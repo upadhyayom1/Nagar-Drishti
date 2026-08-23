@@ -1,6 +1,6 @@
-const app = require('./app');
-const { env } = require('./config/env');
-const { prisma } = require('./lib/prisma');
+const app = require('./src/app');
+const { env } = require('./src/config/env');
+const { prisma } = require('./src/lib/prisma');
 
 const startServer = async () => {
   try {
