@@ -61,6 +61,8 @@ model Camera {
   road Road? @relation(fields: [roadId], references: [id])
   zone Zone? @relation(fields: [zoneId], references: [id])
 
+  cameraHealth                 CameraHealth[]
+  trafficEvents                TrafficEvent[]
   detections                   Detection[]
   sourceCameraTransitions      CameraTransition[] @relation("SourceCamera")
   destinationCameraTransitions CameraTransition[] @relation("DestinationCamera")
@@ -85,7 +87,7 @@ model Road {
   speedLimit Float?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-
+  trafficEvents TrafficEvent[]
   cameras Camera[]
 }
 
@@ -95,10 +97,11 @@ model Zone {
   name      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+  trafficEvents TrafficEvent[]
   cameras           Camera[]
   trafficAggregates TrafficAggregate[]
 }
+
 
 model Detection {
   id                String   @id @default(cuid())
@@ -280,4 +283,68 @@ model TrafficAggregate {
 
   @@index([cameraId, timeBucket])
   @@index([zoneId, timeBucket])
+}
+enum TrafficEventType {
+  ACCIDENT
+  ROAD_BLOCK
+  CONGESTION
+  VEHICLE_BREAKDOWN
+}
+
+enum TrafficEventStatus {
+  ACTIVE
+  RESOLVED
+}
+model CameraHealth {
+  id          String       @id @default(cuid())
+  cameraId    String
+  status      CameraStatus
+  recordedAt  DateTime     @default(now())
+  responseMs  Int?
+  errorMessage String?
+
+  camera Camera @relation(fields: [cameraId], references: [id])
+
+  @@index([cameraId, recordedAt])
+}
+model TrafficEvent {
+  id          String             @id @default(cuid())
+  type        TrafficEventType
+  severity    AlertSeverity
+
+  cameraId    String?
+  roadId      String?
+  zoneId      String?
+
+  latitude    Float?
+  longitude   Float?
+
+  description String?
+  status      TrafficEventStatus @default(ACTIVE)
+
+  startedAt   DateTime
+  resolvedAt  DateTime?
+
+  createdAt   DateTime @default(now())
+
+  camera Camera? @relation(fields: [cameraId], references: [id])
+  road   Road?   @relation(fields: [roadId], references: [id])
+  zone   Zone?   @relation(fields: [zoneId], references: [id])
+
+  @@index([cameraId, startedAt])
+  @@index([roadId, startedAt])
+  @@index([zoneId, startedAt])
+  @@index([status])
+}
+model SystemMetric {
+  id             String   @id @default(cuid())
+  timestamp      DateTime @default(now())
+
+  activeCameras  Int      @default(0)
+  activeVehicles Int      @default(0)
+  totalDetections Int     @default(0)
+  activeAlerts   Int      @default(0)
+
+  averageSpeed   Float?
+  trafficDensity Float?
 }
