@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Simulation - Phase 2 (Advanced)</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { margin: 0; padding: 0; display: flex; font-family: sans-serif; height: 100vh; background: #1a1a1a; color: #fff; }
+        #map { flex: 1; height: 100%; }
+        #sidebar { width: 380px; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; background: #242424; border-left: 1px solid #333; }
+        h2 { margin: 0 0 10px 0; font-size: 1.2rem; border-bottom: 1px solid #444; padding-bottom: 5px; }
+        
+        .controls { display: flex; gap: 10px; flex-wrap: wrap; }
+        button { padding: 8px 12px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2563eb; }
+        button.stop { background: #ef4444; }
+        button.stop:hover { background: #dc2626; }
+        button.speed-btn { background: #4b5563; }
+        button.speed-btn.active { background: #10b981; }
+
+        .stat-box { background: #333; padding: 10px; border-radius: 6px; font-size: 0.85rem; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .stat-box > div { display: flex; flex-direction: column; }
+        .stat-label { color: #9ca3af; font-size: 0.75rem; text-transform: uppercase; }
+        .stat-value { font-size: 1.2rem; font-weight: bold; color: #10b981; }
+
+        #detections { flex: 1; overflow-y: auto; font-size: 0.85rem; display: flex; flex-direction: column; gap: 5px; }
+        .detection-item { background: #333; padding: 8px; border-radius: 4px; border-left: 3px solid #f59e0b; display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; }
+        .det-time { color: #888; font-size: 0.75rem; }
+        .det-cam { color: #facc15; font-weight: bold; }
+        .det-plate { font-weight: bold; font-size: 0.95rem; }
+        .det-type { background: #444; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; color: #cbd5e1; }
+        .det-source { font-size: 0.65rem; color: #a855f7; text-transform: uppercase; font-weight: bold; text-align: right; }
+
+        .camera-marker { font-size: 24px; text-align: center; transition: transform 0.2s; }
+        .camera-pulse { animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) forwards; color: #ef4444; text-shadow: 0 0 10px #ef4444; }
+        .camera-detected-text { font-size: 10px; color: #ef4444; font-weight: bold; text-align: center; background: rgba(0,0,0,0.7); border-radius: 3px; padding: 2px; position: absolute; top: -20px; left: -10px; width: 40px; display: none; }
+        .camera-pulse .camera-detected-text { display: block; }
+
+        @keyframes pulse-ring { 0% { transform: scale(1); } 10% { transform: scale(1.5); } 100% { transform: scale(1); } }
+
+        .vehicle-marker { font-size: 20px; text-align: center; line-height: 20px; text-shadow: 0 0 3px black; transition: transform 1s linear; }
+        .vehicle-highlight { text-shadow: 0 0 10px #facc15, 0 0 5px #facc15; z-index: 1000 !important; }
+
+        .popup-content { color: #000; font-size: 13px; max-height: 250px; overflow-y: auto; }
+        .history-list { margin-top: 5px; padding-left: 15px; font-family: monospace; font-size: 11px; }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <div id="sidebar">
+        <div>
+            <h2>Controls</h2>
+            <div class="controls">
+                <button onclick="startSim()">Start</button>
+                <button onclick="pauseSim()" class="stop">Pause</button>
+                <button onclick="resetSim()" class="stop">Reset</button>
+            </div>
+            <div class="controls" style="margin-top: 10px;">
+                <button class="speed-btn" id="spd-0.5" onclick="setSpeed(0.5)">0.5x</button>
+                <button class="speed-btn active" id="spd-1" onclick="setSpeed(1)">1x</button>
+                <button class="speed-btn" id="spd-2" onclick="setSpeed(2)">2x</button>
+                <button class="speed-btn" id="spd-5" onclick="setSpeed(5)">5x</button>
+                <button class="speed-btn" id="spd-10" onclick="setSpeed(10)">10x</button>
+            </div>
+        </div>
+
+        <div class="stat-box">
+            <div style="grid-column: 1 / -1; margin-bottom: 5px;"><span class="stat-label">Simulation Time</span><span id="sim-time" style="font-family: monospace; color: #fff; font-size: 1.1rem;">Loading...</span></div>
+            <div><span class="stat-label">Status</span><span id="stat-status" style="color: #60a5fa;">PAUSED</span></div>
+            <div><span class="stat-label">Speed</span><span id="stat-speed">1x</span></div>
+            <div><span class="stat-label">Vehicles</span><span id="stat-vehicles" class="stat-value">0</span></div>
+            <div><span class="stat-label">Cameras</span><span id="stat-cameras" class="stat-value">0</span></div>
+            <div><span class="stat-label">Detections</span><span id="stat-detections" class="stat-value" style="color: #f59e0b;">0</span></div>
+        </div>
+
+        <div style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+            <h2>LIVE DETECTIONS</h2>
+            <div id="detections"></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map').setView([28.6315, 77.2167], 15);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap &copy; CARTO' }).addTo(map);
+
+        const vehicleMarkers = {};
+        const cameraElements = {}; 
+        const roadNames = {};
+        let totalDetectionsCount = 0;
+        
+        const typeEmojis = { 'CAR': '🚗', 'BIKE': '🏍', 'BUS': '🚌', 'TRUCK': '🚚', 'AUTO': '🛺' };
+        const statusSymbols = { 'ONLINE': '🟢', 'OFFLINE': '🔴', 'MAINTENANCE': '🟡' };
+
+        async function initMap() {
+            const roadsRes = await fetch('/api/roads');
+            const roadsData = await roadsRes.json();
+            if (roadsData.success) {
+                roadsData.data.forEach(road => {
+                    roadNames[road.id] = road.name || 'Unknown Road';
+                    if (road.geometry && road.geometry.coordinates) {
+                        const latLngs = road.geometry.coordinates.map(c => [c[1], c[0]]);
+                        L.polyline(latLngs, { color: '#4b5563', weight: 2, opacity: 0.6 }).addTo(map);
+                    }
+                });
+            }
+
+            const camRes = await fetch('/api/cameras');
+            const camData = await camRes.json();
+            if (camData.success) {
+                document.getElementById('stat-cameras').innerText = camData.data.length;
+                camData.data.forEach(cam => {
+                    const icon = L.divIcon({
+                        className: 'camera-marker',
+                        html: `📷<div class="camera-detected-text">DETECTED</div>`,
+                        iconSize: [24, 24], iconAnchor: [12, 12], popupAnchor: [0, -12]
+                    });
+
+                    const marker = L.marker([cam.latitude, cam.longitude], { icon }).addTo(map);
+                    
+                    marker.on('click', async () => {
+                        const res = await fetch(`/api/detections/camera/${cam.id}`);
+                        const dData = await res.json();
+                        
+                        let rName = roadNames[cam.roadId] || 'Unknown Road';
+                        let statSym = statusSymbols[cam.status] || '⚪';
+                        
+                        let popupHtml = `<div class="popup-content">
+                            <b>CAMERA ${cam.cameraCode}</b><br>
+                            Status: ${statSym} ${cam.status}<br>
+                            Road: ${rName}<br>
+                            Direction: ${cam.direction || 'N/A'}<br>
+                            <hr>
+                            Vehicles Seen: <b>${dData.data ? dData.data.count : 0}</b><br>
+                        `;
+                        
+                        if (dData.data && dData.data.lastDetection) {
+                            popupHtml += `Last Vehicle: <b>${dData.data.lastDetection.vehicle.plateNumber}</b><br>`;
+                            popupHtml += `Last Detection: ${new Date(dData.data.lastDetection.timestamp).toLocaleTimeString()}<br>`;
+                        } else {
+                            popupHtml += `Last Detection: None<br>`;
+                        }
+                        popupHtml += `</div>`;
+                        marker.bindPopup(popupHtml).openPopup();
+                    });
+                    
+                    marker.on('add', function() { cameraElements[cam.id] = marker.getElement(); });
+                });
+            }
+        }
+
+        async function pollState() {
+            try {
+                const res = await fetch('/api/simulation/state');
+                const data = await res.json();
+
+                if (data.success && data.data) {
+                    const state = data.data;
+
+                    document.getElementById('sim-time').innerText = new Date(state.simulationTime).toLocaleTimeString();
+                    document.getElementById('stat-vehicles').innerText = state.stats.vehicles;
+                    document.getElementById('stat-status').innerText = state.running ? 'RUNNING' : 'PAUSED';
+                    document.getElementById('stat-status').style.color = state.running ? '#10b981' : '#60a5fa';
+                    document.getElementById('stat-speed').innerText = state.speed + 'x';
+                    
+                    // Update speed buttons UI
+                    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+                    const btn = document.getElementById(`spd-${state.speed}`);
+                    if (btn) btn.classList.add('active');
+
+                    const currentVehicleIds = new Set();
+                    state.vehicles.forEach(v => {
+                        currentVehicleIds.add(v.id);
+                        
+                        if (!vehicleMarkers[v.id]) {
+                            const iconHtml = typeEmojis[v.type] || '🚗';
+                            const icon = L.divIcon({
+                                className: 'vehicle-marker',
+                                html: `<div>${iconHtml}</div>`,
+                                iconSize: [20, 20], iconAnchor: [10, 10], popupAnchor: [0, -10]
+                            });
+                            
+                            vehicleMarkers[v.id] = L.marker([v.latitude, v.longitude], { icon }).addTo(map);
+                            
+                            vehicleMarkers[v.id].on('click', async () => {
+                                const vRes = await fetch(`/api/detections/${v.id}`);
+                                const vData = await vRes.json();
+                                
+                                let rName = roadNames[v.roadId] || 'Unknown Road';
+                                
+                                let popupHtml = `<div class="popup-content">
+                                    <b>VEHICLE ${v.plateNumber}</b><br>
+                                    Type: ${v.type}<br>
+                                    Speed: ${Math.round(v.speed)} km/h<br>
+                                    Current Road: ${rName}<br>
+                                    <hr>
+                                    <b>Detection History:</b><br>
+                                `;
+                                
+                                if (vData.data && vData.data.length > 0) {
+                                    const lastDet = vData.data[vData.data.length - 1];
+                                    popupHtml = popupHtml.replace('<hr>', `Last Camera: ${lastDet.camera.cameraCode}<br>Last Detection: ${new Date(lastDet.timestamp).toLocaleTimeString()}<br><hr>`);
+                                    
+                                    popupHtml += `<ul class="history-list">`;
+                                    vData.data.forEach(det => {
+                                        popupHtml += `<li>${det.camera.cameraCode} &rarr; ${new Date(det.timestamp).toLocaleTimeString()}</li>`;
+                                    });
+                                    popupHtml += `</ul>`;
+                                } else {
+                                    popupHtml += `No detections yet.`;
+                                }
+                                popupHtml += `</div>`;
+                                
+                                vehicleMarkers[v.id].bindPopup(popupHtml).openPopup();
+                            });
+                        } else {
+                            vehicleMarkers[v.id].setLatLng([v.latitude, v.longitude]);
+                        }
+                    });
+
+                    Object.keys(vehicleMarkers).forEach(id => {
+                        if (!currentVehicleIds.has(id)) {
+                            map.removeLayer(vehicleMarkers[id]);
+                            delete vehicleMarkers[id];
+                        }
+                    });
+
+                    // Detections
+                    if (state.recentDetections && state.recentDetections.length > 0) {
+                        const lastDet = state.recentDetections[0];
+                        const detContainer = document.getElementById('detections');
+                        const newFirstId = lastDet.vehicleId + lastDet.timestamp;
+                        
+                        if (detContainer.dataset.firstId !== newFirstId) {
+                            detContainer.dataset.firstId = newFirstId;
+                            detContainer.innerHTML = '';
+                            
+                            // We don't have total global count in state easily, so we just let it increase via a query if we wanted, 
+                            // but for now we can fetch the total count or let backend send it. 
+                            // Let's assume we fetch it separately or just use the recentDetections count.
+                            // Actually, backend state.stats.recentDetections is just the array length. We'll skip the total live counter for now or let the user fetch it.
+                            
+                            state.recentDetections.forEach(det => {
+                                const div = document.createElement('div');
+                                div.className = 'detection-item';
+                                
+                                // Fetch vehicle type from state mapping for better UI
+                                const stateV = state.vehicles.find(vx => vx.id === det.vehicleId);
+                                const vType = stateV ? stateV.type : 'CAR';
+                                const emoji = typeEmojis[vType] || '🚗';
+                                
+                                div.innerHTML = `
+                                    <div class="det-time">${new Date(det.timestamp).toLocaleTimeString()}</div>
+                                    <div>
+                                        <span class="det-cam">📷 ${det.cameraId.substring(0,8)}...</span><br>
+                                        <span class="det-plate">${emoji} ${det.plateText}</span> <span class="det-type">${vType}</span>
+                                    </div>
+                                    <div class="det-source">${det.source}</div>
+                                `;
+                                detContainer.appendChild(div);
+                            });
+                            
+                            if (cameraElements[lastDet.cameraId]) {
+                                const el = cameraElements[lastDet.cameraId];
+                                el.classList.remove('camera-pulse');
+                                void el.offsetWidth; 
+                                el.classList.add('camera-pulse');
+                            }
+                            
+                            if (vehicleMarkers[lastDet.vehicleId]) {
+                                const vEl = vehicleMarkers[lastDet.vehicleId].getElement();
+                                if (vEl) {
+                                    vEl.classList.remove('vehicle-highlight');
+                                    void vEl.offsetWidth;
+                                    vEl.classList.add('vehicle-highlight');
+                                    setTimeout(() => { if (vEl) vEl.classList.remove('vehicle-highlight'); }, 2000);
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (err) { console.error("Poll error:", err); }
+        }
+
+        async function startSim() { await fetch('/api/simulation/start', { method: 'POST' }); }
+        async function pauseSim() { await fetch('/api/simulation/pause', { method: 'POST' }); }
+        async function resetSim() { await fetch('/api/simulation/reset', { method: 'POST' }); }
+        async function setSpeed(s) {
+            await fetch('/api/simulation/speed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ speed: s })
+            });
+            pollState(); // Instant UI update
+        }
+
+        // Fetch Total Detections separately
+        async function fetchTotalDetections() {
+            try {
+                const res = await fetch('/api/detections');
+                const data = await res.json();
+                if (data.success && data.data) {
+                    // The API currently returns recent 100 array.
+                    // We need a total count. We will add this to the simulation backend state.
+                }
+            } catch(e) {}
+        }
+
+        initMap();
+        setInterval(pollState, 1000);
+    </script>
+</body>
+
+</html>

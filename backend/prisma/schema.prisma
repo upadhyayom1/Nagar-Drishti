@@ -21,12 +21,17 @@ model User {
 }
 
 model Vehicle {
-  id          String   @id @default(cuid())
-  plateNumber String   @unique
-  firstSeen   DateTime @default(now())
-  lastSeen    DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  plateNumber   String   @unique
+  vehicleType   String?
+  color         String?
+  currentRoadId String?
+  speed         Float?
+  status        String?  @default("ACTIVE")
+  firstSeen     DateTime @default(now())
+  lastSeen      DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   detections        Detection[]
   cameraTransitions CameraTransition[]
@@ -85,6 +90,7 @@ model Road {
   roadCode   String   @unique
   name       String
   speedLimit Float?
+  geometry   Json?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   trafficEvents TrafficEvent[]
@@ -116,6 +122,7 @@ model Detection {
   direction         String?
   lane              Int?
   imageUrl          String?
+  source            String   @default("SIMULATION")
   createdAt         DateTime @default(now())
 
   vehicle Vehicle @relation(fields: [vehicleId], references: [id])
