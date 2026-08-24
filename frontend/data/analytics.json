@@ -1,0 +1,150 @@
+{
+  "stats": {
+    "totalVehiclesToday": 2847,
+    "avgSpeed": 38.5,
+    "activeCameras": 9,
+    "activeAlerts": 4,
+    "congestionIndex": 67,
+    "incidentsToday": 3
+  },
+  "hourlyTraffic": [
+    { "hour": "00:00", "vehicles": 50, "avgSpeed": 55 },
+    { "hour": "01:00", "vehicles": 35, "avgSpeed": 58 },
+    { "hour": "02:00", "vehicles": 20, "avgSpeed": 60 },
+    { "hour": "03:00", "vehicles": 25, "avgSpeed": 58 },
+    { "hour": "04:00", "vehicles": 45, "avgSpeed": 55 },
+    { "hour": "05:00", "vehicles": 85, "avgSpeed": 50 },
+    { "hour": "06:00", "vehicles": 150, "avgSpeed": 45 },
+    { "hour": "07:00", "vehicles": 250, "avgSpeed": 40 },
+    { "hour": "08:00", "vehicles": 320, "avgSpeed": 30 },
+    { "hour": "09:00", "vehicles": 350, "avgSpeed": 25 },
+    { "hour": "10:00", "vehicles": 280, "avgSpeed": 32 },
+    { "hour": "11:00", "vehicles": 220, "avgSpeed": 38 },
+    { "hour": "12:00", "vehicles": 180, "avgSpeed": 40 },
+    { "hour": "13:00", "vehicles": 150, "avgSpeed": 42 },
+    { "hour": "14:00", "vehicles": 160, "avgSpeed": 42 },
+    { "hour": "15:00", "vehicles": 200, "avgSpeed": 38 },
+    { "hour": "16:00", "vehicles": 250, "avgSpeed": 35 },
+    { "hour": "17:00", "vehicles": 310, "avgSpeed": 28 },
+    { "hour": "18:00", "vehicles": 380, "avgSpeed": 22 },
+    { "hour": "19:00", "vehicles": 350, "avgSpeed": 25 },
+    { "hour": "20:00", "vehicles": 250, "avgSpeed": 32 },
+    { "hour": "21:00", "vehicles": 180, "avgSpeed": 40 },
+    { "hour": "22:00", "vehicles": 120, "avgSpeed": 45 },
+    { "hour": "23:00", "vehicles": 80, "avgSpeed": 50 }
+  ],
+  "cameraTraffic": [
+    {
+      "cameraId": "CAM-001",
+      "cameraName": "Anna Nagar Roundtana",
+      "vehicleCount": 150,
+      "avgSpeed": 42,
+      "congestionLevel": "moderate"
+    },
+    {
+      "cameraId": "CAM-002",
+      "cameraName": "T. Nagar Panagal Park",
+      "vehicleCount": 320,
+      "avgSpeed": 20,
+      "congestionLevel": "high"
+    },
+    {
+      "cameraId": "CAM-003",
+      "cameraName": "Guindy Kathipara",
+      "vehicleCount": 350,
+      "avgSpeed": 15,
+      "congestionLevel": "congested"
+    },
+    {
+      "cameraId": "CAM-004",
+      "cameraName": "Marina Beach",
+      "vehicleCount": 80,
+      "avgSpeed": 50,
+      "congestionLevel": "low"
+    },
+    {
+      "cameraId": "CAM-005",
+      "cameraName": "Mount Road",
+      "vehicleCount": 280,
+      "avgSpeed": 22,
+      "congestionLevel": "high"
+    },
+    {
+      "cameraId": "CAM-006",
+      "cameraName": "Madhya Kailash",
+      "vehicleCount": 290,
+      "avgSpeed": 25,
+      "congestionLevel": "high"
+    },
+    {
+      "cameraId": "CAM-007",
+      "cameraName": "OMR SRP Tools",
+      "vehicleCount": 190,
+      "avgSpeed": 35,
+      "congestionLevel": "moderate"
+    },
+    {
+      "cameraId": "CAM-008",
+      "cameraName": "Velachery Bypass",
+      "vehicleCount": 210,
+      "avgSpeed": 30,
+      "congestionLevel": "moderate"
+    },
+    {
+      "cameraId": "CAM-009",
+      "cameraName": "ECR Toll Plaza",
+      "vehicleCount": 50,
+      "avgSpeed": 55,
+      "congestionLevel": "low"
+    },
+    {
+      "cameraId": "CAM-010",
+      "cameraName": "Porur Junction",
+      "vehicleCount": 0,
+      "avgSpeed": 0,
+      "congestionLevel": "low"
+    }
+  ],
+  "busiestRoads": [
+    {
+      "id": "RTE-001",
+      "name": "Guindy Kathipara Junction",
+      "vehicleCount": 350,
+      "avgSpeed": 15,
+      "congestionLevel": "congested"
+    },
+    {
+      "id": "RTE-002",
+      "name": "T. Nagar Panagal Park Area",
+      "vehicleCount": 320,
+      "avgSpeed": 20,
+      "congestionLevel": "high"
+    },
+    {
+      "id": "RTE-003",
+      "name": "OMR Starting Point - Madhya Kailash",
+      "vehicleCount": 290,
+      "avgSpeed": 25,
+      "congestionLevel": "high"
+    },
+    {
+      "id": "RTE-004",
+      "name": "Anna Salai - Spencer Plaza",
+      "vehicleCount": 280,
+      "avgSpeed": 22,
+      "congestionLevel": "high"
+    },
+    {
+      "id": "RTE-005",
+      "name": "Velachery Bypass Road",
+      "vehicleCount": 210,
+      "avgSpeed": 30,
+      "congestionLevel": "moderate"
+    }
+  ],
+  "anomalies": [
+    "Traffic volume on T. Nagar is 2.1x above normal",
+    "Average speed dropped by 40% at Guindy Kathipara",
+    "Unusual vehicle routing detected near Madhya Kailash"
+  ]
+}
