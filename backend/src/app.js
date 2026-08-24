@@ -33,7 +33,17 @@ app.use('/api/simulation', simulationRoutes);
 app.use('/api/detections', detectionRoutes);
 app.use('/api/ocr', ocrRoutes);
 
+<<<<<<< HEAD
 
+=======
+app.use('/api/dev',devRoutes);
+>>>>>>> 5a4e8c3 (Update backend files)
+
+const blacklistRoutes = require('./modules/blacklist/blacklist.routes');
+app.use('/api/blacklist', blacklistRoutes);
+
+const vehicleRoutes = require('./modules/vehicle/vehicle.routes');
+app.use('/api/vehicles', vehicleRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {

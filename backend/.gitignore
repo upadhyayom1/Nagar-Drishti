@@ -1,3 +1,6 @@
+<<<<<<< HEAD
+docs
+=======
 node_modules/
 dist/
 .env
@@ -8,3 +11,4 @@ dist/
 # OCR local files
 ocr/test_images/
 ocr/uploads/
+>>>>>>> a54774e (Initial commit by pravesh)

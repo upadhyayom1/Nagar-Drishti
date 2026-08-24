@@ -50,3 +50,66 @@ exports.createUser = async (req, res) => {
     });
   }
 };
+
+const blacklistService = require('../blacklist/blacklist.service');
+
+exports.simulateDetection = async (req, res) => {
+  try {
+    const { plateNumber, cameraId, vehicleId } = req.body;
+    
+    if (!plateNumber || !cameraId || !vehicleId) {
+      return res.status(400).json({
+        success: false,
+        message: 'plateNumber, cameraId, and vehicleId are required'
+      });
+    }
+
+    let vehicle = await prisma.vehicle.findUnique({ where: { plateNumber } });
+    if (!vehicle) {
+      vehicle = await prisma.vehicle.create({
+        data: { plateNumber }
+      });
+    }
+
+    let camera = await prisma.camera.findFirst({ where: { cameraCode: cameraId } });
+    if (!camera) {
+      camera = await prisma.camera.findUnique({ where: { id: cameraId } });
+    }
+    
+    if (!camera) {
+      camera = await prisma.camera.create({
+        data: {
+          cameraCode: cameraId,
+          name: 'Simulated Camera ' + cameraId,
+          latitude: 28.6304,
+          longitude: 77.2177,
+        }
+      });
+    }
+
+    const detection = await prisma.detection.create({
+      data: {
+        vehicleId: vehicle.id,
+        cameraId: camera.id,
+        plateText: plateNumber,
+        timestamp: new Date(),
+        ocrConfidence: 0.99,
+        vehicleConfidence: 0.99,
+        source: 'SIMULATION'
+      }
+    });
+
+    const result = await blacklistService.processDetectionForBlacklist(detection);
+    
+    res.status(201).json({
+      success: true,
+      data: result
+    });
+  } catch (err) {
+    console.error('Error simulating detection:', err);
+    res.status(500).json({
+      success: false,
+      message: err.message
+    });
+  }
+};
