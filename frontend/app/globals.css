@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-void: #060913; 
+  }
+
+  *, ::before, ::after {
+    border-color: rgba(255, 255, 255, 0.05); /* Safe fallback */
+  }
+
+  body {
+    background-color: var(--bg-void);
+    color: #f1f5f9; 
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    /* Ambient background lighting for the glass to refract */
+    background-image: 
+      radial-gradient(circle at 15% 50%, rgba(14, 165, 233, 0.08), transparent 50%),
+      radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.08), transparent 50%);
+    background-attachment: fixed;
+  }
+}
+
+/* Leaflet Map Overrides */
+.leaflet-container {
+  background: transparent !important;
+  font-family: inherit !important;
+}
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: rgba(15, 23, 42, 0.85) !important;
+  backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.15), 0 16px 40px rgba(0, 0, 0, 0.5) !important;
+  color: #f8fafc !important;
+}
+.leaflet-control-zoom a {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #f8fafc !important;
+}
+.leaflet-control-attribution {
+  background: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(4px) !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+}

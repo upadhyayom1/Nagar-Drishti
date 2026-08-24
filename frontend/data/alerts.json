@@ -1,0 +1,56 @@
+[
+  {
+    "id": "ALT-001",
+    "type": "BLACKLIST_VEHICLE",
+    "severity": "critical",
+    "title": "Blacklisted Vehicle Detected",
+    "description": "Vehicle TN14YZ9012 identified on watchlist spotted in Mount Road zone.",
+    "vehiclePlate": "TN14YZ9012",
+    "cameraId": "CAM-005",
+    "cameraName": "Mount Road",
+    "location": "Anna Salai - Spencer Plaza",
+    "timestamp": "2024-01-15T08:05:00Z",
+    "isRead": false,
+    "isResolved": false
+  },
+  {
+    "id": "ALT-002",
+    "type": "ROUTE_ANOMALY",
+    "severity": "high",
+    "title": "Route Anomaly Detected",
+    "description": "Vehicle detected on unusual route. TN38AB1234 deviated from expected pattern.",
+    "vehiclePlate": "TN38AB1234",
+    "cameraId": "CAM-006",
+    "cameraName": "Madhya Kailash",
+    "location": "OMR Starting Point",
+    "timestamp": "2024-01-15T08:30:00Z",
+    "isRead": false,
+    "isResolved": false
+  },
+  {
+    "id": "ALT-003",
+    "type": "TRAFFIC_SURGE",
+    "severity": "medium",
+    "title": "Traffic Surge Warning",
+    "description": "Traffic volume 2.1x above normal in T. Nagar area.",
+    "cameraId": "CAM-002",
+    "cameraName": "T. Nagar Panagal Park",
+    "location": "Pondy Bazaar",
+    "timestamp": "2024-01-15T08:15:00Z",
+    "isRead": false,
+    "isResolved": false
+  },
+  {
+    "id": "ALT-004",
+    "type": "CAMERA_OFFLINE",
+    "severity": "high",
+    "title": "Camera Connection Lost",
+    "description": "Lost connection to CAM-010 at Porur Junction. Maintenance required.",
+    "cameraId": "CAM-010",
+    "cameraName": "Porur Junction",
+    "location": "Mount Poonamallee Road",
+    "timestamp": "2024-01-15T05:00:00Z",
+    "isRead": false,
+    "isResolved": false
+  }
+]
