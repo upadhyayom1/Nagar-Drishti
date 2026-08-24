@@ -4,3 +4,7 @@ dist/
 .DS_Store
 .env.example
 /src/generated/prisma
+
+# OCR local files
+ocr/test_images/
+ocr/uploads/
