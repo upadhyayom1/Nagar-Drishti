@@ -3,6 +3,10 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const path = require('path');
 const authRoutes = require('./modules/auth/auth.routes');
+
+const ocrRoutes = require('./modules/ocr/ocr.routes');
+
+
 const devRoutes = require('./modules/dev/dev.routes');
 const roadRoutes = require('./modules/road/road.routes');
 const cameraRoutes = require('./modules/camera/camera.routes');
@@ -27,6 +31,10 @@ app.use('/api/cameras', cameraRoutes);
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/simulation', simulationRoutes);
 app.use('/api/detections', detectionRoutes);
+app.use('/api/ocr', ocrRoutes);
+
+
+
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error(err.stack);

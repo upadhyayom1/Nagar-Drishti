@@ -7,6 +7,7 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('1d'),
   PORT: z.string().default('3000'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  PLATE_RECOGNIZER_API_KEY: z.string().min(1),
 });
 
 const _env = envSchema.safeParse(process.env);
