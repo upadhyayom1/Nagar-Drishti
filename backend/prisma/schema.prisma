@@ -28,12 +28,12 @@ model Vehicle {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  detections         Detection[]
-  cameraTransitions  CameraTransition[]
-  trajectories       Trajectory[]
-  predictions        Prediction[]
-  anomalyEvents      AnomalyEvent[]
-  alerts             Alert[]
+  detections        Detection[]
+  cameraTransitions CameraTransition[]
+  trajectories      Trajectory[]
+  predictions       Prediction[]
+  anomalyEvents     AnomalyEvent[]
+  alerts            Alert[]
 }
 
 enum CameraStatus {
@@ -43,27 +43,65 @@ enum CameraStatus {
 }
 
 model Camera {
-  id         String       @id @default(cuid())
-  cameraCode String       @unique
+  id         String @id @default(cuid())
+  cameraCode String @unique
   name       String
-  latitude   Float
-  longitude  Float
-  direction  String?
-  zone       String?
-  status     CameraStatus @default(ONLINE)
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
 
-  detections                    Detection[]
-  sourceCameraTransitions       CameraTransition[] @relation("SourceCamera")
-  destinationCameraTransitions  CameraTransition[] @relation("DestinationCamera")
-  startTrajectories             Trajectory[]       @relation("StartCamera")
-  endTrajectories               Trajectory[]       @relation("EndCamera")
-  predictions                   Prediction[]
-  anomalyEvents                 AnomalyEvent[]
-  alerts                        Alert[]
-  trafficAggregates             TrafficAggregate[]
+  latitude  Float
+  longitude Float
+
+  direction String?
+  roadId    String?
+  zoneId    String?
+
+  status    CameraStatus @default(ONLINE)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  road Road? @relation(fields: [roadId], references: [id])
+  zone Zone? @relation(fields: [zoneId], references: [id])
+
+  cameraHealth                 CameraHealth[]
+  trafficEvents                TrafficEvent[]
+  detections                   Detection[]
+  sourceCameraTransitions      CameraTransition[] @relation("SourceCamera")
+  destinationCameraTransitions CameraTransition[] @relation("DestinationCamera")
+  startTrajectories            Trajectory[]       @relation("StartCamera")
+  endTrajectories              Trajectory[]       @relation("EndCamera")
+
+  currentPredictions   Prediction[] @relation("CurrentCameraPrediction")
+  predictedPredictions Prediction[] @relation("PredictedCamera")
+
+  anomalyEvents     AnomalyEvent[]
+  alerts            Alert[]
+  trafficAggregates TrafficAggregate[]
+
+  @@index([roadId])
+  @@index([zoneId])
 }
+
+model Road {
+  id         String   @id @default(cuid())
+  roadCode   String   @unique
+  name       String
+  speedLimit Float?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  trafficEvents TrafficEvent[]
+  cameras Camera[]
+}
+
+model Zone {
+  id        String   @id @default(cuid())
+  zoneCode  String   @unique
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  trafficEvents TrafficEvent[]
+  cameras           Camera[]
+  trafficAggregates TrafficAggregate[]
+}
+
 
 model Detection {
   id                String   @id @default(cuid())
@@ -103,6 +141,10 @@ model CameraTransition {
   sourceCamera      Camera  @relation("SourceCamera", fields: [sourceCameraId], references: [id])
   destinationCamera Camera  @relation("DestinationCamera", fields: [destinationCameraId], references: [id])
   vehicle           Vehicle @relation(fields: [vehicleId], references: [id])
+
+  @@index([vehicleId, timestamp])
+  @@index([sourceCameraId, timestamp])
+  @@index([destinationCameraId, timestamp])
 }
 
 model Trajectory {
@@ -120,6 +162,10 @@ model Trajectory {
   vehicle     Vehicle @relation(fields: [vehicleId], references: [id])
   startCamera Camera  @relation("StartCamera", fields: [startCameraId], references: [id])
   endCamera   Camera  @relation("EndCamera", fields: [endCameraId], references: [id])
+
+  @@index([vehicleId, startTime])
+  @@index([startCameraId, startTime])
+  @@index([endCameraId, endTime])
 }
 
 model Prediction {
@@ -128,16 +174,34 @@ model Prediction {
   currentCameraId   String
   predictedCameraId String
   probability       Float
+  predictionTime    DateTime @default(now())
   createdAt         DateTime @default(now())
 
   vehicle Vehicle @relation(fields: [vehicleId], references: [id])
-  camera  Camera  @relation(fields: [currentCameraId], references: [id])
+
+  currentCamera Camera @relation("CurrentCameraPrediction", fields: [currentCameraId], references: [id])
+
+  predictedCamera Camera @relation("PredictedCamera", fields: [predictedCameraId], references: [id])
+
+  @@index([vehicleId, predictionTime])
 }
 
 enum AnomalyType {
   ROUTE_ANOMALY
   UNUSUAL_TRAVEL_TIME
   UNUSUAL_CAMERA_TRANSITION
+}
+
+enum BlacklistSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum BlacklistStatus {
+  ACTIVE
+  INACTIVE
 }
 
 model AnomalyEvent {
@@ -193,21 +257,21 @@ model Alert {
 }
 
 model BlacklistedVehicle {
-  id          String   @id @default(cuid())
-  plateNumber String   @unique
+  id          String            @id @default(cuid())
+  plateNumber String            @unique
   reason      String
-  severity    String
-  status      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  severity    BlacklistSeverity
+  status      BlacklistStatus   @default(ACTIVE)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
-  @@index([plateNumber])
+  @@index([plateNumber, status])
 }
 
 model TrafficAggregate {
   id             String   @id @default(cuid())
   cameraId       String
-  zone           String?
+  zoneId         String?
   timeBucket     DateTime
   vehicleCount   Int      @default(0)
   averageSpeed   Float?
@@ -215,6 +279,72 @@ model TrafficAggregate {
   createdAt      DateTime @default(now())
 
   camera Camera @relation(fields: [cameraId], references: [id])
+  zone   Zone?  @relation(fields: [zoneId], references: [id])
 
   @@index([cameraId, timeBucket])
+  @@index([zoneId, timeBucket])
+}
+enum TrafficEventType {
+  ACCIDENT
+  ROAD_BLOCK
+  CONGESTION
+  VEHICLE_BREAKDOWN
+}
+
+enum TrafficEventStatus {
+  ACTIVE
+  RESOLVED
+}
+model CameraHealth {
+  id          String       @id @default(cuid())
+  cameraId    String
+  status      CameraStatus
+  recordedAt  DateTime     @default(now())
+  responseMs  Int?
+  errorMessage String?
+
+  camera Camera @relation(fields: [cameraId], references: [id])
+
+  @@index([cameraId, recordedAt])
+}
+model TrafficEvent {
+  id          String             @id @default(cuid())
+  type        TrafficEventType
+  severity    AlertSeverity
+
+  cameraId    String?
+  roadId      String?
+  zoneId      String?
+
+  latitude    Float?
+  longitude   Float?
+
+  description String?
+  status      TrafficEventStatus @default(ACTIVE)
+
+  startedAt   DateTime
+  resolvedAt  DateTime?
+
+  createdAt   DateTime @default(now())
+
+  camera Camera? @relation(fields: [cameraId], references: [id])
+  road   Road?   @relation(fields: [roadId], references: [id])
+  zone   Zone?   @relation(fields: [zoneId], references: [id])
+
+  @@index([cameraId, startedAt])
+  @@index([roadId, startedAt])
+  @@index([zoneId, startedAt])
+  @@index([status])
+}
+model SystemMetric {
+  id             String   @id @default(cuid())
+  timestamp      DateTime @default(now())
+
+  activeCameras  Int      @default(0)
+  activeVehicles Int      @default(0)
+  totalDetections Int     @default(0)
+  activeAlerts   Int      @default(0)
+
+  averageSpeed   Float?
+  trafficDensity Float?
 }
