@@ -33,11 +33,7 @@ app.use('/api/simulation', simulationRoutes);
 app.use('/api/detections', detectionRoutes);
 app.use('/api/ocr', ocrRoutes);
 
-<<<<<<< HEAD
 
-=======
-app.use('/api/dev',devRoutes);
->>>>>>> 5a4e8c3 (Update backend files)
 
 const blacklistRoutes = require('./modules/blacklist/blacklist.routes');
 app.use('/api/blacklist', blacklistRoutes);
