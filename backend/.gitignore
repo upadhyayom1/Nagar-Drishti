@@ -1,14 +1,11 @@
-<<<<<<< HEAD
 docs
-=======
 node_modules/
 dist/
 .env
 .DS_Store
 .env.example
 /src/generated/prisma
-
-# OCR local files
+data
 ocr/test_images/
 ocr/uploads/
->>>>>>> a54774e (Initial commit by pravesh)
+

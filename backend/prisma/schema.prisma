@@ -11,6 +11,22 @@ enum UserRole {
   OPERATOR
 }
 
+enum VehicleType {
+  CAR
+  MOTORCYCLE
+  SCOOTER
+  AUTO
+  BUS
+  TRUCK
+  VAN
+  TAXI
+}
+
+enum DetectionSource {
+  SIMULATION
+  AI
+}
+
 model User {
   id           String   @id @default(cuid())
   username     String   @unique
@@ -21,30 +37,17 @@ model User {
 }
 
 model Vehicle {
-<<<<<<< HEAD
-  id            String   @id @default(cuid())
-  plateNumber   String   @unique
-  vehicleType   String?
+  id            String       @id @default(cuid())
+  plateNumber   String       @unique
+  vehicleType   VehicleType?
   color         String?
   currentRoadId String?
   speed         Float?
-  status        String?  @default("ACTIVE")
-  firstSeen     DateTime @default(now())
-  lastSeen      DateTime @default(now())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-=======
-  id          String   @id @default(cuid())
-  plateNumber String   @unique
-  color       String?
-  speed       Float?
-  status      String?
-  vehicleType String?
-  firstSeen   DateTime @default(now())
-  lastSeen    DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
->>>>>>> 5a4e8c3 (Update backend files)
+  status        String?      @default("ACTIVE")
+  firstSeen     DateTime     @default(now())
+  lastSeen      DateTime     @default(now())
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   detections        Detection[]
   cameraTransitions CameraTransition[]
@@ -101,15 +104,6 @@ model Camera {
 }
 
 model Road {
-<<<<<<< HEAD
-  id         String   @id @default(cuid())
-  roadCode   String   @unique
-  name       String
-  speedLimit Float?
-  geometry   Json?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-=======
   id            String         @id @default(cuid())
   roadCode      String         @unique
   name          String
@@ -117,7 +111,6 @@ model Road {
   geometry      Json?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
->>>>>>> 5a4e8c3 (Update backend files)
   trafficEvents TrafficEvent[]
   cameras       Camera[]
 }
@@ -146,13 +139,9 @@ model Detection {
   direction         String?
   lane              Int?
   imageUrl          String?
-<<<<<<< HEAD
-  source            String   @default("SIMULATION")
-=======
-  source            String?
-  isBlacklisted     Boolean  @default(false)
+  source            DetectionSource @default(SIMULATION)
+  isBlacklisted     Boolean         @default(false)
   blacklistId       String?
->>>>>>> 5a4e8c3 (Update backend files)
   createdAt         DateTime @default(now())
 
   vehicle         Vehicle             @relation(fields: [vehicleId], references: [id])
