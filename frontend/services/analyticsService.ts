@@ -1,38 +1,61 @@
 import type { TrafficStats, HourlyTraffic, CameraTraffic, Route } from '@/types';
-import analyticsData from '@/data/analytics.json';
-import { delay } from '@/lib/utils';
-
-const data = analyticsData as {
-  stats: TrafficStats;
-  hourlyTraffic: HourlyTraffic[];
-  cameraTraffic: CameraTraffic[];
-  busiestRoads: Route[];
-  anomalies: string[];
-};
+import { apiClient } from './apiClient';
 
 export const analyticsService = {
   async getTrafficStats(): Promise<TrafficStats> {
-    await delay(200);
-    return data.stats;
+    try {
+      const response = await apiClient.get<TrafficStats>('/analytics/overview');
+      return response.data || response;
+    } catch (e) {
+      console.error(e);
+      return {
+        totalVehiclesToday: 0,
+        avgSpeed: 0,
+        activeCameras: 0,
+        activeAlerts: 0,
+        congestionIndex: 0,
+        incidentsToday: 0
+      };
+    }
   },
 
   async getHourlyTraffic(): Promise<HourlyTraffic[]> {
-    await delay(200);
-    return data.hourlyTraffic;
+    try {
+      const response = await apiClient.get<HourlyTraffic[]>('/analytics/hourly');
+      return response.data || response || [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   },
 
   async getCameraTraffic(): Promise<CameraTraffic[]> {
-    await delay(200);
-    return data.cameraTraffic;
+    try {
+      const response = await apiClient.get<CameraTraffic[]>('/analytics/cameras');
+      return response.data || response || [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   },
 
   async getBusiestRoads(): Promise<Route[]> {
-    await delay(200);
-    return data.busiestRoads;
+    try {
+      const response = await apiClient.get<Route[]>('/analytics/busiest-roads');
+      return response.data || response || [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   },
 
   async getTrafficAnomalies(): Promise<string[]> {
-    await delay(150);
-    return data.anomalies;
-  },
+    try {
+      const response = await apiClient.get<string[]>('/analytics/anomalies');
+      return response.data || response || [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  }
 };

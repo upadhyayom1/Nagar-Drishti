@@ -1,10 +1,11 @@
 const fs = require('fs');
 const https = require('https');
+const path = require('path');
 
 const query = `
   [out:json];
   (
-    way["highway"](28.625, 77.21, 28.635, 77.225);
+    way["highway"](25.385, 81.825, 25.545, 81.945);
   );
   (._;>;);
   out body;
@@ -26,8 +27,10 @@ const req = https.request({
       console.error(data.substring(0, 500));
       process.exit(1);
     }
-    fs.writeFileSync('src/data/city/osm_raw.json', data);
-    console.log('Saved to src/data/city/osm_raw.json');
+    const outputPath = path.join(__dirname, 'src/data/prayagraj/osm_raw.json');
+    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+    fs.writeFileSync(outputPath, data);
+    console.log(`Saved to ${outputPath}`);
   });
 });
 

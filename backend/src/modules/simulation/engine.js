@@ -1,5 +1,6 @@
 const turf = require('@turf/turf');
 const { prisma } = require('../../lib/prisma');
+const { recordDetection } = require('../detection/detection.service');
 
 class SimulationEngine {
   constructor() {
@@ -315,7 +316,7 @@ class SimulationEngine {
 
     if (detectionsToSave.length > 0) {
       try {
-        await prisma.detection.createMany({ data: detectionsToSave });
+        await Promise.all(detectionsToSave.map((detection) => recordDetection(detection)));
       } catch (err) {
         console.error('Failed to save simulation detections:', err);
       }

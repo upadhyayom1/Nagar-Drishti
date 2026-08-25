@@ -1,30 +1,31 @@
+import type { Metadata } from 'next';
+import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
 import Providers from '@/lib/providers';
-import { Inter } from 'next/font/google';
 import './globals.css';
 
-// Configure Inter to swap smoothly and create a CSS variable
-const inter = Inter({ 
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-jakarta',
   display: 'swap',
-  variable: '--font-inter',
 });
 
-export const metadata = {
-  title: 'UrbanPulse | Command Center',
-  description: 'AI-powered vehicle intelligence',
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-mono',
+  display: 'swap',
+});
+
+export const metadata: Metadata = {
+  title: 'UrbanPulse | AI Command Center',
+  description: 'AI-powered vehicle intelligence & smart city traffic analytics for Chennai',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
-      {/* 
-        Forcing the font-family directly via style guarantees it loads.
-        If Inter fails, it instantly falls back to Apple's San Francisco / system UI.
-      */}
-      <body 
-        className="antialiased bg-[#08080a] text-gray-100 selection:bg-cyan-500/30"
-        style={{ fontFamily: 'var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}
-      >
+    <html lang="en" className={`${plusJakarta.variable} ${jetbrainsMono.variable}`}>
+      <body className="antialiased">
         <Providers>
           {children}
         </Providers>

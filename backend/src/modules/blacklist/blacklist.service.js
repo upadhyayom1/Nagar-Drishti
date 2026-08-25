@@ -20,7 +20,7 @@ async function addBlacklistedVehicle(data) {
     throw new Error('Vehicle already in blacklist');
   }
 
-  return await prisma.blacklistedVehicle.create({
+  const record = await prisma.blacklistedVehicle.create({
     data: {
       plateNumber: normalizedPlate,
       reason: data.reason || 'Not specified',
@@ -28,13 +28,17 @@ async function addBlacklistedVehicle(data) {
       status: 'ACTIVE',
     },
   });
+  await prisma.vehicle.updateMany({ where: { plateNumber: normalizedPlate }, data: { status: 'BLACKLISTED' } });
+  return record;
 }
 
 async function deactivateBlacklistedVehicle(id) {
-  return await prisma.blacklistedVehicle.update({
+  const record = await prisma.blacklistedVehicle.update({
     where: { id },
     data: { status: 'INACTIVE' },
   });
+  await prisma.vehicle.updateMany({ where: { plateNumber: record.plateNumber }, data: { status: 'ACTIVE' } });
+  return record;
 }
 
 async function getBlacklistedVehicles(filters = {}) {
@@ -80,7 +84,8 @@ async function processDetectionForBlacklist(detection) {
       },
     });
 
-    const alert = await prisma.blacklistAlert.create({
+    const existingAlert = await prisma.blacklistAlert.findFirst({ where: { detectionEventId: detection.id } });
+    const alert = existingAlert || await prisma.blacklistAlert.create({
       data: {
         detectionEventId: detection.id,
         blacklistId: checkResult.record.id,
@@ -91,6 +96,18 @@ async function processDetectionForBlacklist(detection) {
         status: 'NEW',
       }
     });
+
+    if (!existingAlert) {
+      await prisma.alert.create({
+        data: {
+          type: 'BLACKLIST_MATCH',
+          severity: checkResult.record.severity,
+          vehicleId: detection.vehicleId,
+          cameraId: detection.cameraId,
+          message: `Blacklisted vehicle ${checkResult.plateNumber} detected by camera ${detection.cameraId}. Reason: ${checkResult.record.reason}`,
+        },
+      });
+    }
 
     return {
       updatedDetection,

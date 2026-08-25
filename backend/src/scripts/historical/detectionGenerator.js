@@ -1,10 +1,10 @@
 const config = require('./config');
-const { random, randomRange, getDistance } = require('./utils');
+const { random, randomRange } = require('./utils');
 const { getCongestionMultiplier, getBaseSpeedMps } = require('./behaviorProfiles');
 const turf = require('@turf/turf');
 
 function generateTripDetections(vehicle, route, cameras, startTimestampStr) {
-  let detections = [];
+  const detections = [];
   let currentTime = new Date(startTimestampStr).getTime();
   const startHour = new Date(currentTime).getHours();
   
@@ -16,40 +16,33 @@ function generateTripDetections(vehicle, route, cameras, startTimestampStr) {
 
   for (const edge of route) {
     const travelTimeMs = (edge.distance / actualSpeed) * 1000;
-    
-    // Simulate passing the road and checking cameras
-    for (const cam of cameras) {
-      // Is camera offline today?
-      if (random() < config.cameraOfflineRate) continue;
+    const line = turf.lineString(edge.geometry);
+    const edgeCameras = cameras
+      .filter((camera) => !activeCameras.has(camera.cameraCode) && random() >= config.cameraOfflineRate)
+      .map((camera) => {
+        const match = turf.nearestPointOnLine(line, [camera.longitude, camera.latitude], { units: 'meters' });
+        return { camera, distance: match.properties.dist, location: match.properties.location };
+      })
+      .filter(({ distance }) => distance <= 35)
+      .sort((left, right) => left.location - right.location);
 
-      const camPoint = turf.point([cam.longitude, cam.latitude]);
-      // Just check the midpoint and endpoints for simplicity in generation, or just iterate coords
-      for (const coord of edge.geometry) {
-        const dist = getDistance(cam.longitude, cam.latitude, coord[0], coord[1]);
-        if (dist <= 25) { // 25m detection radius
-          if (!activeCameras.has(cam.cameraCode)) {
-            activeCameras.add(cam.cameraCode);
-            
-            // Random detection failure
-            if (random() < config.detectionFailureRate) continue;
+    for (const { camera, location } of edgeCameras) {
+      activeCameras.add(camera.cameraCode);
+      if (random() < config.detectionFailureRate) continue;
 
-            const detectionTime = new Date(currentTime + (random() * travelTimeMs));
-            
-            detections.push({
-              vehicleId: vehicle.id, 
-              cameraId: cam.id,
-              plateText: vehicle.plateNumber,
-              ocrConfidence: randomRange(0.70, 0.99),
-              vehicleConfidence: randomRange(0.75, 0.99),
-              timestamp: detectionTime,
-              latitude: cam.latitude,
-              longitude: cam.longitude,
-              source: 'SIMULATION'
-            });
-          }
-          break; // Avoid detecting multiple times on same edge
-        }
-      }
+      const progress = edge.distance ? location / edge.distance : 0;
+      const detectionTime = new Date(currentTime + (progress * travelTimeMs));
+      detections.push({
+        vehicleId: vehicle.id,
+        cameraId: camera.id,
+        plateText: vehicle.plateNumber,
+        ocrConfidence: randomRange(0.70, 0.99),
+        vehicleConfidence: randomRange(0.75, 0.99),
+        timestamp: detectionTime,
+        latitude: camera.latitude,
+        longitude: camera.longitude,
+        source: 'SIMULATION',
+      });
     }
     
     currentTime += travelTimeMs;

@@ -1,31 +1,31 @@
-const fs = require('fs');
-const path = require('path');
-const { random, randomWeighted, shuffleArray } = require('./utils');
+const turf = require('@turf/turf');
+const { random } = require('./utils');
 
 class RouteGenerator {
-  constructor(cameras) {
-    this.cameras = cameras;
+  constructor(roads) {
     this.graph = new Map();
     this.nodesList = [];
-    this.loadGraph();
+    this.loadGraph(roads);
   }
 
-  loadGraph() {
-    const geojsonPath = path.join(__dirname, '../../../src/data/city/roads.geojson');
-    const roadsFeatureCollection = JSON.parse(fs.readFileSync(geojsonPath, 'utf8'));
+  loadGraph(roads) {
+    for (const road of roads) {
+      if (road.geometry?.type === 'LineString') {
+        const coords = road.geometry.coordinates;
+        for (let index = 1; index < coords.length; index++) {
+          const start = coords[index - 1];
+          const end = coords[index];
+          const startNode = start.join(',');
+          const endNode = end.join(',');
+          const geometry = [start, end];
+          const distance = turf.length(turf.lineString(geometry), { units: 'meters' });
 
-    for (const feature of roadsFeatureCollection.features) {
-      if (feature.geometry.type === 'LineString') {
-        const coords = feature.geometry.coordinates;
-        const startNode = coords[0].join(',');
-        const endNode = coords[coords.length - 1].join(',');
-        const distance = feature.properties.length || 10;
-        
-        if (!this.graph.has(startNode)) this.graph.set(startNode, []);
-        if (!this.graph.has(endNode)) this.graph.set(endNode, []);
+          if (!this.graph.has(startNode)) this.graph.set(startNode, []);
+          if (!this.graph.has(endNode)) this.graph.set(endNode, []);
 
-        this.graph.get(startNode).push({ target: endNode, distance, geometry: coords, roadId: feature.properties.id });
-        this.graph.get(endNode).push({ target: startNode, distance, geometry: [...coords].reverse(), roadId: feature.properties.id });
+          this.graph.get(startNode).push({ target: endNode, distance, geometry, roadId: road.id });
+          this.graph.get(endNode).push({ target: startNode, distance, geometry: [end, start], roadId: road.id });
+        }
       }
     }
     this.nodesList = Array.from(this.graph.keys());

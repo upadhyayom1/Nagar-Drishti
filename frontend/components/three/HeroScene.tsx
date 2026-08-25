@@ -1,33 +1,38 @@
 'use client';
 
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Sphere, Line } from '@react-three/drei';
 import * as THREE from 'three';
 
-const CAMERA_COUNT = 40;
-const CONNECTION_DISTANCE = 4.5;
+const CAMERA_COUNT = 50;
+const CONNECTION_DISTANCE = 5.2;
+
+const COLOR_CYAN   = '#00e5ff';
+const COLOR_AZURE  = '#38bdf8';
+const COLOR_COBALT = '#6366f1';
+const COLOR_VOID   = '#030712';
 
 function NetworkNode() {
   const groupRef = useRef<THREE.Group>(null);
   const { mouse } = useThree();
 
-  // Generate random positions for camera nodes
+  // Generate 3D coordinates for camera nodes
   const nodes = useMemo(() => {
     const points = [];
     for (let i = 0; i < CAMERA_COUNT; i++) {
       points.push(
         new THREE.Vector3(
-          (Math.random() - 0.5) * 15,
-          (Math.random() - 0.5) * 15,
-          (Math.random() - 0.5) * 15
+          (Math.random() - 0.5) * 18,
+          (Math.random() - 0.5) * 18,
+          (Math.random() - 0.5) * 12
         )
       );
     }
     return points;
   }, []);
 
-  // Generate lines between close nodes
+  // Compute optical neural connection vectors
   const lines = useMemo(() => {
     const segments = [];
     for (let i = 0; i < CAMERA_COUNT; i++) {
@@ -41,54 +46,85 @@ function NetworkNode() {
     return segments;
   }, [nodes]);
 
-  useFrame((state) => {
+  // Active Cyan Laser Pulses
+  const [pulses, setPulses] = useState<{line: THREE.Vector3[], progress: number, speed: number, id: number}[]>([]);
+  const pulseId = useRef(0);
+
+  useFrame((state, delta) => {
     if (!groupRef.current) return;
     
-    // Slow continuous rotation
-    groupRef.current.rotation.y += 0.001;
-    groupRef.current.rotation.x += 0.0005;
+    // Smooth continuous orbital drift
+    groupRef.current.rotation.y += delta * 0.05;
+    groupRef.current.rotation.x += delta * 0.02;
 
-    // Mouse parallax (subtle ±5-6 degrees tilt)
-    const targetX = (mouse.x * Math.PI) / 30;
-    const targetY = (mouse.y * Math.PI) / 30;
+    // Mouse parallax tilt
+    const targetX = (mouse.x * Math.PI) / 28;
+    const targetY = (mouse.y * Math.PI) / 28;
     
-    groupRef.current.rotation.x += 0.05 * (targetY - groupRef.current.rotation.x);
-    groupRef.current.rotation.y += 0.05 * (targetX - groupRef.current.rotation.y);
+    groupRef.current.rotation.x += 0.04 * (targetY - groupRef.current.rotation.x);
+    groupRef.current.rotation.y += 0.04 * (targetX - groupRef.current.rotation.y);
+
+    // Spawn pulses
+    if (Math.random() < 0.02 && pulses.length < 6 && lines.length > 0) {
+      const randomLine = lines[Math.floor(Math.random() * lines.length)];
+      setPulses(p => [...p, { line: randomLine, progress: 0, speed: 0.5 + Math.random() * 0.5, id: pulseId.current++ }]);
+    }
+
+    // Update pulses
+    if (pulses.length > 0) {
+      setPulses(p => p.map(pulse => ({ ...pulse, progress: pulse.progress + delta * pulse.speed }))
+                     .filter(pulse => pulse.progress < 1));
+    }
   });
 
   return (
     <group ref={groupRef}>
-      {/* Render Nodes */}
+      {/* 3D Neural Nodes in Electric Cyan & Azure */}
       {nodes.map((pos, i) => (
-        <Sphere key={`node-${i}`} position={pos} args={[0.06, 8, 8]}>
-          <meshBasicMaterial color="#00e5ff" transparent opacity={0.8} />
+        <Sphere key={`node-${i}`} position={pos} args={[i % 4 === 0 ? 0.06 : 0.04, 8, 8]}>
+          <meshBasicMaterial 
+            color={i % 3 === 0 ? COLOR_CYAN : i % 2 === 0 ? COLOR_AZURE : COLOR_COBALT} 
+            transparent 
+            opacity={0.75} 
+          />
         </Sphere>
       ))}
 
-      {/* Render Connections */}
+      {/* Optical Synapse Connections */}
       {lines.map((line, i) => (
         <Line
           key={`line-${i}`}
           points={line as any}
-          color="#0066ff"
-          lineWidth={0.5}
+          color={COLOR_AZURE}
+          lineWidth={0.6}
           transparent
-          opacity={0.15}
+          opacity={0.16}
         />
       ))}
+
+      {/* Traveling Laser Pulses */}
+      {pulses.map(pulse => {
+        const start = pulse.line[0];
+        const end = pulse.line[1];
+        const pos = new THREE.Vector3().lerpVectors(start, end, pulse.progress);
+        return (
+          <Sphere key={`pulse-${pulse.id}`} position={pos} args={[0.08, 8, 8]}>
+            <meshBasicMaterial color="#ffffff" transparent opacity={1 - Math.abs(pulse.progress - 0.5) * 2} />
+          </Sphere>
+        );
+      })}
     </group>
   );
 }
 
 export default function HeroScene() {
   return (
-    <div className="absolute inset-0 z-0 bg-[var(--bg-void)]">
-      <Canvas camera={{ position: [0, 0, 12], fov: 60 }}>
-        <fog attach="fog" args={['#06070a', 8, 20]} />
+    <div className="absolute inset-0 z-0 bg-[#030712]">
+      <Canvas camera={{ position: [0, 0, 14], fov: 55 }}>
+        <fog attach="fog" args={[COLOR_VOID, 10, 24]} />
         <NetworkNode />
       </Canvas>
-      {/* Overlay gradient to blend with the page */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[var(--bg-void)]/50 to-[var(--bg-void)] pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#030712]/60 to-[#030712] pointer-events-none" />
     </div>
   );
 }
