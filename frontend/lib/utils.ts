@@ -82,10 +82,3 @@ export function getStatusBgClass(status: string): string {
     default:          return 'bg-[#24CFFF]/10 text-[#24CFFF] border border-[#24CFFF]/30 shadow-[0_0_12px_rgba(36,207,255,0.15)]';
   }
 }
-
-// ── Async Helpers ─────────────────────────────────────────────────────────────
-
-/** Simulate network latency for mock service calls */
-export function delay(ms = 300): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}

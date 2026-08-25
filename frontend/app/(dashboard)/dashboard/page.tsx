@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useQuery } from '@tanstack/react-query';
-import { Camera as CameraIcon, Car, Gauge, AlertTriangle, Layers, Radio, Sparkles } from 'lucide-react';
+import { Camera as CameraIcon, Car, Gauge, AlertTriangle, Layers, Radio } from 'lucide-react';
 import { StatCard }    from '@/components/ui/StatCard';
 import { GlassCard }   from '@/components/ui/GlassCard';
 import { Badge }       from '@/components/ui/Badge';
@@ -62,7 +62,7 @@ export default function DashboardPage() {
 
   const { data: stats } = useQuery({
     queryKey: ['trafficStats'],
-    queryFn: analyticsService.getTrafficStats,
+    queryFn: () => analyticsService.getTrafficStats(),
   });
 
   const { data: alerts = [] } = useQuery({
@@ -82,31 +82,28 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Active Optical Nodes"
-          value={stats?.activeCameras ?? 9}
+          value={stats?.activeCameras ?? 0}
           icon={CameraIcon}
-          trend={{ value: 2.5, isPositive: true }}
           colorTheme="emerald"
         />
         <StatCard
           label="Vehicles Tracked Today"
-          value={stats?.totalVehiclesToday?.toLocaleString('en-IN') ?? '2,847'}
+          value={stats?.totalVehiclesToday?.toLocaleString('en-IN') ?? 0}
           icon={Car}
-          trend={{ value: 12.3, isPositive: true }}
           colorTheme="violet"
         />
         <StatCard
           label="Average City Velocity"
-          value={stats ? `${stats.avgSpeed}` : '38.5'}
+          value={stats ? `${stats.avgSpeed}` : '—'}
           icon={Gauge}
           subtitle="km / h transit velocity"
-          trend={{ value: 3.1, isPositive: false }}
           colorTheme="cyan"
         />
         <StatCard
           label="Active Sentinel Flags"
-          value={stats?.activeAlerts ?? 4}
+          value={stats?.activeAlerts ?? 0}
           icon={AlertTriangle}
-          subtitle="2 High Priority Flags"
+          subtitle="Backend alert queue"
           colorTheme="rose"
         />
       </div>

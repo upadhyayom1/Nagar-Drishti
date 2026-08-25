@@ -1,7 +1,7 @@
 ```markdown
 # UrbanPulse - Command Center 🚀
 
-UrbanPulse is an AI-powered vehicle intelligence and traffic analytics platform. This frontend application provides a highly polished, iOS-inspired glassmorphic dashboard to visualize camera networks, track vehicle trajectories, and monitor real-time security alerts.
+UrbanPulse is an AI-powered vehicle intelligence and traffic analytics platform for Prayagraj. The frontend consumes the Express/Prisma backend for its cameras, roads, zones, detections, analytics, alerts, and blacklist records.
 
 ## 🛠 Tech Stack
 
@@ -46,7 +46,18 @@ npm install
 
 ```
 
-### 4. Run the Development Server
+### 4. Run the backend
+
+Configure `backend/.env` with `DATABASE_URL` and `JWT_SECRET`, then start the API:
+
+```bash
+cd ../backend
+npm run dev
+```
+
+The API defaults to `http://localhost:5000/api`.
+
+### 5. Run the Development Server
 
 Start the Next.js development server:
 
@@ -55,7 +66,7 @@ npm run dev
 
 ```
 
-### 5. View the App
+### 6. View the App
 
 Open your browser and navigate to:
 👉 **[http://localhost:3000](http://localhost:3000)**
@@ -79,8 +90,7 @@ Here is a quick guide to where everything lives so you can navigate the codebase
 * `/three`: React Three Fiber components for the 3D background.
 
 
-* **`data/`**: Contains mock `.json` datasets (cameras, alerts, vehicle routes). **No backend is required to run this UI**; it currently reads from these files.
-* **`services/`**: The data-fetching layer wrapping TanStack Query. (Currently points to the mock data, but structured to easily swap to a Python backend later).
+* **`services/`**: The typed data-fetching layer wrapping TanStack Query and the backend REST API.
 * **`store/`**: Zustand stores for handling lightweight global UI state (like collapsing the sidebar).
 * **`lib/`**: Utility functions (like class merging via `clsx` and `tailwind-merge`) and global providers.
 

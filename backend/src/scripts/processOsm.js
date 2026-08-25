@@ -1,7 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const rawData = JSON.parse(fs.readFileSync(path.join(__dirname, '../data/city/osm_raw.json'), 'utf8'));
+const dataDirectory = path.join(__dirname, '../data/prayagraj');
+const rawData = JSON.parse(fs.readFileSync(path.join(dataDirectory, 'osm_raw.json'), 'utf8'));
 
 const nodes = {};
 const ways = [];
@@ -43,5 +44,5 @@ const geojson = {
   features
 };
 
-fs.writeFileSync(path.join(__dirname, '../data/city/roads.geojson'), JSON.stringify(geojson, null, 2));
+fs.writeFileSync(path.join(dataDirectory, 'roads.geojson'), JSON.stringify(geojson, null, 2));
 console.log(`Generated roads.geojson with ${features.length} road segments.`);

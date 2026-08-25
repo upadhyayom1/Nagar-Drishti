@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { CameraStatus, AlertSeverity, AlertType, TrafficLevel } from '@/types';
+import type { CameraStatus, AlertSeverity, AlertType } from '@/types';
 
 interface FilterState {
   // Camera filters

@@ -12,6 +12,12 @@ const COLOR_CYAN   = '#00e5ff';
 const COLOR_AZURE  = '#38bdf8';
 const COLOR_COBALT = '#6366f1';
 const COLOR_VOID   = '#030712';
+type LineSegment = [THREE.Vector3, THREE.Vector3];
+
+function deterministicValue(index: number, offset: number): number {
+  const value = Math.sin(index * 12.9898 + offset * 78.233) * 43758.5453;
+  return value - Math.floor(value);
+}
 
 function NetworkNode() {
   const groupRef = useRef<THREE.Group>(null);
@@ -19,13 +25,13 @@ function NetworkNode() {
 
   // Generate 3D coordinates for camera nodes
   const nodes = useMemo(() => {
-    const points = [];
-    for (let i = 0; i < CAMERA_COUNT; i++) {
+    const points: THREE.Vector3[] = [];
+    for (let i = 0; i < CAMERA_COUNT; i += 1) {
       points.push(
         new THREE.Vector3(
-          (Math.random() - 0.5) * 18,
-          (Math.random() - 0.5) * 18,
-          (Math.random() - 0.5) * 12
+          (deterministicValue(i, 1) - 0.5) * 18,
+          (deterministicValue(i, 2) - 0.5) * 18,
+          (deterministicValue(i, 3) - 0.5) * 12
         )
       );
     }
@@ -34,8 +40,8 @@ function NetworkNode() {
 
   // Compute optical neural connection vectors
   const lines = useMemo(() => {
-    const segments = [];
-    for (let i = 0; i < CAMERA_COUNT; i++) {
+    const segments: LineSegment[] = [];
+    for (let i = 0; i < CAMERA_COUNT; i += 1) {
       for (let j = i + 1; j < CAMERA_COUNT; j++) {
         const distance = nodes[i].distanceTo(nodes[j]);
         if (distance < CONNECTION_DISTANCE) {
@@ -47,7 +53,7 @@ function NetworkNode() {
   }, [nodes]);
 
   // Active Cyan Laser Pulses
-  const [pulses, setPulses] = useState<{line: THREE.Vector3[], progress: number, speed: number, id: number}[]>([]);
+  const [pulses, setPulses] = useState<{ line: LineSegment; progress: number; speed: number; id: number }[]>([]);
   const pulseId = useRef(0);
 
   useFrame((state, delta) => {
@@ -94,7 +100,7 @@ function NetworkNode() {
       {lines.map((line, i) => (
         <Line
           key={`line-${i}`}
-          points={line as any}
+          points={line}
           color={COLOR_AZURE}
           lineWidth={0.6}
           transparent

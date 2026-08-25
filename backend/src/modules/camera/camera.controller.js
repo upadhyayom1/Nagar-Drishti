@@ -40,7 +40,7 @@ function enrichCamera(camera) {
     lng: camera.longitude,
     vehiclesDetected: camera.vehicleCount,
     detectionCount: camera.detectionCount,
-    fps: 30, // Mocking fps to make UI look good
+    fps: null,
     lastUpdated: camera.updatedAt,
     zone: typeof camera.zone === 'string' ? camera.zone : camera.zone?.name || null,
   };

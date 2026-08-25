@@ -6,7 +6,7 @@ const turf = require('@turf/turf');
 
 function generateCameras() {
   console.log('Generating strategic camera network...');
-  const geojsonPath = path.join(__dirname, '../../../src/data/city/roads.geojson');
+  const geojsonPath = path.join(__dirname, '../../../src/data/prayagraj/roads.geojson');
   const roadsFeatureCollection = JSON.parse(fs.readFileSync(geojsonPath, 'utf8'));
 
   const nodeConnections = new Map();
@@ -35,8 +35,7 @@ function generateCameras() {
     // Score = number of connections + slight randomness to tiebreak
     let score = roads.size;
     
-    // Add strategic placement bonus: nodes near edges of CP or in dead center might be better
-    // For simplicity, just use connection degree
+    // Use connection degree to prioritize major road intersections.
     score += random(); 
 
     scoredNodes.push({

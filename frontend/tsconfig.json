@@ -31,8 +31,6 @@
     "**/*.mts"
   ],
   "exclude": [
-    "node_modules",
-    "Nagar-Drishti",
-    "Nagar-Drishti/**"
+    "node_modules"
   ]
 }
