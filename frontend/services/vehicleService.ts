@@ -1,53 +1,76 @@
 import type { Vehicle, Detection, VehicleJourney } from '@/types';
-import vehiclesData from '@/data/vehicles.json';
-import detectionsData from '@/data/detections.json';
-import routesData from '@/data/routes.json';
-import { delay } from '@/lib/utils';
-
-const heroVehicle: Vehicle = vehiclesData.hero as Vehicle;
-const allVehicles: Vehicle[] = [heroVehicle, ...(vehiclesData.vehicles as Vehicle[])];
-const detections: Detection[] = detectionsData as Detection[];
-const journeys: VehicleJourney[] = routesData as VehicleJourney[];
+import { apiClient } from './apiClient';
 
 export const vehicleService = {
   async searchVehicles(query: string): Promise<Vehicle[]> {
-    await delay(300);
-    if (!query) return allVehicles.slice(0, 5);
-    const q = query.toUpperCase();
-    return allVehicles.filter(v => v.plate.includes(q));
+    try {
+      if (!query) return await this.getRecentVehicles(5);
+      const response = await apiClient.get(`/vehicles/search?q=${encodeURIComponent(query)}`);
+      return response.data?.data || response.data || [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   },
 
   async getVehicleByPlate(plate: string): Promise<Vehicle | undefined> {
-    await delay(200);
-    return allVehicles.find(v => v.plate === plate.toUpperCase());
+    try {
+      const response = await apiClient.get(`/vehicles/${encodeURIComponent(plate)}`);
+      return response.data?.data || response.data;
+    } catch (e) {
+      console.error(e);
+      return undefined;
+    }
   },
 
   async getVehicleDetections(plate: string): Promise<Detection[]> {
-    await delay(200);
-    return detections
-      .filter(d => d.vehiclePlate === plate.toUpperCase())
-      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    try {
+      const response = await apiClient.get(`/vehicles/${encodeURIComponent(plate)}/detections`);
+      return response.data?.data || response.data || [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   },
 
   async getVehicleJourney(plate: string): Promise<VehicleJourney | undefined> {
-    await delay(200);
-    return journeys.find(j => j.plate === plate.toUpperCase());
+    try {
+      const response = await apiClient.get(`/vehicles/${encodeURIComponent(plate)}/journey`);
+      return response.data?.data || response.data;
+    } catch (e) {
+      console.error(e);
+      return undefined;
+    }
   },
 
   async getAllVehicles(): Promise<Vehicle[]> {
-    await delay(200);
-    return allVehicles;
+    try {
+      const response = await apiClient.get('/vehicles');
+      return response.data?.data || response.data || [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   },
 
   async getTotalVehiclesToday(): Promise<number> {
-    await delay(100);
-    return allVehicles.length;
+    try {
+      const response = await apiClient.get('/vehicles');
+      const data = response.data?.data || response.data || [];
+      return data.length;
+    } catch (e) {
+      console.error(e);
+      return 0;
+    }
   },
 
   async getRecentVehicles(limit: number = 5): Promise<Vehicle[]> {
-    await delay(200);
-    return allVehicles
-      .sort((a, b) => new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime())
-      .slice(0, limit);
+    try {
+      const response = await apiClient.get(`/vehicles?limit=${limit}&sort=recent`);
+      return response.data?.data || response.data || [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   },
 };

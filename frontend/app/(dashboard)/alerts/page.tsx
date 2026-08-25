@@ -1,95 +1,128 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { Bell, Camera, Car, Clock, Filter, AlertTriangle, Shield, TrendingUp, WifiOff } from 'lucide-react';
-import { GlassCard } from '@/components/ui/GlassCard';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Bell, Camera, Car, Clock, Filter, Shield, TrendingUp, AlertTriangle, WifiOff, CheckCircle2, Download, RefreshCw } from 'lucide-react';
+import { GlassCard }   from '@/components/ui/GlassCard';
+import { Badge }       from '@/components/ui/Badge';
+import { Button }      from '@/components/ui/Button';
 import { PageWrapper } from '@/components/layout/PageWrapper';
-import { alertService } from '@/services/alertService';
-import { formatDateTime } from '@/lib/utils';
-import { useFilterStore } from '@/store/filterStore';
+import { alertService }    from '@/services/alertService';
+import { formatDateTime, cn } from '@/lib/utils';
+import { useFilterStore }   from '@/store/filterStore';
 import type { Alert } from '@/types';
 
 function getAlertIcon(type: string) {
   switch (type) {
     case 'BLACKLIST_VEHICLE': return Shield;
-    case 'ROUTE_ANOMALY': return TrendingUp;
-    case 'TRAFFIC_SURGE': return AlertTriangle;
-    case 'CAMERA_OFFLINE': return WifiOff;
-    default: return Bell;
+    case 'ROUTE_ANOMALY':     return TrendingUp;
+    case 'TRAFFIC_SURGE':     return AlertTriangle;
+    case 'CAMERA_OFFLINE':    return WifiOff;
+    default:                  return Bell;
   }
 }
 
-function AlertCard({ alert, index }: { alert: Alert; index: number }) {
+function AlertCard({
+  alert,
+  index,
+  isAcknowledged,
+  onAcknowledge,
+}: {
+  alert: Alert;
+  index: number;
+  isAcknowledged: boolean;
+  onAcknowledge: (id: string) => void;
+}) {
   const Icon = getAlertIcon(alert.type);
-  const severityVariant = alert.severity === 'critical' ? 'danger' : alert.severity === 'high' ? 'warning' : alert.severity === 'medium' ? 'info' : 'default';
-  const borderClass = alert.severity === 'critical' ? 'border-status-critical/20 status-glow-critical' : 'border-border-glass';
+  const isCritical = alert.severity === 'critical';
+  const isHigh     = alert.severity === 'high';
+
+  const iconColor = isCritical ? 'text-rose-400' : isHigh ? 'text-amber-400' : 'text-cyan-400';
+  const iconBg    = isCritical ? 'bg-rose-500/15' : isHigh ? 'bg-amber-500/15' : 'bg-cyan-500/15';
+  const borderClass = isCritical
+    ? 'border-rose-500/40 shadow-[0_0_30px_rgba(244,63,94,0.18)]'
+    : isHigh
+    ? 'border-amber-500/35 shadow-[0_0_20px_rgba(251,191,36,0.12)]'
+    : 'border-white/10';
+
+  const svVariant = isCritical ? 'danger' : isHigh ? 'warning' : alert.severity === 'medium' ? 'info' : 'default';
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05, duration: 0.3 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ delay: index * 0.04, duration: 0.25 }}
     >
-      <GlassCard className={borderClass}>
+      <GlassCard 
+        hover 
+        glow={isCritical ? 'crimson' : isHigh ? 'amber' : 'cyan'} 
+        className={cn('border', borderClass, isAcknowledged && 'opacity-70 bg-slate-900/40')}
+      >
         <div className="flex items-start gap-4">
-          {/* Icon */}
-          <div className={`p-2 rounded-lg flex-shrink-0 ${
-            alert.severity === 'critical' ? 'bg-status-critical/10' :
-            alert.severity === 'high' ? 'bg-status-warn/10' :
-            'bg-accent-cyan/10'
-          }`}>
-            <Icon size={18} className={`${
-              alert.severity === 'critical' ? 'text-status-critical' :
-              alert.severity === 'high' ? 'text-status-warn' :
-              'text-accent-cyan'
-            }`} />
+          <div className={cn('p-3.5 rounded-2xl shrink-0 border border-white/10 shadow-md', iconBg)}>
+            <Icon size={22} className={iconColor} />
           </div>
 
-          {/* Content */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-sm font-semibold text-text-primary truncate">{alert.title}</h3>
-              <Badge variant={severityVariant} size="sm">{alert.severity}</Badge>
+            <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <h3 className="text-sm font-bold text-white font-display truncate">{alert.title}</h3>
+                {isAcknowledged && (
+                  <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
+                    <CheckCircle2 size={11} /> Acknowledged
+                  </span>
+                )}
+              </div>
+              <Badge variant={svVariant} size="sm" dot pulse={isCritical && !isAcknowledged}>{alert.severity}</Badge>
             </div>
-            <p className="text-xs text-text-secondary mb-2">{alert.description}</p>
 
-            <div className="flex items-center gap-4 text-[10px] text-text-secondary">
+            <p className="text-xs text-slate-400 mb-3.5 leading-relaxed font-body">{alert.description}</p>
+
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs font-data text-slate-400">
               {alert.vehiclePlate && (
-                <span className="flex items-center gap-1">
-                  <Car size={10} />
-                  <span className="font-data text-accent-cyan">{alert.vehiclePlate}</span>
+                <span className="flex items-center gap-1.5 text-cyan-400 font-bold bg-cyan-500/10 px-2.5 py-0.5 rounded-lg border border-cyan-500/25">
+                  <Car size={13} /> {alert.vehiclePlate}
                 </span>
               )}
-              <span className="flex items-center gap-1">
-                <Camera size={10} />
-                {alert.cameraName}
+              <span className="flex items-center gap-1.5 font-body">
+                <Camera size={13} className="text-slate-500" /> {alert.cameraName}
               </span>
-              <span className="flex items-center gap-1">
-                <Clock size={10} />
-                <span className="font-data">{formatDateTime(alert.timestamp)}</span>
+              <span className="flex items-center gap-1.5 font-data">
+                <Clock size={13} className="text-slate-500" /> {formatDateTime(alert.timestamp)}
               </span>
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center gap-2 mt-3">
-              {alert.vehiclePlate && (
-                <Link href={`/vehicles/${alert.vehiclePlate}`}>
+            <div className="flex items-center justify-between gap-2.5 mt-4 pt-3.5 border-t border-white/[0.06] flex-wrap">
+              <div className="flex items-center gap-2">
+                {alert.vehiclePlate && (
+                  <Link href={`/vehicles/${alert.vehiclePlate}`}>
+                    <Button variant="secondary" size="sm">
+                      <Car size={13} /> View Vehicle Profile
+                    </Button>
+                  </Link>
+                )}
+                <Link href={`/cameras/${alert.cameraId}`}>
                   <Button variant="ghost" size="sm">
-                    <Car size={12} />
-                    View Vehicle
+                    <Camera size={13} /> Live Camera Feed
                   </Button>
                 </Link>
-              )}
-              <Link href={`/cameras/${alert.cameraId}`}>
-                <Button variant="ghost" size="sm">
-                  <Camera size={12} />
-                  View Camera
-                </Button>
-              </Link>
+              </div>
+
+              <button
+                onClick={() => onAcknowledge(alert.id)}
+                className={cn(
+                  'text-xs font-display font-semibold px-3 py-1.5 rounded-xl border transition-all duration-200 flex items-center gap-1.5',
+                  isAcknowledged
+                    ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20'
+                    : 'bg-white/[0.04] text-slate-300 border-white/10 hover:border-cyan-400/40 hover:text-cyan-300 hover:bg-cyan-500/10'
+                )}
+              >
+                <CheckCircle2 size={13} />
+                {isAcknowledged ? 'Mark Unresolved' : 'Acknowledge Threat'}
+              </button>
             </div>
           </div>
         </div>
@@ -98,72 +131,130 @@ function AlertCard({ alert, index }: { alert: Alert; index: number }) {
   );
 }
 
+function FilterPill({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'text-xs font-display font-semibold px-4 py-1.5 rounded-xl border transition-all duration-200 capitalize',
+        active
+          ? 'bg-cyan-500/15 text-cyan-300 border-cyan-400/40 shadow-[0_0_15px_rgba(6,182,212,0.18)]'
+          : 'bg-white/[0.04] text-slate-400 border-white/10 hover:border-white/20 hover:text-white',
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
 export default function AlertsPage() {
-  const { data: alerts = [] } = useQuery({
-    queryKey: ['alerts'],
-    queryFn: () => alertService.getAlerts(),
-  });
-
+  const { data: alerts = [], refetch, isFetching } = useQuery({ queryKey: ['alerts'], queryFn: alertService.getAlerts });
   const { alertSeverityFilter, setAlertSeverityFilter } = useFilterStore();
+  const [acknowledgedMap, setAcknowledgedMap] = useState<Record<string, boolean>>({});
 
-  const filteredAlerts = alertSeverityFilter === 'all'
+  const toggleAcknowledge = (id: string) => {
+    setAcknowledgedMap(prev => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  const handleExportCSV = () => {
+    if (alerts.length === 0) return;
+    const headers = ['ID', 'Title', 'Severity', 'Type', 'Camera', 'VehiclePlate', 'Timestamp', 'Description'];
+    const rows = alerts.map(a => [
+      a.id,
+      `"${a.title.replace(/"/g, '""')}"`,
+      a.severity,
+      a.type,
+      `"${a.cameraName.replace(/"/g, '""')}"`,
+      a.vehiclePlate || '',
+      a.timestamp,
+      `"${a.description.replace(/"/g, '""')}"`
+    ]);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `UrbanPulse_Alerts_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const filtered = alertSeverityFilter === 'all'
     ? alerts
     : alerts.filter((a: Alert) => a.severity === alertSeverityFilter);
 
-  // Sort by severity: critical first
-  const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
-  const sortedAlerts = [...filteredAlerts].sort((a, b) =>
-    (severityOrder[a.severity as keyof typeof severityOrder] ?? 4) - (severityOrder[b.severity as keyof typeof severityOrder] ?? 4)
-  );
+  const sorted = [...filtered].sort((a: Alert, b: Alert) => {
+    const order = { critical: 0, high: 1, medium: 2, low: 3 };
+    return (order[a.severity as keyof typeof order] ?? 4) - (order[b.severity as keyof typeof order] ?? 4);
+  });
 
   const criticalCount = alerts.filter((a: Alert) => a.severity === 'critical').length;
-  const highCount = alerts.filter((a: Alert) => a.severity === 'high').length;
+  const highCount     = alerts.filter((a: Alert) => a.severity === 'high').length;
 
   return (
-    <PageWrapper className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <PageWrapper className="space-y-6 font-body">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold font-display">Alerts Center</h1>
-          <p className="text-sm text-text-secondary mt-1">
-            <span className="font-data text-text-primary">{alerts.length}</span> active alerts across the network
+          <h1 className="text-2xl font-bold text-white font-display">Sentinel Threat Alerts</h1>
+          <p className="text-xs font-mono text-slate-400 mt-0.5 uppercase tracking-wider">
+            <span className="text-rose-400 font-bold">{alerts.length}</span> active automated neural intelligence triggers
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="danger" dot pulse>{criticalCount} Critical</Badge>
-          <Badge variant="warning" dot>{highCount} High</Badge>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <Badge variant="danger"  dot pulse>{criticalCount} Critical</Badge>
+          <Badge variant="warning" dot>{highCount} High Priority</Badge>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="text-xs"
+          >
+            <RefreshCw size={13} className={isFetching ? 'animate-spin text-cyan-400' : ''} />
+            Refresh
+          </Button>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleExportCSV}
+            className="text-xs"
+          >
+            <Download size={13} />
+            Export Log
+          </Button>
         </div>
       </div>
 
-      {/* Severity Filter */}
-      <div className="flex items-center gap-2">
-        <Filter size={14} className="text-text-secondary" />
-        {(['all', 'critical', 'high', 'medium', 'low'] as const).map((severity) => (
-          <button
-            key={severity}
-            onClick={() => setAlertSeverityFilter(severity)}
-            className={`px-3 py-1.5 text-xs rounded-lg border transition-all duration-150 capitalize ${
-              alertSeverityFilter === severity
-                ? 'border-accent-cyan/40 bg-accent-cyan/10 text-accent-cyan'
-                : 'border-border-glass bg-surface-glass text-text-secondary hover:text-text-primary'
-            }`}
-          >
-            {severity === 'all' ? 'All Alerts' : severity}
-          </button>
+      <div className="flex items-center gap-2 flex-wrap">
+        <Filter size={14} className="text-cyan-400/70 mr-1" />
+        {(['all', 'critical', 'high', 'medium', 'low'] as const).map((s) => (
+          <FilterPill key={s} label={s === 'all' ? 'All Alerts' : s} active={alertSeverityFilter === s} onClick={() => setAlertSeverityFilter(s)} />
         ))}
       </div>
 
-      {/* Alert List */}
-      <div className="space-y-3">
-        {sortedAlerts.map((alert: Alert, index: number) => (
-          <AlertCard key={alert.id} alert={alert} index={index} />
-        ))}
+      <div className="space-y-4">
+        <AnimatePresence>
+          {sorted.map((alert: Alert, i: number) => (
+            <AlertCard
+              key={alert.id}
+              alert={alert}
+              index={i}
+              isAcknowledged={!!acknowledgedMap[alert.id]}
+              onAcknowledge={toggleAcknowledge}
+            />
+          ))}
+        </AnimatePresence>
       </div>
 
-      {sortedAlerts.length === 0 && (
-        <div className="text-center py-12 text-text-secondary">
-          <Bell size={48} className="mx-auto mb-3 opacity-30" />
-          <p>No alerts match the current filter</p>
+      {sorted.length === 0 && (
+        <div className="text-center py-20">
+          <Bell size={40} className="mx-auto mb-3 text-cyan-400/20" />
+          <p className="text-xs font-mono text-slate-400">No active alerts matching the selected filter</p>
         </div>
       )}
     </PageWrapper>

@@ -51,7 +51,7 @@ exports.createUser = async (req, res) => {
   }
 };
 
-const blacklistService = require('../blacklist/blacklist.service');
+const { recordDetection } = require('../detection/detection.service');
 
 exports.simulateDetection = async (req, res) => {
   try {
@@ -81,25 +81,21 @@ exports.simulateDetection = async (req, res) => {
         data: {
           cameraCode: cameraId,
           name: 'Simulated Camera ' + cameraId,
-          latitude: 28.6304,
-          longitude: 77.2177,
+          latitude: 25.4516,
+          longitude: 81.8468,
         }
       });
     }
 
-    const detection = await prisma.detection.create({
-      data: {
-        vehicleId: vehicle.id,
-        cameraId: camera.id,
-        plateText: plateNumber,
-        timestamp: new Date(),
-        ocrConfidence: 0.99,
-        vehicleConfidence: 0.99,
-        source: 'SIMULATION'
-      }
+    const result = await recordDetection({
+      vehicleId: vehicle.id,
+      cameraId: camera.id,
+      plateText: plateNumber,
+      timestamp: new Date(),
+      ocrConfidence: 0.99,
+      vehicleConfidence: 0.99,
+      source: 'SIMULATION'
     });
-
-    const result = await blacklistService.processDetectionForBlacklist(detection);
     
     res.status(201).json({
       success: true,

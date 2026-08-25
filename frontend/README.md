@@ -1,36 +1,97 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+```markdown
+# UrbanPulse - Command Center 🚀
 
-## Getting Started
+UrbanPulse is an AI-powered vehicle intelligence and traffic analytics platform. This frontend application provides a highly polished, iOS-inspired glassmorphic dashboard to visualize camera networks, track vehicle trajectories, and monitor real-time security alerts.
 
-First, run the development server:
+## 🛠 Tech Stack
+
+*   **Framework:** [Next.js 14+](https://nextjs.org/) (App Router)
+*   **Styling:** [Tailwind CSS v4](https://tailwindcss.com/)
+*   **State Management:** [Zustand](https://github.com/pmndrs/zustand) (UI state) & [TanStack React Query](https://tanstack.com/query/latest) (Data fetching)
+*   **Mapping:** [Leaflet](https://leafletjs.com/) with React-Leaflet
+*   **3D Graphics:** [React Three Fiber](https://docs.pmnd.rs/react-three-fiber/getting-started/introduction) & Drei (for the landing page hero scene)
+*   **Icons:** [Lucide React](https://lucide.dev/)
+
+---
+
+## 💻 Getting Started (Local Development)
+
+Follow these steps to get the project running locally on your machine. 
+
+### 1. Prerequisites
+Make sure you have Node.js installed (version 18.17 or higher is recommended). You can verify this by running:
+```bash
+node -v
+
+```
+
+### 2. Clone the Repository
+
+Clone this repository to your local machine and navigate into the project folder:
+
+```bash
+git clone <paste-your-repo-url-here>
+cd Frontend1
+
+```
+
+*(Note: If the folder name is different after cloning, navigate into that specific folder).*
+
+### 3. Install Dependencies
+
+This project uses `npm`. Run the following command to install all required packages. Node will automatically read the `package.json` file and download everything needed:
+
+```bash
+npm install
+
+```
+
+### 4. Run the Development Server
+
+Start the Next.js development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 5. View the App
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Open your browser and navigate to:
+👉 **[http://localhost:3000](http://localhost:3000)**
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+You should see the 3D animated landing page. Click **"Explore Command Center"** to enter the main dashboard.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 📁 Project Structure Overview
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Here is a quick guide to where everything lives so you can navigate the codebase easily:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+* **`app/`**: Contains the Next.js routing logic.
+* `app/page.tsx`: The public 3D landing page.
+* `app/(dashboard)/`: The main authenticated app shell (Sidebar, TopBar) and all dashboard routes (`/dashboard`, `/live-cameras`, `/vehicles`, etc.).
 
-## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+* **`components/`**: Reusable UI elements.
+* `/ui`: The core design system (GlassCard, StatCard, etc.).
+* `/map`: Leaflet map components.
+* `/three`: React Three Fiber components for the 3D background.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+* **`data/`**: Contains mock `.json` datasets (cameras, alerts, vehicle routes). **No backend is required to run this UI**; it currently reads from these files.
+* **`services/`**: The data-fetching layer wrapping TanStack Query. (Currently points to the mock data, but structured to easily swap to a Python backend later).
+* **`store/`**: Zustand stores for handling lightweight global UI state (like collapsing the sidebar).
+* **`lib/`**: Utility functions (like class merging via `clsx` and `tailwind-merge`) and global providers.
+
+---
+
+## ⚠️ Troubleshooting & Tips
+
+* **Blank Map / Map Rendering Issues:** Leaflet requires the browser's `window` object. If you make edits to the map components, ensure they are dynamically imported with `ssr: false`.
+* **Styling Looks Broken (White Boxes):** This project uses highly customized Tailwind tokens. If you notice styles glitching after pulling new code, stop the server (`CTRL + C`) and restart it with `npm run dev` to clear the Turbopack cache.
+* **Navigation:** Currently, clicking on a vehicle in the `/vehicles` "Recent Vehicles" list will automatically route you to that specific vehicle's animated trajectory map.
+
+```
+
+```

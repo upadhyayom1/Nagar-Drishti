@@ -1,43 +1,69 @@
 'use client';
 
-import { Sidebar } from '@/components/layout/Sidebar';
-import { TopBar } from '@/components/layout/TopBar';
-import { useUIStore } from '@/store/uiStore';
+import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
+import { Sidebar }             from '@/components/layout/Sidebar';
+import { TopBar }              from '@/components/layout/TopBar';
+import { NotificationsPanel }  from '@/components/layout/NotificationsPanel';
+import { useUIStore }          from '@/store/uiStore';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const sidebarCollapsed = useUIStore((state) => state.sidebarCollapsed);
+  const pathname = usePathname();
+
+  // Ensure window scroll is always locked to top (prevents browser auto-scrolling to clicked bottom links)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
 
   return (
-    <div className="flex h-[100dvh] w-full overflow-hidden bg-[#08080a] text-gray-100 relative">
-      
-      {/* Deep Ambient Glows for Glass Refraction */}
-      <div className="absolute top-0 left-1/4 w-[40vw] h-[40vw] bg-blue-500/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-[40vw] h-[40vw] bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
+    <div
+      className="fixed inset-0 flex w-screen h-screen overflow-hidden select-none font-body"
+      style={{ backgroundColor: 'var(--bg-void)', color: 'var(--text-primary)' }}
+    >
+      {/* ── Multi-Chromatic Ambient Light Orbs ── */}
+      <div className="absolute top-[-15%] left-[-10%] w-[55vw] h-[55vw] rounded-full blur-[180px] pointer-events-none z-0"
+           style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.08), transparent)' }} />
+      <div className="absolute bottom-[-15%] right-[-10%] w-[55vw] h-[55vw] rounded-full blur-[190px] pointer-events-none z-0"
+           style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.07), transparent)' }} />
+      <div className="absolute top-[40%] right-[25%] w-[40vw] h-[40vw] rounded-full blur-[200px] pointer-events-none z-0"
+           style={{ background: 'radial-gradient(circle, rgba(236,72,153,0.04), transparent)' }} />
 
-      {/* Floating Sidebar (Hidden on mobile) */}
-      <aside 
-        className="hidden md:flex flex-col z-20 transition-all duration-300 ease-in-out p-4 pr-2 shrink-0"
-        style={{ width: sidebarCollapsed ? '104px' : '280px' }}
+      {/* ── Sidebar Shell ── */}
+      <aside
+        className="hidden md:flex flex-col z-20 transition-all duration-300 ease-in-out p-3.5 pr-1.5 shrink-0 h-full overflow-hidden"
+        style={{ width: sidebarCollapsed ? '94px' : '270px' }}
       >
-        <div className="w-full h-full rounded-[1.5rem] bg-white/[0.015] backdrop-blur-2xl border border-white/[0.02] shadow-2xl flex flex-col overflow-hidden">
+        <div className="w-full h-full glass-panel flex flex-col overflow-hidden">
           <Sidebar />
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 z-10 p-4 pl-2 gap-4">
-        
-        {/* Restored TopBar Container */}
-        <header className="shrink-0 rounded-[1.5rem] bg-white/[0.015] backdrop-blur-2xl border border-white/[0.02] shadow-lg">
+      {/* ── Main Content Area ── */}
+      <div className="flex-1 flex flex-col min-w-0 z-10 p-3.5 pl-2 gap-3 h-full overflow-hidden">
+
+        {/* Floating TopBar */}
+        <header className="shrink-0 glass-panel rounded-[1.25rem] overflow-hidden">
           <TopBar />
         </header>
 
-        {/* Scrolling Page Content */}
-        <main className="flex-1 overflow-y-auto rounded-[1.5rem] bg-white/[0.01] backdrop-blur-2xl border border-white/[0.02] shadow-inner p-4 md:p-6 no-scrollbar">
+        {/* Inner Scrollable Page Viewport */}
+        <main
+          className="flex-1 overflow-y-auto rounded-[1.25rem] p-5 relative z-10"
+          style={{
+            background: 'rgba(10,14,30,0.4)',
+            backdropFilter: 'blur(24px)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            boxShadow: 'inset 0 0 50px rgba(0,0,0,0.7)',
+          }}
+        >
           {children}
         </main>
-        
+
       </div>
+
+      {/* ── Global Notifications Panel ── */}
+      <NotificationsPanel />
     </div>
   );
 }

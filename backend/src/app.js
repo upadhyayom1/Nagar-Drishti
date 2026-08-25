@@ -18,7 +18,10 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
+  credentials: true
+}));
 
 // Serve the test frontend
 app.use(express.static(path.join(__dirname, 'public')));
@@ -38,8 +41,13 @@ app.use('/api/ocr', ocrRoutes);
 const blacklistRoutes = require('./modules/blacklist/blacklist.routes');
 app.use('/api/blacklist', blacklistRoutes);
 
-const vehicleRoutes = require('./modules/vehicle/vehicle.routes');
-app.use('/api/vehicles', vehicleRoutes);
+const analyticsRoutes = require('./modules/analytics/analytics.routes');
+app.use('/api/analytics', analyticsRoutes);
+
+const alertRoutes = require('./modules/alert/alert.routes');
+app.use('/api/alerts', alertRoutes);
+
+
 
 // Global Error Handler
 app.use((err, req, res, next) => {

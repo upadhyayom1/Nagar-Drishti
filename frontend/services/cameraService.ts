@@ -1,42 +1,64 @@
 import type { Camera, Detection } from '@/types';
-import camerasData from '@/data/cameras.json';
-import detectionsData from '@/data/detections.json';
-import { delay } from '@/lib/utils';
-
-const cameras: Camera[] = camerasData as Camera[];
-const detections: Detection[] = detectionsData as Detection[];
+import { apiClient } from './apiClient';
 
 export const cameraService = {
   async getCameras(): Promise<Camera[]> {
-    await delay(200);
-    return cameras;
+    try {
+      const response = await apiClient.get('/cameras');
+      return response.data?.data || response.data || [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   },
 
   async getCameraById(id: string): Promise<Camera | undefined> {
-    await delay(150);
-    return cameras.find(c => c.id === id);
+    try {
+      const response = await apiClient.get(`/cameras/${id}`);
+      return response.data?.data || response.data;
+    } catch (e) {
+      console.error(e);
+      return undefined;
+    }
   },
 
   async getCamerasByStatus(status: string): Promise<Camera[]> {
-    await delay(200);
-    if (status === 'all') return cameras;
-    return cameras.filter(c => c.status === status);
+    try {
+      const response = await apiClient.get(`/cameras?status=${status}`);
+      return response.data?.data || response.data || [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   },
 
   async getDetectionsByCamera(cameraId: string): Promise<Detection[]> {
-    await delay(200);
-    return detections.filter(d => d.cameraId === cameraId);
+    try {
+      const response = await apiClient.get(`/cameras/${cameraId}/detections`);
+      return response.data?.data || response.data || [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   },
 
   async getRecentDetections(limit: number = 10): Promise<Detection[]> {
-    await delay(200);
-    return [...detections]
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, limit);
+    try {
+      const response = await apiClient.get(`/detections?limit=${limit}`);
+      return response.data?.data || response.data || [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   },
 
   async getOnlineCameraCount(): Promise<number> {
-    await delay(100);
-    return cameras.filter(c => c.status === 'online').length;
+    try {
+      const cameras = await this.getCameras();
+      return cameras.filter(c => c.status === 'online').length;
+    } catch (e) {
+      console.error(e);
+      return 0;
+    }
   },
 };

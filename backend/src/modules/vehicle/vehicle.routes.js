@@ -1,16 +1,14 @@
 const express = require('express');
-<<<<<<< HEAD
+
 const vehicleController = require('./vehicle.controller');
 
 const router = express.Router();
 
 router.get('/', vehicleController.getVehicles);
-router.get('/:id', vehicleController.getVehicle);
-=======
-const { searchVehicle } = require('./vehicle.controller');
-const router = express.Router();
+router.get('/search/:plateNumber', vehicleController.searchVehicle);
+router.get('/recent', vehicleController.getRecentVehicles);
+router.get('/journey/:plateNumber', vehicleController.getVehicleJourney);
+router.get('/:plateNumber', vehicleController.getVehicle);
 
-router.get('/search/:plateNumber', searchVehicle);
->>>>>>> 5a4e8c3 (Update backend files)
 
 module.exports = router;

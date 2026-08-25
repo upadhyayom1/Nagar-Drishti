@@ -3,42 +3,63 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { Search, Car, Eye, MapPin, Star } from 'lucide-react';
-import { GlassCard } from '@/components/ui/GlassCard';
-import { Badge } from '@/components/ui/Badge';
-import { Input } from '@/components/ui/Input';
+import { motion } from 'framer-motion';
+import { Search, Car, Eye, MapPin, Star, ArrowRight, Radio, Shield } from 'lucide-react';
+import { GlassCard }   from '@/components/ui/GlassCard';
+import { Badge }       from '@/components/ui/Badge';
+import { Input }       from '@/components/ui/Input';
 import { PageWrapper } from '@/components/layout/PageWrapper';
 import { vehicleService } from '@/services/vehicleService';
+import { cn } from '@/lib/utils';
 import type { Vehicle } from '@/types';
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.06 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35 } },
+};
+
 function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
-  const statusVariant = vehicle.status === 'blacklist' ? 'danger' : vehicle.status === 'watchlist' ? 'warning' : 'default';
+  const statusVariant = vehicle.status === 'blacklist' ? 'danger' : vehicle.status === 'watchlist' ? 'warning' : 'success';
+  const glowType = vehicle.status === 'blacklist' ? 'crimson' : vehicle.status === 'watchlist' ? 'amber' : 'cyan';
 
   return (
-    <Link href={`/vehicles/${vehicle.plate}`}>
-      <GlassCard hover className="h-full">
-        <div className="flex items-start justify-between mb-3">
-          <span className="text-lg font-data font-semibold text-accent-cyan">{vehicle.plate}</span>
-          <Badge variant={statusVariant} size="sm">{vehicle.status}</Badge>
+    <Link href={`/vehicles/${vehicle.plate}`} className="block h-full">
+      <GlassCard hover glow={glowType} className="h-full flex flex-col justify-between gap-4 p-5">
+        <div>
+          <div className="flex items-start justify-between mb-3">
+            <span className="text-lg font-data font-extrabold text-cyan-300 tracking-wider">{vehicle.plate}</span>
+            <Badge variant={statusVariant} size="sm">{vehicle.status}</Badge>
+          </div>
+
+          <div className="space-y-2 text-xs text-slate-300 font-body">
+            <div className="flex items-center gap-2">
+              <Car size={13} className="text-indigo-400 shrink-0" />
+              <span>{vehicle.vehicleType} · {vehicle.color}</span>
+            </div>
+            <div className="flex items-center gap-2 font-data">
+              <Eye size={13} className="text-cyan-400 shrink-0" />
+              <span><span className="text-white font-bold">{vehicle.totalDetections}</span> detections</span>
+            </div>
+            <div className="flex items-center gap-2 font-data">
+              <MapPin size={13} className="text-pink-400 shrink-0" />
+              <span><span className="text-white font-bold">{vehicle.camerasVisited}</span> cameras visited</span>
+            </div>
+          </div>
         </div>
-        <div className="space-y-2 text-xs text-text-secondary">
-          <div className="flex items-center gap-2">
-            <Car size={12} />
-            <span>{vehicle.vehicleType} • {vehicle.color}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Eye size={12} />
-            <span><span className="font-data text-text-primary">{vehicle.totalDetections}</span> detections</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <MapPin size={12} />
-            <span><span className="font-data text-text-primary">{vehicle.camerasVisited}</span> cameras visited</span>
-          </div>
-        </div>
+
         {vehicle.registeredCity && (
-          <p className="text-[10px] text-text-secondary mt-2 pt-2 border-t border-border-glass">
-            Registered: {vehicle.registeredCity}
-          </p>
+          <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between text-[10px] font-data text-slate-400">
+            <span>REG: {vehicle.registeredCity}</span>
+            <ArrowRight size={12} className="text-cyan-400" />
+          </div>
         )}
       </GlassCard>
     </Link>
@@ -62,59 +83,80 @@ export default function VehiclesPage() {
   const displayVehicles = searchQuery.length > 0 ? searchResults : recentVehicles;
 
   return (
-    <PageWrapper className="space-y-8">
-      {/* Header */}
-      <div className="text-center max-w-2xl mx-auto space-y-4">
-        <h1 className="text-3xl font-bold font-display">Vehicle Intelligence</h1>
-        <p className="text-sm text-text-secondary">
-          Search and track any vehicle across the city-wide camera network
+    <PageWrapper className="space-y-8 font-body">
+      {/* Search Header Banner */}
+      <div className="text-center max-w-2xl mx-auto space-y-4 pt-4">
+        <h1 className="text-3xl font-bold text-white font-display">Vehicle Intelligence</h1>
+        <p className="text-xs font-mono text-slate-400 uppercase tracking-widest">
+          Query city-wide ANPR optical recognition records and trajectory histories
         </p>
-        <div className="max-w-lg mx-auto">
+        <div className="max-w-xl mx-auto">
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Enter vehicle plate number (e.g., TN38AB1234)"
+            placeholder="Enter full or partial license plate (e.g. TN38AB1234)"
             showSearchIcon
-            className="text-center font-data text-base py-3"
+            shortcutHint="Global Search"
+            className="h-12 text-base text-center"
           />
         </div>
       </div>
 
-      {/* Quick Access — Hero Vehicle */}
+      {/* Quick Access Card with Multi-Chromatic Spectral Glow */}
       {searchQuery.length === 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3 flex items-center gap-2">
-            <Star size={14} className="text-accent-cyan" />
-            Quick Access
-          </h2>
+          <p className="text-xs font-display font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+            <Star size={14} className="text-yellow-400" /> Featured Intelligence Target
+          </p>
           <Link href="/vehicles/TN38AB1234">
-            <GlassCard hover className="max-w-md border-accent-cyan/20">
+            <GlassCard
+              hover
+              glow="spectral"
+              accent="spectral"
+              className="max-w-xl border-cyan-500/30 shadow-[0_0_35px_rgba(6,182,212,0.2)]"
+            >
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-xl font-data font-bold text-accent-cyan">TN38AB1234</span>
-                  <p className="text-xs text-text-secondary mt-1">White Sedan • 4 cameras • 12 detections</p>
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl font-data font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-300 to-indigo-300">
+                      TN38AB1234
+                    </span>
+                    <Badge variant="cyan" size="sm">Active Target</Badge>
+                  </div>
+                  <p className="text-xs text-slate-300 mt-1.5 font-body">
+                    White Sedan · 4 Key Chennai Intersections · 12 Detections
+                  </p>
                 </div>
-                <Badge variant="info" size="sm">Featured</Badge>
+                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-indigo-500/20 via-cyan-500/20 to-pink-500/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_20px_rgba(6,182,212,0.3)]">
+                  <ArrowRight size={20} />
+                </div>
               </div>
             </GlassCard>
           </Link>
         </div>
       )}
 
-      {/* Results */}
+      {/* Vehicle Cards Grid with Staggered Entrance */}
       <div>
-        <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">
-          {searchQuery.length > 0 ? `Search Results (${displayVehicles.length})` : 'Recent Vehicles'}
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {displayVehicles.map((vehicle) => (
-            <VehicleCard key={vehicle.plate} vehicle={vehicle} />
+        <p className="text-xs font-display font-bold uppercase tracking-wider text-slate-400 mb-4">
+          {searchQuery.length > 0 ? `Search Query Matches (${displayVehicles.length})` : 'Recently Sighted Vehicles'}
+        </p>
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
+        >
+          {displayVehicles.map((v: Vehicle) => (
+            <motion.div variants={itemVariants} key={v.plate} className="h-full">
+              <VehicleCard vehicle={v} />
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
         {searchQuery.length > 0 && displayVehicles.length === 0 && (
-          <div className="text-center py-12 text-text-secondary">
-            <Search size={48} className="mx-auto mb-3 opacity-30" />
-            <p>No vehicles found matching "{searchQuery}"</p>
+          <div className="text-center py-20">
+            <Search size={40} className="mx-auto mb-3 text-cyan-400/20" />
+            <p className="text-xs font-mono text-slate-400">No vehicles located with plate pattern "{searchQuery}"</p>
           </div>
         )}
       </div>

@@ -1,36 +1,54 @@
 import type { Alert, AlertSeverity, AlertType } from '@/types';
-import alertsData from '@/data/alerts.json';
-import { delay } from '@/lib/utils';
-
-const alerts: Alert[] = alertsData as Alert[];
+import { apiClient } from './apiClient';
 
 export const alertService = {
   async getAlerts(): Promise<Alert[]> {
-    await delay(200);
-    return alerts;
+    try {
+      const response = await apiClient.get<Alert[]>('/alerts');
+      return response.data || response || [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   },
 
   async getAlertsBySeverity(severity: AlertSeverity | 'all'): Promise<Alert[]> {
-    await delay(200);
-    if (severity === 'all') return alerts;
-    return alerts.filter(a => a.severity === severity);
+    try {
+      const response = await apiClient.get<Alert[]>(`/alerts?severity=${severity === 'all' ? '' : severity}`);
+      return response.data || response || [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   },
 
   async getAlertsByType(type: AlertType | 'all'): Promise<Alert[]> {
-    await delay(200);
-    if (type === 'all') return alerts;
-    return alerts.filter(a => a.type === type);
+    try {
+      const response = await apiClient.get<Alert[]>(`/alerts?type=${type === 'all' ? '' : type}`);
+      return response.data || response || [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   },
 
   async getActiveAlertCount(): Promise<number> {
-    await delay(100);
-    return alerts.filter(a => !a.isResolved).length;
+    try {
+      const alerts = await this.getAlerts();
+      return alerts.filter(a => !a.isResolved).length;
+    } catch (e) {
+      console.error(e);
+      return 0;
+    }
   },
 
   async getRecentAlerts(limit: number = 5): Promise<Alert[]> {
-    await delay(200);
-    return [...alerts]
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, limit);
+    try {
+      const response = await apiClient.get<Alert[]>(`/alerts?limit=${limit}`);
+      return response.data || response || [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   },
 };

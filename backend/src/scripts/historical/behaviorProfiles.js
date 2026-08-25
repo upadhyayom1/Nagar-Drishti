@@ -3,57 +3,64 @@ const { randomRange, random } = require('./utils');
 function getDailyTrips(profile, dayOfWeek) {
   const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
-  // returns an array of hours (float) representing start times for trips
+  // returns an array of objects: { hour, type }
   let trips = [];
   
   if (profile === 'COMMUTER') {
     if (isWeekend) {
-      if (random() < 0.2) trips.push(randomRange(10, 18));
+      if (random() < 0.3) trips.push({ hour: randomRange(10, 18), type: 'RANDOM_TRIP' });
     } else {
-      // Morning commute (7-10)
-      if (random() < 0.95) trips.push(randomRange(7, 10));
-      // Evening commute (17-20)
-      if (random() < 0.95) trips.push(randomRange(17, 20));
-      // Occasional lunch trip
-      if (random() < 0.1) trips.push(randomRange(12, 14));
+      if (random() < 0.95) trips.push({ hour: randomRange(7, 10), type: 'COMMUTE_TO_WORK' });
+      if (random() < 0.95) trips.push({ hour: randomRange(17, 20), type: 'COMMUTE_TO_HOME' });
+      if (random() < 0.1) trips.push({ hour: randomRange(12, 14), type: 'RANDOM_TRIP' });
     }
   } 
   else if (profile === 'RANDOM_DRIVER') {
-    const tripCount = isWeekend ? Math.floor(randomRange(0, 4)) : Math.floor(randomRange(0, 2));
+    const tripCount = isWeekend ? Math.floor(randomRange(1, 4)) : Math.floor(randomRange(0, 3));
     for (let i = 0; i < tripCount; i++) {
-      trips.push(randomRange(8, 22));
+      trips.push({ hour: randomRange(8, 22), type: 'RANDOM_TRIP' });
     }
   }
   else if (profile === 'DELIVERY') {
-    // Deliveries mostly on weekdays, multiple trips
-    const tripCount = isWeekend ? Math.floor(randomRange(0, 3)) : Math.floor(randomRange(3, 8));
+    const tripCount = isWeekend ? Math.floor(randomRange(1, 4)) : Math.floor(randomRange(4, 9));
     for (let i = 0; i < tripCount; i++) {
-      trips.push(randomRange(7, 19));
+      trips.push({ hour: randomRange(7, 19), type: 'RANDOM_TRIP' });
+    }
+  }
+  else if (profile === 'RIDE_HAIL') {
+    const tripCount = Math.floor(randomRange(8, 16));
+    for (let i = 0; i < tripCount; i++) {
+      trips.push({ hour: randomRange(4, 23), type: 'RANDOM_TRIP' });
+    }
+  }
+  else if (profile === 'LONG_HAUL_TRUCK') {
+    // Only travels 1-2 days a week
+    if (random() < 0.2) {
+      trips.push({ hour: randomRange(2, 22), type: 'LONG_HAUL' });
+    }
+  }
+  else if (profile === 'COMMERCIAL') {
+    if (!isWeekend) {
+      const tripCount = Math.floor(randomRange(2, 5));
+      for (let i = 0; i < tripCount; i++) {
+        trips.push({ hour: randomRange(6, 17), type: 'RANDOM_TRIP' });
+      }
+    }
+  }
+  else if (profile === 'OCCASIONAL_VISITOR') {
+    if (random() < 0.1) {
+      trips.push({ hour: randomRange(10, 21), type: 'RANDOM_TRIP' });
     }
   }
   else if (profile === 'TAXI') {
     const tripCount = Math.floor(randomRange(4, 12));
     for (let i = 0; i < tripCount; i++) {
-      // Taxis run any time, slight preference to peaks but broad spread
-      trips.push(randomRange(4, 23));
-    }
-  }
-  else if (profile === 'COMMERCIAL') {
-    if (!isWeekend) {
-      const tripCount = Math.floor(randomRange(1, 4));
-      for (let i = 0; i < tripCount; i++) {
-        trips.push(randomRange(6, 17));
-      }
-    }
-  }
-  else if (profile === 'OCCASIONAL_VISITOR') {
-    if (random() < 0.05) {
-      trips.push(randomRange(10, 21));
+      trips.push({ hour: randomRange(4, 23), type: 'RANDOM_TRIP' });
     }
   }
 
   // Sort chronologically
-  return trips.sort((a, b) => a - b);
+  return trips.sort((a, b) => a.hour - b.hour);
 }
 
 function getCongestionMultiplier(hour) {
