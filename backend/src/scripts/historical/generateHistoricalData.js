@@ -67,9 +67,9 @@ async function main() {
   console.log('Seeding Camera Health...');
   const healthData = dbCameras.map(c => ({
     cameraId: c.id,
-    status: Math.random() > 0.05 ? 'ONLINE' : 'OFFLINE',
+    status: random() > 0.05 ? 'ONLINE' : 'OFFLINE',
     recordedAt: new Date(),
-    responseMs: Math.floor(Math.random() * 50) + 10,
+    responseMs: Math.floor(random() * 50) + 10,
     errorMessage: null
   }));
   await prisma.cameraHealth.createMany({ data: healthData });
@@ -80,11 +80,11 @@ async function main() {
   const eventTypes = ['ACCIDENT', 'ROAD_BLOCK', 'CONGESTION', 'VEHICLE_BREAKDOWN'];
   for (let i = 0; i < 20; i++) {
     const dDate = new Date();
-    dDate.setHours(dDate.getHours() - Math.floor(Math.random() * 48));
-    const randomCamera = dbCameras[Math.floor(Math.random() * dbCameras.length)];
+    dDate.setHours(dDate.getHours() - Math.floor(random() * 48));
+    const randomCamera = dbCameras[Math.floor(random() * dbCameras.length)];
     events.push({
       type: eventTypes[Math.floor(Math.random() * eventTypes.length)],
-      severity: Math.random() > 0.8 ? 'CRITICAL' : 'HIGH',
+      severity: random() > 0.8 ? 'CRITICAL' : 'HIGH',
       description: 'Simulated traffic event ' + i,
       cameraId: randomCamera.id,
       roadId: randomCamera.roadId,

@@ -1,10 +1,12 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { Search, Bell, Radio, Sparkles } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Bell } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
-import { Badge } from '@/components/ui/Badge';
 import { useUIStore } from '@/store/uiStore';
+import { alertService } from '@/services/alertService';
+import { analyticsService } from '@/services/analyticsService';
 
 const pageTitles: Record<string, string> = {
   '/dashboard': 'Command Center',
@@ -27,10 +29,12 @@ export function TopBar() {
   const pathname = usePathname();
   const router   = useRouter();
   const { searchQuery, setSearchQuery, notificationsOpen, setNotificationsOpen } = useUIStore();
+  const { data: alertCount = 0 } = useQuery({ queryKey: ['activeAlertCount'], queryFn: alertService.getActiveAlertCount });
+  const { data: systemHealth } = useQuery({ queryKey: ['systemHealth'], queryFn: analyticsService.getSystemHealth });
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && searchQuery.trim()) {
-      router.push(`/vehicles/${searchQuery.trim().toUpperCase()}`);
+      router.push(`/vehicles?search=${encodeURIComponent(searchQuery.trim().toUpperCase())}`);
     }
   };
 
@@ -44,9 +48,9 @@ export function TopBar() {
         </h1>
         <p className="text-[10px] font-mono uppercase tracking-widest flex items-center gap-2 font-bold mt-0.5 text-slate-400">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-live shadow-[0_0_10px_#10b981]" />
-          <span className="text-cyan-400">Autonomous Sensor Grid Synced</span>
+          <span className="text-cyan-400">{systemHealth?.summary.online ?? 0} sensor nodes online</span>
           <span className="text-slate-600">·</span>
-          <span className="text-indigo-300">Sector Chennai Central</span>
+          <span className="text-indigo-300">Prayagraj traffic network</span>
         </p>
       </div>
 
@@ -56,7 +60,7 @@ export function TopBar() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyDown={handleSearch}
-          placeholder="Search license plate (e.g. TN38AB1234)"
+          placeholder="Search a vehicle plate"
           showSearchIcon
           shortcutHint="↵ ENTER"
           className="h-10 text-xs font-mono"
@@ -65,17 +69,6 @@ export function TopBar() {
 
       {/* Right Side Status & Operator Pill */}
       <div className="flex items-center gap-3.5 shrink-0">
-        {/* Operator Identity Chip with Iridescent Gradient Avatar */}
-        <div className="hidden lg:flex items-center gap-2.5 px-3 py-1.5 rounded-full border border-white/10 bg-[rgba(13,19,40,0.6)] backdrop-blur-xl shadow-sm hover:border-cyan-500/30 transition-colors">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 via-cyan-400 to-pink-500 flex items-center justify-center text-[10px] font-display font-extrabold text-white shadow-[0_0_14px_rgba(99,102,241,0.4)]">
-            RK
-          </div>
-          <div className="flex flex-col pr-1">
-            <span className="text-[11px] font-display font-bold text-white leading-tight">Rahul Krishnan</span>
-            <span className="text-[9px] font-mono text-cyan-300 font-semibold leading-tight">Sector Operator · On Shift</span>
-          </div>
-        </div>
-
         {/* Notifications Bell */}
         <button
           onClick={() => setNotificationsOpen(!notificationsOpen)}
@@ -84,7 +77,7 @@ export function TopBar() {
         >
           <Bell size={18} />
           <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white text-[9px] font-mono font-extrabold flex items-center justify-center shadow-[0_0_14px_rgba(244,63,94,0.9)] animate-pulse">
-            4
+            {alertCount}
           </span>
         </button>
       </div>

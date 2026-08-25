@@ -8,7 +8,7 @@ import { GlassCard }   from '@/components/ui/GlassCard';
 import { Badge }       from '@/components/ui/Badge';
 import { PageWrapper } from '@/components/layout/PageWrapper';
 import { cameraService } from '@/services/cameraService';
-import { formatTime, formatDateTime } from '@/lib/utils';
+import { formatTime } from '@/lib/utils';
 import type { Detection } from '@/types';
 
 export default function CameraDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -62,30 +62,11 @@ export default function CameraDetailPage({ params }: { params: Promise<{ id: str
             {/* Scan-line overlay */}
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-500/[0.02] to-cyan-500/[0.06] pointer-events-none" />
 
-            {/* Neural ANPR Bounding Boxes */}
-            <div className="absolute inset-0">
-              <div className="absolute border-2 border-cyan-400 rounded-sm shadow-[0_0_15px_rgba(6,182,212,0.7)]" style={{ left: '22%', top: '44%', width: '13%', height: '18%' }}>
-                <span className="absolute -top-5 left-0 text-[9px] font-mono bg-cyan-400 text-slate-950 px-1.5 py-0.5 rounded-sm whitespace-nowrap font-extrabold">
-                  TN38AB1234 · 98.4%
-                </span>
-              </div>
-              <div className="absolute border-2 border-sky-400 rounded-sm shadow-[0_0_12px_rgba(56,189,248,0.6)]" style={{ left: '56%', top: '48%', width: '11%', height: '16%' }}>
-                <span className="absolute -top-5 left-0 text-[9px] font-mono bg-sky-400 text-slate-950 px-1.5 py-0.5 rounded-sm whitespace-nowrap font-extrabold">
-                  TN09CD5678 · 91.2%
-                </span>
-              </div>
-              <div className="absolute border-2 border-amber-400 rounded-sm shadow-[0_0_12px_rgba(251,191,36,0.6)]" style={{ left: '74%', top: '42%', width: '9%', height: '14%' }}>
-                <span className="absolute -top-5 left-0 text-[9px] font-mono bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded-sm whitespace-nowrap font-extrabold">
-                  TN10EF9012 · 76.5%
-                </span>
-              </div>
-            </div>
-
             {/* Live Overlays */}
             <div className="absolute top-3 left-3 flex items-center gap-2">
               <Badge variant="danger" dot pulse size="sm">LIVE</Badge>
               <span className="text-[10px] font-mono bg-black/80 backdrop-blur-sm px-2.5 py-0.5 rounded-lg text-white font-bold border border-white/10">
-                {camera.fps} FPS
+                {camera.detectionCount} detections
               </span>
             </div>
 
@@ -102,7 +83,7 @@ export default function CameraDetailPage({ params }: { params: Promise<{ id: str
 
             <div className="absolute bottom-3 left-3">
               <span className="text-[10px] font-mono bg-black/80 backdrop-blur-sm px-3 py-1 rounded-xl text-cyan-400 font-extrabold border border-cyan-500/30 shadow-lg">
-                {camera.id} · LAT {camera.lat.toFixed(4)}, LNG {camera.lng.toFixed(4)}
+                {camera.cameraCode} · LAT {camera.lat.toFixed(4)}, LNG {camera.lng.toFixed(4)}
               </span>
             </div>
           </GlassCard>

@@ -1,8 +1,8 @@
 
+const turf = require('@turf/turf');
 const { prisma } = require('../../lib/prisma');
-const { getVehicleProfile } = require('./vehicle.intelligence.service');
 
-const normalizePlate = (plate) => String(plate || '').trim().toUpperCase().replace(/\s+/g, '');
+const normalizePlate = (plate) => String(plate || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
 const toVehicleSummary = (vehicle) => ({
   plate: vehicle.plateNumber,
   vehicleType: vehicle.vehicleType || 'UNKNOWN',
@@ -46,7 +46,7 @@ exports.getVehicle = async (req, res) => {
 
 exports.searchVehicle = async function searchVehicle(req, res, next) {
   try {
-    const { plateNumber } = req.params;
+    const plateNumber = req.params.plateNumber || req.query.q || req.query.query;
 
     if (!plateNumber) {
       return res.status(400).json({
@@ -75,26 +75,46 @@ exports.getRecentVehicles = async (req, res, next) => {
 
 exports.getVehicleJourney = async (req, res, next) => {
   try {
-    const profile = await getVehicleProfile(req.params.plateNumber);
-    if (!profile) return res.status(404).json({ success: false, message: 'Vehicle not found' });
-    const waypoints = profile.history.map((detection) => ({
+    const plateNumber = normalizePlate(req.params.plateNumber);
+    const vehicle = await prisma.vehicle.findUnique({
+      where: { plateNumber },
+      select: { id: true, plateNumber: true },
+    });
+    if (!vehicle) return res.status(404).json({ success: false, message: 'Vehicle not found' });
+
+    const detections = await prisma.detection.findMany({
+      where: { vehicleId: vehicle.id },
+      orderBy: { timestamp: 'asc' },
+      include: { camera: { select: { id: true, name: true, cameraCode: true, latitude: true, longitude: true } } },
+    });
+    const waypoints = detections.map((detection) => ({
       cameraId: detection.cameraId,
-      cameraName: detection.cameraName,
-      lat: detection.latitude,
-      lng: detection.longitude,
+      cameraName: detection.camera.name || detection.camera.cameraCode,
+      lat: detection.latitude ?? detection.camera.latitude,
+      lng: detection.longitude ?? detection.camera.longitude,
       timestamp: detection.timestamp,
       speed: 0,
       direction: detection.direction || 'UNKNOWN',
     })).filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lng));
+
+    let totalDistance = 0;
+    for (let index = 1; index < waypoints.length; index++) {
+      const previous = waypoints[index - 1];
+      const current = waypoints[index];
+      const distance = turf.distance([previous.lng, previous.lat], [current.lng, current.lat], { units: 'kilometers' });
+      const durationHours = Math.max(0, (new Date(current.timestamp) - new Date(previous.timestamp)) / 3600000);
+      totalDistance += distance;
+      current.speed = durationHours ? Math.round((distance / durationHours) * 10) / 10 : 0;
+    }
     const first = waypoints[0]?.timestamp;
     const last = waypoints.at(-1)?.timestamp;
     const totalDuration = first && last ? Math.max(0, Math.round((new Date(last) - new Date(first)) / 60000)) : 0;
     return res.json({ success: true, data: {
-      plate: profile.vehicle.plateNumber,
+      plate: vehicle.plateNumber,
       waypoints,
-      totalDistance: 0,
+      totalDistance: Math.round(totalDistance * 100) / 100,
       totalDuration,
-      avgSpeed: 0,
+      avgSpeed: totalDuration ? Math.round((totalDistance / (totalDuration / 60)) * 10) / 10 : 0,
     }});
   } catch (error) { next(error); }
 };

@@ -3,12 +3,12 @@
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Camera as CameraIcon, Video, Activity, Clock, Wifi, WifiOff, Radio } from 'lucide-react';
+import { Camera as CameraIcon, Video, Activity, Clock } from 'lucide-react';
 import { GlassCard }   from '@/components/ui/GlassCard';
 import { Badge }       from '@/components/ui/Badge';
 import { PageWrapper } from '@/components/layout/PageWrapper';
 import { cameraService }  from '@/services/cameraService';
-import { formatTime, cn } from '@/lib/utils';
+import { formatTime } from '@/lib/utils';
 import { useFilterStore } from '@/store/filterStore';
 import type { Camera } from '@/types';
 
@@ -50,12 +50,12 @@ function CameraCard({ camera }: { camera: Camera }) {
           </div>
           <div className="absolute top-2.5 right-2.5">
             <span className="text-[10px] font-data bg-black/80 backdrop-blur-sm px-2.5 py-0.5 rounded-lg text-white font-bold border border-white/10">
-              {camera.fps} FPS
+              {camera.detectionCount} detections
             </span>
           </div>
           <div className="absolute bottom-2.5 left-2.5">
             <span className="text-[10px] font-data bg-black/80 backdrop-blur-sm px-2.5 py-0.5 rounded-lg text-cyan-400 font-bold border border-cyan-500/30">
-              {camera.id}
+              {camera.cameraCode}
             </span>
           </div>
         </div>
@@ -136,7 +136,7 @@ export default function CamerasPage() {
         <div>
           <h1 className="text-2xl font-bold font-display text-[var(--text-primary)]">Optical Feed Grid</h1>
           <p className="text-xs font-mono text-[var(--text-secondary)] mt-0.5 uppercase tracking-wider">
-            Monitoring <span className="text-[var(--brand-cyan)] font-bold">{cameras.length}</span> high-throughput optical nodes across Chennai
+            Monitoring <span className="text-[var(--brand-cyan)] font-bold">{cameras.length}</span> optical nodes across Prayagraj
           </p>
         </div>
         <div className="flex items-center gap-2">

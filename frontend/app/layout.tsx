@@ -19,7 +19,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: 'UrbanPulse | AI Command Center',
-  description: 'AI-powered vehicle intelligence & smart city traffic analytics for Chennai',
+  description: 'AI-powered vehicle intelligence and traffic analytics for Prayagraj',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

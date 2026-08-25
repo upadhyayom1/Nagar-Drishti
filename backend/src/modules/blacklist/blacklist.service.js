@@ -7,9 +7,14 @@ function normalizePlateNumber(plateNumber) {
 
 async function addBlacklistedVehicle(data) {
   const normalizedPlate = normalizePlateNumber(data.plateNumber);
+  const severity = String(data.severity || 'MEDIUM').toUpperCase();
+  const validSeverities = new Set(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']);
   
   if (!normalizedPlate) {
     throw new Error('Invalid plate number');
+  }
+  if (!validSeverities.has(severity)) {
+    throw new Error('Invalid blacklist severity');
   }
 
   const existing = await prisma.blacklistedVehicle.findUnique({
@@ -24,7 +29,7 @@ async function addBlacklistedVehicle(data) {
     data: {
       plateNumber: normalizedPlate,
       reason: data.reason || 'Not specified',
-      severity: data.severity || 'MEDIUM',
+      severity,
       status: 'ACTIVE',
     },
   });

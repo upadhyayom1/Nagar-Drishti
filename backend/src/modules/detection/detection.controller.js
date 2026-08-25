@@ -52,7 +52,7 @@ exports.getRecentDetections = async (req, res) => {
 
 exports.getVehicleDetections = async (req, res) => {
   try {
-    const plateNumber = String(req.params.plateNumber || '').trim().toUpperCase().replace(/\s+/g, '');
+    const plateNumber = String(req.params.plateNumber || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
     const detections = await prisma.detection.findMany({
       where: { vehicle: { plateNumber } },
       orderBy: { timestamp: 'asc' }, // chronological journey

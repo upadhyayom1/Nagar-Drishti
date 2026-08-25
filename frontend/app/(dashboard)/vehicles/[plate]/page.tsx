@@ -4,14 +4,14 @@ import { use } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Car, Eye, Clock, Route, Camera, Activity, Calendar } from 'lucide-react';
+import { ArrowLeft, Eye, Clock, Route, Camera } from 'lucide-react';
 import { GlassCard }   from '@/components/ui/GlassCard';
 import { Badge }       from '@/components/ui/Badge';
 import { Button }      from '@/components/ui/Button';
 import { StatCard }    from '@/components/ui/StatCard';
 import { PageWrapper } from '@/components/layout/PageWrapper';
 import { vehicleService } from '@/services/vehicleService';
-import { formatDateTime, formatDate, cn } from '@/lib/utils';
+import { formatDateTime, formatDate } from '@/lib/utils';
 import type { Detection } from '@/types';
 
 export default function VehicleProfilePage({ params }: { params: Promise<{ plate: string }> }) {
@@ -32,6 +32,18 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
   );
 
   const statusVariant = vehicle.status === 'blacklist' ? 'danger' : vehicle.status === 'watchlist' ? 'warning' : 'success';
+  const activityDays = Array.from({ length: 28 }, (_, index) => {
+    const day = new Date();
+    day.setHours(0, 0, 0, 0);
+    day.setDate(day.getDate() - (27 - index));
+    const nextDay = new Date(day);
+    nextDay.setDate(nextDay.getDate() + 1);
+    return detections.filter((detection) => {
+      const timestamp = new Date(detection.timestamp);
+      return timestamp >= day && timestamp < nextDay;
+    }).length;
+  });
+  const maxActivity = Math.max(...activityDays, 1);
 
   return (
     <PageWrapper className="space-y-6 font-body">
@@ -143,13 +155,13 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
               Daily Activity Heatmap
             </p>
             <div className="grid grid-cols-7 gap-1.5">
-              {Array.from({ length: 28 }, (_, i) => {
-                const v = Math.sin(i * 0.4) * 0.5 + 0.5;
-                const bg = v > 0.7 ? 'bg-cyan-400/80 shadow-[0_0_6px_rgba(6,182,212,0.5)]'
-                         : v > 0.4 ? 'bg-cyan-500/40'
-                         : v > 0.15 ? 'bg-cyan-500/15'
-                         : 'bg-slate-800/60';
-                return <div key={i} className={`aspect-square rounded-sm ${bg}`} />;
+              {activityDays.map((count, index) => {
+                const level = count / maxActivity;
+                const background = level >= 0.75 ? 'bg-cyan-400/80 shadow-[0_0_6px_rgba(6,182,212,0.5)]'
+                  : level >= 0.4 ? 'bg-cyan-500/40'
+                  : count > 0 ? 'bg-cyan-500/15'
+                  : 'bg-slate-800/60';
+                return <div key={index} title={`${count} detections`} className={`aspect-square rounded-sm ${background}`} />;
               })}
             </div>
             <div className="flex items-center justify-between text-[9px] font-mono text-slate-500 mt-3">

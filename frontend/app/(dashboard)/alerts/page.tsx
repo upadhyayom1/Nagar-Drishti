@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Camera, Car, Clock, Filter, Shield, TrendingUp, AlertTriangle, WifiOff, CheckCircle2, Download, RefreshCw } from 'lucide-react';
@@ -14,28 +13,26 @@ import { formatDateTime, cn } from '@/lib/utils';
 import { useFilterStore }   from '@/store/filterStore';
 import type { Alert } from '@/types';
 
-function getAlertIcon(type: string) {
+function renderAlertIcon(type: string, className: string) {
   switch (type) {
-    case 'BLACKLIST_VEHICLE': return Shield;
-    case 'ROUTE_ANOMALY':     return TrendingUp;
-    case 'TRAFFIC_SURGE':     return AlertTriangle;
-    case 'CAMERA_OFFLINE':    return WifiOff;
-    default:                  return Bell;
+    case 'BLACKLIST_VEHICLE': return <Shield size={22} className={className} />;
+    case 'ROUTE_ANOMALY':     return <TrendingUp size={22} className={className} />;
+    case 'TRAFFIC_SURGE':     return <AlertTriangle size={22} className={className} />;
+    case 'CAMERA_OFFLINE':    return <WifiOff size={22} className={className} />;
+    default:                  return <Bell size={22} className={className} />;
   }
 }
 
 function AlertCard({
   alert,
   index,
-  isAcknowledged,
   onAcknowledge,
 }: {
   alert: Alert;
   index: number;
-  isAcknowledged: boolean;
   onAcknowledge: (id: string) => void;
 }) {
-  const Icon = getAlertIcon(alert.type);
+  const isAcknowledged = alert.isRead;
   const isCritical = alert.severity === 'critical';
   const isHigh     = alert.severity === 'high';
 
@@ -63,7 +60,7 @@ function AlertCard({
       >
         <div className="flex items-start gap-4">
           <div className={cn('p-3.5 rounded-2xl shrink-0 border border-white/10 shadow-md', iconBg)}>
-            <Icon size={22} className={iconColor} />
+            {renderAlertIcon(alert.type, iconColor)}
           </div>
 
           <div className="flex-1 min-w-0">
@@ -121,7 +118,7 @@ function AlertCard({
                 )}
               >
                 <CheckCircle2 size={13} />
-                {isAcknowledged ? 'Mark Unresolved' : 'Acknowledge Threat'}
+                {isAcknowledged ? 'Acknowledged' : 'Acknowledge Threat'}
               </button>
             </div>
           </div>
@@ -148,16 +145,18 @@ function FilterPill({ label, active, onClick }: { label: string; active: boolean
 }
 
 export default function AlertsPage() {
+  const queryClient = useQueryClient();
   const { data: alerts = [], refetch, isFetching } = useQuery({ queryKey: ['alerts'], queryFn: alertService.getAlerts });
   const { alertSeverityFilter, setAlertSeverityFilter } = useFilterStore();
-  const [acknowledgedMap, setAcknowledgedMap] = useState<Record<string, boolean>>({});
-
-  const toggleAcknowledge = (id: string) => {
-    setAcknowledgedMap(prev => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
-  };
+  const acknowledgeAlert = useMutation({
+    mutationFn: alertService.acknowledgeAlert,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['alerts'] });
+      queryClient.invalidateQueries({ queryKey: ['recentAlerts'] });
+      queryClient.invalidateQueries({ queryKey: ['activeAlertCount'] });
+      queryClient.invalidateQueries({ queryKey: ['trafficStats'] });
+    },
+  });
 
   const handleExportCSV = () => {
     if (alerts.length === 0) return;
@@ -244,8 +243,7 @@ export default function AlertsPage() {
               key={alert.id}
               alert={alert}
               index={i}
-              isAcknowledged={!!acknowledgedMap[alert.id]}
-              onAcknowledge={toggleAcknowledge}
+              onAcknowledge={(id) => acknowledgeAlert.mutate(id)}
             />
           ))}
         </AnimatePresence>

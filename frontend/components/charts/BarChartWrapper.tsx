@@ -2,24 +2,28 @@
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
+type ChartDatum = object;
+type TooltipEntry = { color?: string; name?: string; value?: string | number };
+type CustomTooltipProps = { active?: boolean; payload?: TooltipEntry[]; label?: string | number };
+
 interface BarChartWrapperProps {
-  data: any[];
+  data: ChartDatum[];
   dataKey: string;
   xAxisKey: string;
   height?: number;
   color?: string;
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-2xl px-4 py-3 text-xs bg-slate-900/95 backdrop-blur-xl border border-cyan-400/30 shadow-[0_12px_36px_rgba(0,0,0,0.85)] font-mono text-white">
       <p className="text-slate-400 mb-1 text-[11px] font-display font-medium">{label}</p>
-      {payload.map((entry: any, i: number) => (
-        <p key={i} className="text-white font-bold flex items-center gap-2">
+      {payload.map((entry, index) => (
+        <p key={`${entry.name}-${index}`} className="text-white font-bold flex items-center gap-2">
           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
           <span>{entry.name}:</span>
-          <span className="text-cyan-300">{entry.value.toLocaleString()} veh</span>
+          <span className="text-cyan-300">{entry.value?.toLocaleString()} veh</span>
         </p>
       ))}
     </div>

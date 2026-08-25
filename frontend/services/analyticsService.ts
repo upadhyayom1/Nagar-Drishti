@@ -1,61 +1,41 @@
-import type { TrafficStats, HourlyTraffic, CameraTraffic, Route } from '@/types';
-import { apiClient } from './apiClient';
+import type { TrafficStats, HourlyTraffic, CameraTraffic, NetworkAnalytics, Route, SystemHealth } from '@/types';
+import { apiClient, unwrapApiResponse } from './apiClient';
+
+export interface AnalyticsWindow {
+  from: string;
+  to: string;
+}
+
+function withWindow(window?: AnalyticsWindow) {
+  return window ? { params: window } : undefined;
+}
 
 export const analyticsService = {
-  async getTrafficStats(): Promise<TrafficStats> {
-    try {
-      const response = await apiClient.get<TrafficStats>('/analytics/overview');
-      return response.data || response;
-    } catch (e) {
-      console.error(e);
-      return {
-        totalVehiclesToday: 0,
-        avgSpeed: 0,
-        activeCameras: 0,
-        activeAlerts: 0,
-        congestionIndex: 0,
-        incidentsToday: 0
-      };
-    }
+  async getTrafficStats(window?: AnalyticsWindow): Promise<TrafficStats> {
+    return unwrapApiResponse(await apiClient.get<TrafficStats>('/analytics/overview', withWindow(window)));
   },
 
-  async getHourlyTraffic(): Promise<HourlyTraffic[]> {
-    try {
-      const response = await apiClient.get<HourlyTraffic[]>('/analytics/hourly');
-      return response.data || response || [];
-    } catch (e) {
-      console.error(e);
-      return [];
-    }
+  async getHourlyTraffic(window?: AnalyticsWindow): Promise<HourlyTraffic[]> {
+    return unwrapApiResponse(await apiClient.get<HourlyTraffic[]>('/analytics/hourly', withWindow(window)));
   },
 
-  async getCameraTraffic(): Promise<CameraTraffic[]> {
-    try {
-      const response = await apiClient.get<CameraTraffic[]>('/analytics/cameras');
-      return response.data || response || [];
-    } catch (e) {
-      console.error(e);
-      return [];
-    }
+  async getCameraTraffic(window?: AnalyticsWindow): Promise<CameraTraffic[]> {
+    return unwrapApiResponse(await apiClient.get<CameraTraffic[]>('/analytics/cameras', withWindow(window)));
   },
 
-  async getBusiestRoads(): Promise<Route[]> {
-    try {
-      const response = await apiClient.get<Route[]>('/analytics/busiest-roads');
-      return response.data || response || [];
-    } catch (e) {
-      console.error(e);
-      return [];
-    }
+  async getBusiestRoads(window?: AnalyticsWindow): Promise<Route[]> {
+    return unwrapApiResponse(await apiClient.get<Route[]>('/analytics/busiest-roads', withWindow(window)));
   },
 
   async getTrafficAnomalies(): Promise<string[]> {
-    try {
-      const response = await apiClient.get<string[]>('/analytics/anomalies');
-      return response.data || response || [];
-    } catch (e) {
-      console.error(e);
-      return [];
-    }
-  }
+    return unwrapApiResponse(await apiClient.get<string[]>('/analytics/anomalies'));
+  },
+
+  async getNetwork(): Promise<NetworkAnalytics> {
+    return unwrapApiResponse(await apiClient.get<NetworkAnalytics>('/analytics/network'));
+  },
+
+  async getSystemHealth(): Promise<SystemHealth> {
+    return unwrapApiResponse(await apiClient.get<SystemHealth>('/analytics/system'));
+  },
 };

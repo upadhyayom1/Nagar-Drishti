@@ -46,3 +46,22 @@ exports.getActiveAlertCount = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+exports.updateAlertStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const status = String(req.body.status || '').toUpperCase();
+    if (!['ACKNOWLEDGED', 'RESOLVED'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'status must be ACKNOWLEDGED or RESOLVED' });
+    }
+    const alert = await prisma.alert.update({
+      where: { id },
+      data: { status, ...(status === 'RESOLVED' ? { resolvedAt: new Date() } : {}) },
+    });
+    res.status(200).json({ success: true, data: alert });
+  } catch (error) {
+    if (error.code === 'P2025') return res.status(404).json({ success: false, message: 'Alert not found' });
+    console.error('Error updating alert:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};

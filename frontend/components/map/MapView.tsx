@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Polyline, Circle, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
-import { Video, RotateCcw, Crosshair } from 'lucide-react';
+import { Video, Crosshair } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useFilterStore } from '@/store/filterStore';
+import { roadService } from '@/services/roadService';
 import type { Camera } from '@/types';
 
 interface MapViewProps {
@@ -80,21 +82,22 @@ function MapViewController({ center, zoom }: { center: [number, number]; zoom: n
   );
 }
 
-// Optional trajectories if needed later
-const CORRIDOR_TRAJECTORIES: { name: string; coords: [number, number][]; color: string; }[] = [];
-
 export function MapView({
   cameras,
-  center = [25.45, 81.84], // Prayagraj coordinates
-  zoom = 13,
+  center = [25.4516, 81.8468],
+  zoom = 12,
   className,
 }: MapViewProps) {
   const { showHeatmap, showTrajectories, showTrafficDensity } = useFilterStore();
+  const { data: roads = [] } = useQuery({ queryKey: ['roads'], queryFn: roadService.getRoads });
+  const mapCenter: [number, number] = cameras.length
+    ? [cameras.reduce((sum, camera) => sum + camera.lat, 0) / cameras.length, cameras.reduce((sum, camera) => sum + camera.lng, 0) / cameras.length]
+    : center;
 
   return (
     <div className="w-full h-full min-h-[480px] relative rounded-2xl overflow-hidden group">
       <MapContainer
-        center={center}
+        center={mapCenter}
         zoom={zoom}
         className={className}
         style={{ height: '100%', width: '100%', minHeight: '480px', zIndex: 1 }}
@@ -102,7 +105,7 @@ export function MapView({
         attributionControl={true}
       >
         <MapResizeHandler />
-        <MapViewController center={center} zoom={zoom} />
+        <MapViewController center={mapCenter} zoom={zoom} />
 
         {/* CartoDB Dark Matter Base Tiles */}
         <TileLayer
@@ -111,6 +114,19 @@ export function MapView({
           maxZoom={19}
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
         />
+
+        {roads.map((road) => road.geometry?.type === 'LineString' && road.geometry.coordinates.length > 1 && (
+          <Polyline
+            key={road.id}
+            positions={road.geometry.coordinates.map(([longitude, latitude]) => [latitude, longitude] as [number, number])}
+            pathOptions={{
+              color: '#38bdf8',
+              weight: showTrajectories ? 3.5 : 2,
+              opacity: showTrajectories ? 0.8 : 0.42,
+              dashArray: showTrajectories ? '8 6' : undefined,
+            }}
+          />
+        ))}
 
         {/* ── Layer 1: Density Heatmap Halos ── */}
         {showHeatmap && cameras.map((c) => {
@@ -131,21 +147,7 @@ export function MapView({
           );
         })}
 
-        {/* ── Layer 2: Trajectory Vectors ── */}
-        {showTrajectories && CORRIDOR_TRAJECTORIES.map((traj, i) => (
-          <Polyline
-            key={`traj-${i}`}
-            positions={traj.coords}
-            pathOptions={{
-              color: traj.color,
-              weight: 3.5,
-              opacity: 0.85,
-              dashArray: '8 6',
-            }}
-          />
-        ))}
-
-        {/* ── Layer 3: Traffic Density Radii ── */}
+        {/* ── Layer 2: Traffic Density Radii ── */}
         {showTrafficDensity && cameras.map((c) => {
           const isHeavy = c.trafficLevel === 'congested' || c.trafficLevel === 'high';
           return (
@@ -188,7 +190,7 @@ export function MapView({
                         {camera.name}
                       </p>
                       <p className="text-[10px] text-cyan-400 font-data font-bold mt-0.5">
-                        {camera.id} · {camera.zone}
+                        {camera.cameraCode} · {camera.zone}
                       </p>
                     </div>
                     <Badge variant={statusVariant(camera.status)} size="sm" dot pulse={isOnline}>
@@ -206,8 +208,8 @@ export function MapView({
                       <span className="text-cyan-400 font-extrabold text-xs font-data">{camera.vehiclesDetected}</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block text-[9px] font-display uppercase font-bold">STREAM FPS</span>
-                      <span className="text-white font-bold text-xs font-data">{camera.fps} FPS</span>
+                      <span className="text-slate-400 block text-[9px] font-display uppercase font-bold">DETECTIONS</span>
+                      <span className="text-white font-bold text-xs font-data">{camera.detectionCount}</span>
                     </div>
                   </div>
 

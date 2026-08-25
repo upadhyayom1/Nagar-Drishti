@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useQuery } from '@tanstack/react-query';
-import { Car, Gauge, TrendingUp, AlertTriangle, Download, RefreshCw, Calendar } from 'lucide-react';
+import { Car, Gauge, TrendingUp, AlertTriangle, Download, RefreshCw } from 'lucide-react';
 import { StatCard }    from '@/components/ui/StatCard';
 import { GlassCard }   from '@/components/ui/GlassCard';
 import { Badge }       from '@/components/ui/Badge';
@@ -31,10 +31,19 @@ function ChartSkeleton() {
 
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState<'today' | '24h' | '7d' | '30d'>('today');
-  const { data: stats, refetch, isFetching } = useQuery({ queryKey: ['trafficStats'], queryFn: analyticsService.getTrafficStats });
-  const { data: hourlyData = [] }   = useQuery({ queryKey: ['hourlyTraffic'],  queryFn: analyticsService.getHourlyTraffic });
-  const { data: cameraTraffic = [] } = useQuery({ queryKey: ['cameraTraffic'],  queryFn: analyticsService.getCameraTraffic });
-  const { data: busiestRoads = [] }  = useQuery({ queryKey: ['busiestRoads'],  queryFn: analyticsService.getBusiestRoads });
+  const analyticsWindow = useMemo(() => {
+    const to = new Date();
+    const from = new Date(to);
+    if (timeRange === 'today') from.setHours(0, 0, 0, 0);
+    if (timeRange === '24h') from.setHours(from.getHours() - 24);
+    if (timeRange === '7d') from.setDate(from.getDate() - 7);
+    if (timeRange === '30d') from.setDate(from.getDate() - 30);
+    return { from: from.toISOString(), to: to.toISOString() };
+  }, [timeRange]);
+  const { data: stats, refetch, isFetching } = useQuery({ queryKey: ['trafficStats', analyticsWindow], queryFn: () => analyticsService.getTrafficStats(analyticsWindow) });
+  const { data: hourlyData = [] }   = useQuery({ queryKey: ['hourlyTraffic', analyticsWindow],  queryFn: () => analyticsService.getHourlyTraffic(analyticsWindow) });
+  const { data: cameraTraffic = [] } = useQuery({ queryKey: ['cameraTraffic', analyticsWindow],  queryFn: () => analyticsService.getCameraTraffic(analyticsWindow) });
+  const { data: busiestRoads = [] }  = useQuery({ queryKey: ['busiestRoads', analyticsWindow],  queryFn: () => analyticsService.getBusiestRoads(analyticsWindow) });
   const { data: anomalies = [] }    = useQuery({ queryKey: ['anomalies'],     queryFn: analyticsService.getTrafficAnomalies });
 
   const handleExportReport = () => {
@@ -111,10 +120,10 @@ export default function AnalyticsPage() {
 
       {/* Multi-Color KPI Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Volume Today" value={stats?.totalVehiclesToday?.toLocaleString('en-IN') ?? '2,847'} icon={Car} trend={{ value: 8.2, isPositive: true }} colorTheme="violet" />
-        <StatCard label="Network Velocity"   value={stats ? `${stats.avgSpeed} km/h` : '38.5 km/h'} icon={Gauge} trend={{ value: 3.1, isPositive: false }} colorTheme="cyan" />
-        <StatCard label="Congestion Index"  value={stats?.congestionIndex ?? 67} icon={TrendingUp} subtitle="/ 100 max density" colorTheme="amber" />
-        <StatCard label="Incident Anomalies" value={stats?.incidentsToday ?? 3} icon={AlertTriangle} colorTheme="rose" />
+        <StatCard label={`Total Volume (${timeRange})`} value={stats?.totalVehiclesToday?.toLocaleString('en-IN') ?? 0} icon={Car} colorTheme="violet" />
+        <StatCard label="Network Velocity"   value={stats ? `${stats.avgSpeed} km/h` : '—'} icon={Gauge} colorTheme="cyan" />
+        <StatCard label="Congestion Index"  value={stats?.congestionIndex ?? 0} icon={TrendingUp} subtitle="/ 100 max density" colorTheme="amber" />
+        <StatCard label="Incident Anomalies" value={stats?.incidentsToday ?? 0} icon={AlertTriangle} colorTheme="rose" />
       </div>
 
       {/* Charts Row */}
@@ -122,7 +131,7 @@ export default function AnalyticsPage() {
         <GlassCard accent="violet" glow="violet">
           <div className="flex items-center justify-between mb-4">
             <p className="text-xs font-display font-bold uppercase tracking-wider text-slate-300">
-              Hourly Vehicle Volume (24h Diurnal Curve)
+              Hourly Vehicle Distribution
             </p>
             <Badge variant="violet" size="sm">Diurnal Curve</Badge>
           </div>
@@ -134,7 +143,7 @@ export default function AnalyticsPage() {
             <p className="text-xs font-display font-bold uppercase tracking-wider text-slate-300">
               Traffic Density by Camera Station
             </p>
-            <Badge variant="cyan" size="sm">10 Sensor Nodes</Badge>
+            <Badge variant="cyan" size="sm">{cameraTraffic.length} Sensor Nodes</Badge>
           </div>
           <BarChartWrapper data={cameraTraffic} dataKey="vehicleCount" xAxisKey="cameraName" color="#06b6d4" />
         </GlassCard>
@@ -157,7 +166,7 @@ export default function AnalyticsPage() {
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-xs font-bold text-white truncate font-display">{road.name}</span>
                     <span className="text-[11px] font-mono text-slate-400 shrink-0 ml-2 font-semibold">
-                      {road.vehicleCount.toLocaleString()} veh/hr
+                      {road.vehicleCount.toLocaleString()} detections
                     </span>
                   </div>
                   <div className="h-2 bg-slate-800/80 rounded-full overflow-hidden">

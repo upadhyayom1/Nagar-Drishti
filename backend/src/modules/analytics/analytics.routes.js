@@ -9,5 +9,6 @@ router.get('/cameras', analyticsController.getCameras);
 router.get('/busiest-roads', analyticsController.getBusiestRoads);
 router.get('/anomalies', analyticsController.getAnomalies);
 router.get('/network', analyticsController.getNetwork);
+router.get('/system', analyticsController.getSystemHealth);
 
 module.exports = router;

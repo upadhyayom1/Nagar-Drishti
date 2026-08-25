@@ -5,6 +5,7 @@ export type TrafficLevel = 'low' | 'moderate' | 'high' | 'congested';
 
 export interface Camera {
   id: string;
+  cameraCode: string;
   name: string;
   location: string;
   lat: number;
@@ -12,7 +13,8 @@ export interface Camera {
   status: CameraStatus;
   trafficLevel: TrafficLevel;
   vehiclesDetected: number;
-  fps: number;
+  detectionCount: number;
+  fps: number | null;
   lastUpdated: string;
   zone: string;
 }
@@ -105,4 +107,41 @@ export interface CameraTraffic {
   vehicleCount: number;
   avgSpeed: number;
   congestionLevel: TrafficLevel;
+}
+
+export interface BlacklistedVehicle {
+  id: string;
+  plateNumber: string;
+  reason: string;
+  severity: AlertSeverity;
+  status: 'ACTIVE' | 'INACTIVE';
+  createdAt: string;
+}
+
+export interface NetworkCorridor {
+  origin: { id: string; name: string; code: string };
+  destination: { id: string; name: string; code: string };
+  volume: number;
+  averageTravelSeconds: number;
+  averageSpeed: number;
+}
+
+export interface NetworkAnalytics {
+  corridors: NetworkCorridor[];
+  summary: { corridorCount: number; averageTravelSeconds: number; peakVolume: number };
+}
+
+export interface SystemNode {
+  id: string;
+  cameraCode: string;
+  name: string;
+  zone: string;
+  status: 'ONLINE' | 'OFFLINE' | 'MAINTENANCE';
+  responseMs: number | null;
+  lastUpdated: string;
+}
+
+export interface SystemHealth {
+  summary: { total: number; online: number; warning: number; offline: number; activeAlerts: number };
+  nodes: SystemNode[];
 }

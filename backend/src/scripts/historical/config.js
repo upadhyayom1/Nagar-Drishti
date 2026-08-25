@@ -13,7 +13,7 @@ module.exports = {
   // Database volume
   vehicleCount: 2000,
   cameraCount: 52,
-  historicalDays: positiveIntegerFromEnv('HISTORICAL_DAYS', 14),
+  historicalDays: positiveIntegerFromEnv('HISTORICAL_DAYS', 180),
 
   // Temporal range: endDate null means generate up to the current local date.
   endDate: process.env.HISTORICAL_END_DATE || null,

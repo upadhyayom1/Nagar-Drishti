@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Play, Pause, RotateCcw, Activity, Radio } from 'lucide-react';
+import { ArrowLeft, Play, Pause, RotateCcw, Radio } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Button }    from '@/components/ui/Button';
 import { vehicleService } from '@/services/vehicleService';
@@ -40,7 +40,6 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
   const decodedPlate = decodeURIComponent(plate).toUpperCase();
   const [currentWaypointIndex, setCurrentWaypointIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMapReady, setIsMapReady] = useState(false);
 
   const { data: journey } = useQuery({
     queryKey: ['vehicleJourney', decodedPlate],
@@ -48,18 +47,16 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
   });
 
   useEffect(() => {
-    setIsMapReady(true);
-  }, []);
-
-  // Playback Loop
-  useEffect(() => {
-    if (!isPlaying || !journey) return;
-    if (currentWaypointIndex >= journey.waypoints.length - 1) {
-      setIsPlaying(false);
-      return;
-    }
+    if (!isPlaying || !journey || currentWaypointIndex >= journey.waypoints.length - 1) return;
     const timer = setTimeout(() => {
-      setCurrentWaypointIndex((prev) => prev + 1);
+      setCurrentWaypointIndex((previousIndex) => {
+        const nextIndex = previousIndex + 1;
+        if (nextIndex >= journey.waypoints.length - 1) {
+          setIsPlaying(false);
+          return journey.waypoints.length - 1;
+        }
+        return nextIndex;
+      });
     }, 2200);
     return () => clearTimeout(timer);
   }, [isPlaying, currentWaypointIndex, journey]);
@@ -88,8 +85,7 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
     <div className="flex flex-col lg:flex-row h-[calc(100vh-140px)] -m-6 rounded-[1.75rem] overflow-hidden bg-[var(--bg-void)] border border-[rgba(150,190,210,0.12)] font-sans">
       {/* Map Canvas */}
       <div className="flex-1 relative min-h-[350px]">
-        {isMapReady && (
-          <MapContainer
+        <MapContainer
             center={[centerLat, centerLng]}
             zoom={12}
             style={{ height: '100%', width: '100%', minHeight: '350px' }}
@@ -119,7 +115,7 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
             {/* Waypoint nodes */}
             {waypoints.map((wp, i) => (
               <CircleMarker
-                key={wp.cameraId}
+                key={`${wp.cameraId}-${i}`}
                 center={[wp.lat, wp.lng]}
                 radius={i <= currentWaypointIndex ? 8 : 5}
                 pathOptions={{
@@ -154,7 +150,6 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
               }}
             />
           </MapContainer>
-        )}
 
         {/* Back button overlay */}
         <div className="absolute top-4 left-4 z-[1000]">

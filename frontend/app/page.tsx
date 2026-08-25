@@ -3,27 +3,22 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import {
   Shield,
   Zap,
-  Activity,
   ArrowRight,
   Video,
   Car,
-  TrendingUp,
   Cpu,
-  Lock,
-  Globe,
   Radio,
   BarChart3,
   Route,
-  Sparkles,
-  Server,
-  Layers,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge }  from '@/components/ui/Badge';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { analyticsService } from '@/services/analyticsService';
 
 // 3D R3F Background Scene with zero SSR errors
 const HeroScene = dynamic(() => import('@/components/three/HeroScene'), {
@@ -41,10 +36,19 @@ const staggerContainer = {
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" as any } }
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' as const } }
 };
 
 export default function LandingPage() {
+  const { data: stats } = useQuery({ queryKey: ['trafficStats'], queryFn: () => analyticsService.getTrafficStats() });
+  const { data: systemHealth } = useQuery({ queryKey: ['systemHealth'], queryFn: analyticsService.getSystemHealth });
+  const metrics = [
+    { value: stats ? stats.totalVehiclesToday.toLocaleString('en-IN') : '—', label: 'RECORDED VEHICLES', text: 'text-emerald-400' },
+    { value: systemHealth ? String(systemHealth.summary.total) : '—', label: 'CAMERA NODES', text: 'text-cyan-400' },
+    { value: systemHealth ? String(systemHealth.summary.online) : '—', label: 'NODES ONLINE', text: 'text-violet-400' },
+    { value: stats ? String(stats.activeAlerts) : '—', label: 'ACTIVE ALERTS', text: 'text-rose-400' },
+  ];
+
   return (
     <div className="min-h-screen bg-[#050711] text-white relative overflow-hidden font-body select-none">
 
@@ -75,7 +79,7 @@ export default function LandingPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Badge variant="cyan" dot pulse size="sm">Grid Active</Badge>
+            <Badge variant="cyan" dot pulse size="sm">{systemHealth ? `${systemHealth.summary.online}/${systemHealth.summary.total} nodes online` : 'Loading network'}</Badge>
             <Link href="/dashboard">
               <Button variant="primary" size="sm">
                 Command Center <ArrowRight size={13} />
@@ -101,7 +105,7 @@ export default function LandingPage() {
           </h1>
 
           <p className="max-w-2xl mx-auto text-base sm:text-lg text-slate-300 font-body leading-relaxed">
-            Neural ANPR plate recognition, multi-camera spatial trajectory synthesis, and real-time municipal traffic analytics engineered for public safety and smart city operations.
+            Backend-powered ANPR records, multi-camera trajectory reconstruction, and traffic analytics for Prayagraj public-safety operations.
           </p>
 
           {/* Action Buttons */}
@@ -111,9 +115,9 @@ export default function LandingPage() {
                 Explore Command Center <ArrowRight size={17} />
               </Button>
             </Link>
-            <Link href="/vehicles/TN38AB1234">
+            <Link href="/vehicles">
               <Button variant="secondary" size="lg" className="w-full sm:w-auto px-8">
-                <Car size={17} /> Track Target <span className="font-mono ml-1 text-cyan-300">TN38AB1234</span>
+                <Car size={17} /> Search Vehicles
               </Button>
             </Link>
           </div>
@@ -125,16 +129,11 @@ export default function LandingPage() {
             animate="show"
             className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-10 max-w-4xl mx-auto"
           >
-            {[
-              { val: '99.4%', label: 'OCR RECOGNITION', text: 'text-emerald-400' },
-              { val: '<140ms', label: 'EDGE INFERENCE', text: 'text-cyan-400' },
-              { val: '10+', label: 'OPTICAL NODES', text: 'text-violet-400' },
-              { val: '24/7', label: 'ANOMALY SENTINEL', text: 'text-rose-400' },
-            ].map((m, i) => (
+            {metrics.map((metric, i) => (
               <motion.div variants={fadeUp} key={i}>
                 <GlassCard padding="sm" className="p-4 text-center">
-                  <div className={`text-2xl font-extrabold font-data ${m.text}`}>{m.val}</div>
-                  <div className="text-[10px] font-display text-slate-400 mt-1 tracking-widest uppercase font-bold">{m.label}</div>
+                  <div className={`text-2xl font-extrabold font-data ${metric.text}`}>{metric.value}</div>
+                  <div className="text-[10px] font-display text-slate-400 mt-1 tracking-widest uppercase font-bold">{metric.label}</div>
                 </GlassCard>
               </motion.div>
             ))}
@@ -162,13 +161,13 @@ export default function LandingPage() {
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
         >
           {[
-            { step: '01', title: 'Detect', icon: Video, desc: 'YOLO edge inference classifies vehicle types, colors, and bounding coordinates in real-time at 30 FPS.', glow: 'emerald', iconColor: 'text-emerald-400', iconBg: 'bg-emerald-500/15 border-emerald-500/30' },
-            { step: '02', title: 'Recognize', icon: Cpu, desc: 'Neural ANPR OCR reads and validates license plates under low-light and adverse weather conditions.', glow: 'cyan', iconColor: 'text-cyan-400', iconBg: 'bg-cyan-500/15 border-cyan-500/30' },
-            { step: '03', title: 'Connect', icon: Route, desc: 'Correlates timestamps and GPS metadata across adjacent intersection nodes to construct complete trajectory journeys.', glow: 'violet', iconColor: 'text-violet-400', iconBg: 'bg-violet-500/15 border-violet-500/30' },
-            { step: '04', title: 'Sentinel', icon: Shield, desc: 'Automated heuristics flag blacklisted targets, route anomalies, and traffic surges instantly.', glow: 'crimson', iconColor: 'text-rose-400', iconBg: 'bg-rose-500/15 border-rose-500/30' },
+            { step: '01', title: 'Detect', icon: Video, desc: 'The ingestion pipeline records vehicle attributes and camera coordinates from incoming detection events.', glow: 'emerald' as const, iconColor: 'text-emerald-400', iconBg: 'bg-emerald-500/15 border-emerald-500/30' },
+            { step: '02', title: 'Recognize', icon: Cpu, desc: 'ANPR processing reads and normalizes vehicle plates from detection events for backend search.', glow: 'cyan' as const, iconColor: 'text-cyan-400', iconBg: 'bg-cyan-500/15 border-cyan-500/30' },
+            { step: '03', title: 'Connect', icon: Route, desc: 'Timestamp and GPS metadata across camera nodes reconstruct recorded vehicle journeys.', glow: 'violet' as const, iconColor: 'text-violet-400', iconBg: 'bg-violet-500/15 border-violet-500/30' },
+            { step: '04', title: 'Sentinel', icon: Shield, desc: 'Backend rules create alerts for blacklisted vehicles, route anomalies, and traffic surges.', glow: 'crimson' as const, iconColor: 'text-rose-400', iconBg: 'bg-rose-500/15 border-rose-500/30' },
           ].map((card, i) => (
             <motion.div variants={fadeUp} key={i} className="h-full">
-              <GlassCard hover glow={card.glow as any} className="flex flex-col justify-between p-7 h-full">
+              <GlassCard hover glow={card.glow} className="flex flex-col justify-between p-7 h-full">
                 <div>
                   <div className="flex items-center justify-between mb-5">
                     <div className={`p-3.5 rounded-2xl ${card.iconBg} ${card.iconColor} border shadow-lg`}>
@@ -255,9 +254,9 @@ export default function LandingPage() {
           <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="flex items-center justify-center gap-2.5 flex-wrap">
-            <Badge variant="cyan" dot pulse size="sm">Live Node Network</Badge>
-            <Badge variant="spectral" size="sm">Sub-140ms Latency</Badge>
-            <Badge variant="default" size="sm">Sector Chennai Central</Badge>
+            <Badge variant="cyan" dot pulse size="sm">Backend data source</Badge>
+            <Badge variant="spectral" size="sm">Prayagraj network</Badge>
+            <Badge variant="default" size="sm">ANPR intelligence</Badge>
           </div>
 
           <div className="space-y-4 max-w-3xl mx-auto">
@@ -306,7 +305,7 @@ export default function LandingPage() {
                 </span>
               </div>
               <p className="text-xs text-slate-400 font-body leading-relaxed">
-                Autonomous vehicle intelligence and smart municipal traffic telemetry operating system engineered for Chennai's smart roads.
+                Autonomous vehicle intelligence and municipal traffic telemetry for Prayagraj&apos;s road network.
               </p>
               <div className="pt-1">
                 <Badge variant="emerald" dot pulse size="sm">Grid Operational</Badge>
@@ -335,7 +334,7 @@ export default function LandingPage() {
               <ul className="space-y-2 text-xs font-body text-slate-400">
                 <li><Link href="/alerts" className="hover:text-rose-400 transition-colors">Sentinel Threat Alerts</Link></li>
                 <li><Link href="/system" className="hover:text-amber-400 transition-colors">System Diagnostics</Link></li>
-                <li><Link href="/vehicles/TN38AB1234/trajectory" className="hover:text-cyan-300 transition-colors">Trajectory Playback</Link></li>
+                <li><Link href="/vehicles" className="hover:text-cyan-300 transition-colors">Trajectory Playback</Link></li>
                 <li><span className="text-slate-600">ANPR Neural Engine v2.4</span></li>
                 <li><span className="text-slate-600">Edge Stream Ingestion</span></li>
               </ul>
@@ -348,16 +347,16 @@ export default function LandingPage() {
               </p>
               <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2 text-[11px] font-mono text-slate-400">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">SECTOR:</span>
-                  <span className="text-cyan-300 font-bold">Chennai Central</span>
+                  <span className="text-slate-500">CITY:</span>
+                  <span className="text-cyan-300 font-bold">Prayagraj</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">OPERATOR:</span>
-                  <span className="text-white">Rahul Krishnan</span>
+                  <span className="text-slate-500">NODES:</span>
+                  <span className="text-white">{systemHealth ? `${systemHealth.summary.online}/${systemHealth.summary.total} online` : 'Loading'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">TELEMETRY:</span>
-                  <span className="text-emerald-400 font-bold">30 FPS Live</span>
+                  <span className="text-slate-500">ALERTS:</span>
+                  <span className="text-emerald-400 font-bold">{stats?.activeAlerts ?? '—'} active</span>
                 </div>
               </div>
             </div>
@@ -368,7 +367,7 @@ export default function LandingPage() {
           <div className="pt-8 border-t border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-body text-slate-500">
             <p>© {new Date().getFullYear()} UrbanPulse AI. Authorized smart city operations platform.</p>
             <p className="flex items-center gap-1.5 text-slate-400">
-              Built by <span className="text-cyan-300 font-semibold">Team Antigravity</span> for Smart City Chennai
+              Built for Prayagraj smart-city operations
             </p>
           </div>
 
