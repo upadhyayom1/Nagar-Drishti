@@ -1,0 +1,15 @@
+# Python Bytecode & Environments
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+
+# Data Outputs (Ignore generated CSV/JSON caches if large)
+*.log
+.DS_Store
+
+# IDE Settings
+.vscode/
+.idea/
