@@ -16,15 +16,30 @@ function parseTrafficWindow({ from, to } = {}) {
 function getTrafficLevel({ detectionCount, vehicleCount, durationMinutes }) {
   const hourlyVehicleRate = (vehicleCount * 60) / durationMinutes;
   const hourlyDetectionRate = (detectionCount * 60) / durationMinutes;
-  if (hourlyVehicleRate >= 120 || hourlyDetectionRate >= 240) return 'congested';
-  if (hourlyVehicleRate >= 60 || hourlyDetectionRate >= 120) return 'high';
-  if (hourlyVehicleRate >= 20 || hourlyDetectionRate >= 40) return 'moderate';
+  
+  // Adjusted for realistic city traffic volumes
+  if (hourlyVehicleRate >= 1200 || hourlyDetectionRate >= 2400) return 'congested';
+  if (hourlyVehicleRate >= 600 || hourlyDetectionRate >= 1200) return 'high';
+  if (hourlyVehicleRate >= 200 || hourlyDetectionRate >= 400) return 'moderate';
   return 'low';
 }
 
 async function getTrafficSnapshot(windowInput = {}, cameraId) {
-  const window = parseTrafficWindow(windowInput);
+  let { from, to } = windowInput;
+
+  // If 'to' is not provided, use the timestamp of the latest detection in the database
+  // This ensures the dashboard always shows the "current time" of the simulation
+  if (!to) {
+    const latest = await prisma.detection.findFirst({
+      orderBy: { timestamp: 'desc' },
+      select: { timestamp: true }
+    });
+    to = latest ? latest.timestamp : new Date();
+  }
+
+  const window = parseTrafficWindow({ from, to });
   const where = { timestamp: { gte: window.from, lte: window.to }, ...(cameraId ? { cameraId } : {}) };
+  
   const [cameras, counts, uniqueVehiclePairs] = await Promise.all([
     prisma.camera.findMany({
       where: cameraId ? { id: cameraId } : undefined,
@@ -34,6 +49,7 @@ async function getTrafficSnapshot(windowInput = {}, cameraId) {
     prisma.detection.groupBy({ by: ['cameraId'], where, _count: { _all: true } }),
     prisma.detection.findMany({ where, distinct: ['cameraId', 'vehicleId'], select: { cameraId: true, vehicleId: true } }),
   ]);
+  
   const countByCamera = new Map(counts.map((item) => [item.cameraId, item._count._all]));
   const uniqueByCamera = new Map();
   uniqueVehiclePairs.forEach(({ cameraId: id }) => uniqueByCamera.set(id, (uniqueByCamera.get(id) || 0) + 1));

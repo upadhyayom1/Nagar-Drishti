@@ -58,16 +58,19 @@ export default function DashboardPage() {
   const { data: cameras = [] } = useQuery({
     queryKey: ['cameras'],
     queryFn: cameraService.getCameras,
+    refetchInterval: 5_000,
   });
 
   const { data: stats } = useQuery({
     queryKey: ['trafficStats'],
     queryFn: () => analyticsService.getTrafficStats(),
+    refetchInterval: 5_000,
   });
 
   const { data: alerts = [] } = useQuery({
     queryKey: ['recentAlerts'],
     queryFn: () => alertService.getRecentAlerts(5),
+    refetchInterval: 5_000,
   });
 
   const {
@@ -129,7 +132,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Real-Time Sentinel Feed Column */}
-        <GlassCard padding="sm" glow="spectral" accent="spectral" className="lg:col-span-1 flex flex-col h-[575px]">
+        <GlassCard padding="sm" glow="spectral" accent="spectral" className="lg:col-span-1 flex flex-col h-[520px]">
           <div className="flex items-center justify-between mb-3.5 pb-3 border-b border-white/10">
             <h3 className="text-xs font-display font-bold text-white uppercase tracking-wider flex items-center gap-2">
               <Radio size={14} className="text-pink-400 animate-pulse" />

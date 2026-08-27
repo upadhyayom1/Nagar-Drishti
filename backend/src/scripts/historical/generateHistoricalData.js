@@ -34,12 +34,12 @@ async function main() {
       }))
     });
   }
-  
+
   // We need to keep the profile around for generation
   const dbVehiclesMap = await prisma.vehicle.findMany().then(vs => {
-     const map = new Map();
-     for (const v of vs) map.set(v.plateNumber, v);
-     return map;
+    const map = new Map();
+    for (const v of vs) map.set(v.plateNumber, v);
+    return map;
   });
 
   const vehiclesWithProfile = vehiclesData
@@ -52,7 +52,7 @@ async function main() {
       };
     })
     .filter(Boolean);
-  
+
   if (vehiclesWithProfile.length === 0) {
     throw new Error('Failed to map any generated vehicles to database records.');
   }
@@ -99,13 +99,13 @@ async function main() {
 
   // 5. Generate Trips & Detections over days
   console.log(`Simulating ${config.historicalDays} days of traffic...`);
-  
+
   let totalDetections = 0;
   let totalTransitions = 0;
   let batch = [];
   let transitionBatch = [];
   const BATCH_SIZE = 5000;
-  
+
   const endDate = config.endDate ? new Date(config.endDate) : new Date();
   if (Number.isNaN(endDate.getTime())) throw new Error('config.endDate must be a valid ISO date or null');
   const startDate = new Date(endDate);
@@ -121,7 +121,7 @@ async function main() {
     for (const vehicle of vehiclesWithProfile) {
       if (random() > config.dailyActiveVehicleRate) continue;
       const trips = getDailyTrips(vehicle.profile, dayOfWeek);
-      
+
       let lastNode = null;
 
       for (const trip of trips) {
@@ -178,7 +178,7 @@ async function main() {
             averageSpeed: (distanceMeters / travelTimeSeconds) * 3.6,
           });
         }
-        
+
         for (const det of detections) {
           batch.push(det);
           if (batch.length >= BATCH_SIZE) {

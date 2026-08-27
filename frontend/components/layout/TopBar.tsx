@@ -2,11 +2,13 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Bell } from 'lucide-react';
+import { Bell, LogOut } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { useUIStore } from '@/store/uiStore';
 import { alertService } from '@/services/alertService';
 import { analyticsService } from '@/services/analyticsService';
+import { authService } from '@/services/authService';
+import { useAuthStore } from '@/store/authStore';
 
 const pageTitles: Record<string, string> = {
   '/dashboard': 'Command Center',
@@ -29,12 +31,24 @@ export function TopBar() {
   const pathname = usePathname();
   const router   = useRouter();
   const { searchQuery, setSearchQuery, notificationsOpen, setNotificationsOpen } = useUIStore();
+  const { logout } = useAuthStore();
   const { data: alertCount = 0 } = useQuery({ queryKey: ['activeAlertCount'], queryFn: alertService.getActiveAlertCount });
   const { data: systemHealth } = useQuery({ queryKey: ['systemHealth'], queryFn: analyticsService.getSystemHealth });
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && searchQuery.trim()) {
       router.push(`/vehicles?search=${encodeURIComponent(searchQuery.trim().toUpperCase())}`);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      logout();
+      router.push('/login');
     }
   };
 
@@ -79,6 +93,15 @@ export function TopBar() {
           <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white text-[9px] font-mono font-extrabold flex items-center justify-center shadow-[0_0_14px_rgba(244,63,94,0.9)] animate-pulse">
             {alertCount}
           </span>
+        </button>
+        
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          className="relative p-2.5 rounded-xl bg-rose-500/10 text-rose-400 hover:text-rose-300 hover:bg-rose-500/20 border border-rose-500/20 transition-all duration-200 outline-none shadow-sm hover:scale-105"
+          aria-label="Logout"
+        >
+          <LogOut size={18} />
         </button>
       </div>
     </div>

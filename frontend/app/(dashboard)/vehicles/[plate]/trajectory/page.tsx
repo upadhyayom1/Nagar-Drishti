@@ -248,7 +248,7 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
           <div className="space-y-2">
             {waypoints.map((wp: Waypoint, i: number) => (
               <button
-                key={wp.cameraId}
+                key={`${wp.cameraId}-${i}`}
                 onClick={() => { setCurrentWaypointIndex(i); setIsPlaying(false); }}
                 className={cn(
                   'w-full text-left p-3.5 rounded-2xl border transition-all',
