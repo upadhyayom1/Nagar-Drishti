@@ -88,4 +88,90 @@ async function evaluateCongestionAlert(cameraId, timestamp = new Date()) {
   return prisma.alert.create({ data: { type: 'CONGESTION', severity, cameraId, message } });
 }
 
-module.exports = { parseTrafficWindow, getTrafficLevel, getTrafficSnapshot, evaluateCongestionAlert };
+const simulationEngine = require('../simulation/engine');
+
+const calculateCongestionLevel = (vehicleCount, averageSpeed) => {
+  if (vehicleCount === 0) return 'LOW';
+  
+  if (vehicleCount > 10 && averageSpeed < 15) return 'SEVERE';
+  if (vehicleCount > 5 && averageSpeed < 30) return 'HIGH';
+  if (vehicleCount > 2 && averageSpeed < 45) return 'MEDIUM';
+  return 'LOW';
+};
+
+const getRoadTrafficData = async () => {
+  const state = simulationEngine.getState();
+  const vehicles = state.vehicles || [];
+  
+  const roadStats = {};
+  
+  for (const v of vehicles) {
+    if (!v.roadId) continue;
+    
+    if (!roadStats[v.roadId]) {
+      roadStats[v.roadId] = { count: 0, totalSpeed: 0 };
+    }
+    
+    roadStats[v.roadId].count++;
+    roadStats[v.roadId].totalSpeed += v.speed || 0;
+  }
+  
+  const trafficByRoad = [];
+  
+  for (const roadId of Object.keys(roadStats)) {
+    const stats = roadStats[roadId];
+    const avgSpeed = stats.count > 0 ? stats.totalSpeed / stats.count : 0;
+    
+    trafficByRoad.push({
+      roadId,
+      vehicleCount: stats.count,
+      averageSpeed: Math.round(avgSpeed),
+      congestionLevel: calculateCongestionLevel(stats.count, avgSpeed),
+      timestamp: state.simulationTime || new Date(),
+    });
+  }
+  
+  return trafficByRoad;
+};
+
+const getRoadTraffic = async (roadId) => {
+  const traffic = await getRoadTrafficData();
+  return traffic.find(t => t.roadId === roadId) || {
+    roadId,
+    vehicleCount: 0,
+    averageSpeed: 0,
+    congestionLevel: 'LOW',
+    timestamp: new Date(),
+  };
+};
+
+const getTrafficSummary = async () => {
+  const traffic = await getRoadTrafficData();
+  
+  const summary = {
+    totalRoads: traffic.length,
+    lowCongestion: 0,
+    mediumCongestion: 0,
+    highCongestion: 0,
+    severeCongestion: 0,
+  };
+  
+  for (const t of traffic) {
+    if (t.congestionLevel === 'LOW') summary.lowCongestion++;
+    else if (t.congestionLevel === 'MEDIUM') summary.mediumCongestion++;
+    else if (t.congestionLevel === 'HIGH') summary.highCongestion++;
+    else if (t.congestionLevel === 'SEVERE') summary.severeCongestion++;
+  }
+  
+  return summary;
+};
+
+module.exports = { 
+  parseTrafficWindow, 
+  getTrafficLevel, 
+  getTrafficSnapshot, 
+  evaluateCongestionAlert,
+  getRoadTrafficData,
+  getRoadTraffic,
+  getTrafficSummary,
+};
