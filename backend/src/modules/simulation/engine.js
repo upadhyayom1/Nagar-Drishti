@@ -505,4 +505,5 @@ class SimulationEngine {
 }
 
 const engine = new SimulationEngine();
+global.simulationEngine = engine;
 module.exports = engine;
