@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 id,roadCode,name,speedLimit,geometry,createdAt,updatedAt
 "cmt91fl4l0009igir7hrw8p17","PRY-RD-MG","Mahatma Gandhi Marg",40,"{""type"":""LineString"",""coordinates"":[[81.8321,25.4509],[81.8407,25.4501],[81.8468,25.4516],[81.8534,25.4542],[81.8565,25.4655]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
 "cmt91fl4m000aigiry0g2mnn4","PRY-RD-STATION","Civil Lines Station Approach",30,"{""type"":""LineString"",""coordinates"":[[81.8468,25.4516],[81.8382,25.4468],[81.8265,25.443],[81.8299,25.4376]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
@@ -18,3 +19,25 @@ id,roadCode,name,speedLimit,geometry,createdAt,updatedAt
 "cmt91fl4m000pigirwp6ea57f","PRY-RD-OLD_YAMUNA","Old Yamuna Bridge",40,"{""type"":""LineString"",""coordinates"":[[81.835,25.43],[81.85,25.423],[81.855,25.41],[81.86,25.39]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
 "cmt91fl4m000qigirk3gdsmpv","PRY-RD-ALLENKGANJ","Allen Ganj & Govindpur",30,"{""type"":""LineString"",""coordinates"":[[81.8565,25.4655],[81.86,25.468],[81.87,25.48],[81.8654,25.4874]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
 "cmt91fl4m000rigirmhz964in","PRY-RD-HIGHWAY_SOUTH","Rewa Highway",70,"{""type"":""LineString"",""coordinates"":[[81.84,25.365],[81.82,25.35]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
+=======
+id,roadCode,name,speedLimit
+cmtb9ww1y00099wiruzret5fa,PRY-RD-MG,Mahatma Gandhi Marg,40
+cmtb9ww1y000a9wire4uqokm2,PRY-RD-STATION,Civil Lines Station Approach,30
+cmtb9ww1y000b9wirokpek47r,PRY-RD-KATRA,Katra Road and University Corridor,30
+cmtb9ww1y000c9wirbbdw3ntr,PRY-RD-NORTH,Katra–Teliarganj–Phaphamau Corridor,50
+cmtb9ww1y000d9wirw66w0fsh,PRY-RD-DARAGANJ,Allapur–Bairhana–Daraganj Road,30
+cmtb9ww1y000e9wiruoebc9qp,PRY-RD-SANGAM,Sangam and Parade Approach,20
+cmtb9ww1y000f9wirh4a0f6u8,PRY-RD-MINTO,Minto Road and Bridge Approach,30
+cmtb9ww1y000g9wir7ep5oluu,PRY-RD-YAMUNA,New Yamuna Bridge,50
+cmtb9ww1y000h9wirtxj4y2i9,PRY-RD-MIRZAPUR,"Mirzapur Road, Naini",40
+cmtb9ww1y000i9wirifxfv1im,PRY-RD-SHASTRI,Shastri Bridge,40
+cmtb9ww1y000j9wiro7p3mnhk,PRY-RD-JHUNSI,Jhunsi Road,40
+cmtb9ww1y000k9wirgl55m6at,PRY-RD-MELA,Sangam–New Yamuna Link,20
+cmtb9ww1y000l9wir5p6rprg3,PRY-RD-AIRPORT,Bamrauli Airport Road,60
+cmtb9ww1y000m9wir7e7lvykz,PRY-RD-JHALWA,Jhalwa IT Corridor,40
+cmtb9ww1y000n9wirkkxygdwl,PRY-RD-OLD_CITY,Chowk - Meerapur Road,30
+cmtb9ww1y000o9wirtdjmz6cr,PRY-RD-INDUSTRIAL,Naini Industrial Highway,50
+cmtb9ww1y000p9wirlqdj2a6r,PRY-RD-OLD_YAMUNA,Old Yamuna Bridge,40
+cmtb9ww1y000q9wirupe5nlp9,PRY-RD-ALLENKGANJ,Allen Ganj & Govindpur,30
+cmtb9ww1y000r9wironj9crqs,PRY-RD-HIGHWAY_SOUTH,Rewa Highway,70
+>>>>>>> origin/main

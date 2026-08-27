@@ -1,85 +1,294 @@
+import sys
 import os
 import pandas as pd
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse
-from analytics.movement_analyzer import analyze_ocr_movement
 
-app = FastAPI(title="Nagar-Drishti Movement Analysis")
+# Add the current directory to Python's path
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, BASE_DIR)
 
-DATA_DIR = "data"
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
+
+from analytics.movement_analyzer import (
+    VehicleMovementAnalyzer,
+    analyze_ocr_movement
+)
+
+
+# ============================================================
+# FastAPI Application
+# ============================================================
+
+app = FastAPI(
+    title="Nagar-Drishti Vehicle Movement Analysis API",
+    description=(
+        "FastAPI service for urban vehicle trajectory tracking, "
+        "traffic analysis, speed violation detection, and OCR "
+        "vehicle movement analysis."
+    ),
+    version="1.0.0"
+)
+
+
+# ============================================================
+# CORS Configuration
+# ============================================================
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# ============================================================
+# Data Configuration
+# ============================================================
+
+DATA_DIR = os.path.join(BASE_DIR, "data")
+
+DETECTIONS_PATH = os.path.join(DATA_DIR, "detections.csv")
+CAMERAS_PATH = os.path.join(DATA_DIR, "cameras.csv")
+ROADS_PATH = os.path.join(DATA_DIR, "roads.csv")
+ZONES_PATH = os.path.join(DATA_DIR, "zones.csv")
+
+
+# ============================================================
+# Initialize Vehicle Movement Analyzer
+# ============================================================
+
+try:
+    analyzer = VehicleMovementAnalyzer(
+        detections_path=DETECTIONS_PATH,
+        cameras_path=CAMERAS_PATH,
+        roads_path=ROADS_PATH,
+        zones_path=ZONES_PATH
+    )
+except Exception as e:
+    analyzer = None
+    print(f"WARNING: Failed to initialize VehicleMovementAnalyzer: {e}")
+
+
+# ============================================================
+# Prepare OCR Movement Analysis Data
+# ============================================================
+
 MERGED_DATA = None
+
 
 @app.on_event("startup")
 def load_and_prepare_csv_data():
-    global MERGED_DATA
-    
-    roads_path = os.path.join(DATA_DIR, "roads.csv")
-    zones_path = os.path.join(DATA_DIR, "zones.csv")
-    cameras_path = os.path.join(DATA_DIR, "cameras.csv")
-    detections_path = os.path.join(DATA_DIR, "detections.csv")
-
-    roads = pd.read_csv(roads_path)
-    zones = pd.read_csv(zones_path)
-    cameras = pd.read_csv(cameras_path)
-    detections = pd.read_csv(detections_path)
-
-    # 1. Map camera code (e.g. C001 -> PRY-CAM-001)
-    detections['mapped_code'] = detections['cameraCode'].apply(lambda c: f"PRY-CAM-{int(c[1:]):03d}")
-
-    # 2. Merge specifying suffixes to preserve original column names
-    merged = detections.merge(cameras, left_on='mapped_code', right_on='cameraCode', how='left', suffixes=('', '_cam'))
-    merged = merged.merge(roads, left_on='roadId', right_on='id', how='left', suffixes=('', '_road'))
-    merged = merged.merge(zones, left_on='zoneId', right_on='id', how='left', suffixes=('', '_zone'))
-
-    MERGED_DATA = merged
-
-@app.get("/", response_class=HTMLResponse)
-def index():
-    return """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Nagar-Drishti OCR Movement Analysis</title>
-        <style>
-            body { font-family: Arial, sans-serif; background: #0f172a; color: #f8fafc; margin: 40px; }
-            h1 { color: #38bdf8; }
-            .card { background: #1e293b; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-            input, button { padding: 10px; border-radius: 4px; border: none; font-size: 16px; }
-            button { background: #0284c7; color: white; cursor: pointer; }
-            pre { background: #020617; padding: 15px; border-radius: 6px; overflow-x: auto; color: #4ade80; }
-        </style>
-    </head>
-    <body>
-        <h1>ANPR Vehicle Movement Analysis (Real CSV Stream)</h1>
-        <div class="card">
-            <input type="text" id="queryInput" placeholder="Enter Vehicle ID or Plate (e.g. DL08LG1722)">
-            <button onclick="analyze()">Analyze OCR Data</button>
-        </div>
-        <div class="card">
-            <h3>Pipeline Output</h3>
-            <pre id="output">Enter a Plate/Vehicle ID to query...</pre>
-        </div>
-
-        <script>
-            async function analyze() {
-                const query = document.getElementById('queryInput').value.trim();
-                if(!query) return;
-                const res = await fetch('/api/analyze/' + query);
-                const data = await res.json();
-                document.getElementById('output').textContent = JSON.stringify(data, null, 2);
-            }
-        </script>
-    </body>
-    </html>
     """
+    Load and merge CSV data required by the OCR movement analysis
+    pipeline.
+    """
+
+    global MERGED_DATA
+
+    try:
+        roads = pd.read_csv(ROADS_PATH)
+        zones = pd.read_csv(ZONES_PATH)
+        cameras = pd.read_csv(CAMERAS_PATH)
+        detections = pd.read_csv(DETECTIONS_PATH)
+
+        # Map detection camera code:
+        # C001 -> PRY-CAM-001
+        detections["mapped_code"] = detections["cameraCode"].apply(
+            lambda c: f"PRY-CAM-{int(c[1:]):03d}"
+        )
+
+        # Merge detections with cameras
+        merged = detections.merge(
+            cameras,
+            left_on="mapped_code",
+            right_on="cameraCode",
+            how="left",
+            suffixes=("", "_cam")
+        )
+
+        # Merge roads
+        merged = merged.merge(
+            roads,
+            left_on="roadId",
+            right_on="id",
+            how="left",
+            suffixes=("", "_road")
+        )
+
+        # Merge zones
+        merged = merged.merge(
+            zones,
+            left_on="zoneId",
+            right_on="id",
+            how="left",
+            suffixes=("", "_zone")
+        )
+
+        MERGED_DATA = merged
+
+        print(
+            f"OCR movement data initialized successfully: "
+            f"{len(MERGED_DATA)} detections loaded."
+        )
+
+    except Exception as e:
+        MERGED_DATA = None
+        print(f"WARNING: Failed to load OCR movement data: {e}")
+
+
+# ============================================================
+# Root Endpoint
+# ============================================================
+
+@app.get("/")
+def read_root():
+    return {
+        "message": "Welcome to the Nagar-Drishti Vehicle Movement Analysis Engine API",
+        "status": "running"
+    }
+
+
+# ============================================================
+# Health Check
+# ============================================================
+
+@app.get("/health")
+def health_check():
+    return {
+        "status": "healthy" if analyzer is not None else "degraded",
+        "analyzer_initialized": analyzer is not None,
+        "ocr_data_initialized": MERGED_DATA is not None
+    }
+
+
+# ============================================================
+# Traffic Summary
+# ============================================================
+
+@app.get("/api/summary")
+def get_summary():
+
+    if analyzer is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Vehicle movement analyzer is not initialized."
+        )
+
+    try:
+        return analyzer.get_traffic_summary()
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate traffic summary: {str(e)}"
+        )
+
+
+# ============================================================
+# Vehicle Trajectory
+# ============================================================
+
+@app.get("/api/vehicle/{vehicle_id}/trajectory")
+def get_vehicle_trajectory(vehicle_id: str):
+
+    if analyzer is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Vehicle movement analyzer is not initialized."
+        )
+
+    try:
+        trajectory_data = analyzer.get_vehicle_trajectory(vehicle_id)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to retrieve vehicle trajectory: {str(e)}"
+        )
+
+    if not trajectory_data:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Vehicle ID '{vehicle_id}' not found."
+        )
+
+    return trajectory_data
+
+
+# ============================================================
+# Speed Violations
+# ============================================================
+
+@app.get("/api/violations")
+def get_speed_violations(
+    speed_limit: float = Query(
+        50.0,
+        description="Speed threshold limit in km/h"
+    )
+):
+
+    if analyzer is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Vehicle movement analyzer is not initialized."
+        )
+
+    if speed_limit <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Speed limit must be greater than 0."
+        )
+
+    try:
+        violations = analyzer.detect_speed_violations(
+            speed_limit_default=speed_limit
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to detect speed violations: {str(e)}"
+        )
+
+    return {
+        "speed_limit_threshold": speed_limit,
+        "total_violations": len(violations),
+        "violations": violations
+    }
+
+
+# ============================================================
+# OCR Vehicle Movement Analysis
+# ============================================================
 
 @app.get("/api/analyze/{identifier}")
 def analyze_vehicle(identifier: str):
-    if MERGED_DATA is None:
-        raise HTTPException(status_code=500, detail="Data pipeline not initialized.")
 
-    result = analyze_ocr_movement(MERGED_DATA, identifier, dwell_threshold_mins=8.0)
+    if MERGED_DATA is None:
+        raise HTTPException(
+            status_code=500,
+            detail="OCR movement data pipeline is not initialized."
+        )
+
+    try:
+        result = analyze_ocr_movement(
+            MERGED_DATA,
+            identifier,
+            dwell_threshold_mins=8.0
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to analyze vehicle movement: {str(e)}"
+        )
+
     if not result:
-        raise HTTPException(status_code=404, detail=f"Vehicle '{identifier}' not found in detections.")
-    
+        raise HTTPException(
+            status_code=404,
+            detail=f"Vehicle '{identifier}' not found in detections."
+        )
+
     return result

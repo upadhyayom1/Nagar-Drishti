@@ -1,1 +1,4 @@
 docs
+# Python virtual environment
+ml/venv/
+ml/vehicle_movement_analysis/data
