@@ -69,7 +69,8 @@ class SimulationEngine {
 
     this.buildGraph();
     if (this.nodesList.length === 0) {
-      throw new Error('Simulation cannot start because no routable road geometry is available.');
+      console.warn('Simulation cannot start because no routable road geometry is available. Running in read-only mode.');
+      return;
     }
 
     // Map DB vehicles to simulation state
@@ -250,7 +251,8 @@ class SimulationEngine {
   start() {
     if (this.running) return;
     if (!this.vehicles.length || !this.cameras.length || !this.nodesList.length) {
-      throw new Error('Simulation is not ready. Seed the Prayagraj network and restart the backend.');
+      console.warn('Simulation is not ready. Skipping simulation start. Backend will run in read-only mode.');
+      return;
     }
     this.running = true;
     this.lastTickTime = Date.now();

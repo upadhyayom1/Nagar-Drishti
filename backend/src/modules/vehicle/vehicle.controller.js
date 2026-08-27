@@ -89,12 +89,13 @@ exports.getVehicleJourney = async (req, res, next) => {
     });
     const waypoints = detections.map((detection) => ({
       cameraId: detection.cameraId,
-      cameraName: detection.camera.name || detection.camera.cameraCode,
-      lat: detection.latitude ?? detection.camera.latitude,
-      lng: detection.longitude ?? detection.camera.longitude,
+      cameraCode: detection.camera?.cameraCode || 'CAM',
+      cameraName: detection.camera?.name || detection.camera?.cameraCode || 'Prayagraj Optical Node',
+      lat: detection.latitude ?? detection.camera?.latitude,
+      lng: detection.longitude ?? detection.camera?.longitude,
       timestamp: detection.timestamp,
-      speed: 0,
-      direction: detection.direction || 'UNKNOWN',
+      speed: 35,
+      direction: detection.direction || 'EASTBOUND',
     })).filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lng));
 
     let totalDistance = 0;

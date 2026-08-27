@@ -47,7 +47,7 @@ export default function CameraDetailPage({ params }: { params: Promise<{ id: str
           <p className="text-xs font-mono text-slate-400 mt-1">{camera.location} · Sector Zone: {camera.zone}</p>
         </div>
         <span className="text-xs font-mono text-cyan-400 font-bold bg-cyan-500/10 px-3.5 py-1.5 rounded-xl border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
-          NODE: {camera.id}
+          NODE: {camera.cameraCode || camera.name}
         </span>
       </div>
 

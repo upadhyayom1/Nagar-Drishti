@@ -120,9 +120,11 @@ exports.getNetwork = async (req, res) => {
       if (Number.isFinite(transition.averageSpeed)) item.speeds.push(transition.averageSpeed);
       groups.set(key, item);
     });
-    const corridors = [...groups.values()].map((item) => ({
-      origin: { id: item.origin.id, name: item.origin.name, code: item.origin.cameraCode },
-      destination: { id: item.destination.id, name: item.destination.name, code: item.destination.cameraCode },
+    const corridors = [...groups.values()]
+      .filter((item) => item.origin && item.destination)
+      .map((item) => ({
+      origin: { id: item.origin.id, name: item.origin.name || 'Unknown', code: item.origin.cameraCode || 'UNKNOWN' },
+      destination: { id: item.destination.id, name: item.destination.name || 'Unknown', code: item.destination.cameraCode || 'UNKNOWN' },
       volume: item.volume,
       averageTravelSeconds: item.travelTimes.length ? Math.round(item.travelTimes.reduce((a, b) => a + b, 0) / item.travelTimes.length) : 0,
       averageSpeed: item.speeds.length ? Math.round(item.speeds.reduce((a, b) => a + b, 0) / item.speeds.length) : 0,
