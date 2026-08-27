@@ -1,10 +1,20 @@
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware # <--- Import this
+from fastapi.responses import HTMLResponse
 import os
 import pandas as pd
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse
 from analytics.movement_analyzer import analyze_ocr_movement
 
 app = FastAPI(title="Nagar-Drishti Movement Analysis")
+
+# --- ADD THIS CORS CONFIGURATION ---
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows requests from any frontend origin during development
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 DATA_DIR = "data"
 MERGED_DATA = None
