@@ -49,18 +49,15 @@ async function getTrafficSnapshot(windowInput = {}, cameraId) {
 
   // Check live simulation engine if active
   let liveEngineVehiclesByCam = new Map();
-  try {
-    const engine = require('../simulation/engine');
-    if (engine && engine.running && Array.isArray(engine.vehicles)) {
-      for (const v of engine.vehicles) {
-        if (v.activeCameras && v.activeCameras.size > 0) {
-          for (const camId of v.activeCameras) {
-            liveEngineVehiclesByCam.set(camId, (liveEngineVehiclesByCam.get(camId) || 0) + 1);
-          }
+  if (global.simulationEngine && global.simulationEngine.running && Array.isArray(global.simulationEngine.vehicles)) {
+    for (const v of global.simulationEngine.vehicles) {
+      if (v.activeCameras && v.activeCameras.size > 0) {
+        for (const camId of v.activeCameras) {
+          liveEngineVehiclesByCam.set(camId, (liveEngineVehiclesByCam.get(camId) || 0) + 1);
         }
       }
     }
-  } catch (_) {}
+  }
 
   return {
     from: window.from,
@@ -105,8 +102,6 @@ async function evaluateCongestionAlert(cameraId, timestamp = new Date()) {
   return prisma.alert.create({ data: { type: 'CONGESTION', severity, cameraId, message } });
 }
 
-const simulationEngine = require('../simulation/engine');
-
 const calculateCongestionLevel = (vehicleCount, averageSpeed) => {
   if (vehicleCount === 0) return 'LOW';
   
@@ -117,7 +112,8 @@ const calculateCongestionLevel = (vehicleCount, averageSpeed) => {
 };
 
 const getRoadTrafficData = async () => {
-  const state = simulationEngine.getState();
+  const engine = global.simulationEngine;
+  const state = engine && typeof engine.getState === 'function' ? engine.getState() : { vehicles: [] };
   const vehicles = state.vehicles || [];
   
   const roadStats = {};
