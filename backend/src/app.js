@@ -5,7 +5,7 @@ const path = require('path');
 const authRoutes = require('./modules/auth/auth.routes');
 
 const ocrRoutes = require('./modules/ocr/ocr.routes');
-
+const mlRoutes = require('./modules/ml/ml.routes');
 
 const devRoutes = require('./modules/dev/dev.routes');
 const roadRoutes = require('./modules/road/road.routes');
@@ -35,6 +35,7 @@ app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/simulation', simulationRoutes);
 app.use('/api/detections', detectionRoutes);
 app.use('/api/ocr', ocrRoutes);
+app.use('/api/ml', mlRoutes);
 
 
 
