@@ -120,6 +120,22 @@ async function processDetectionForBlacklist(detection) {
           message: `Blacklisted vehicle ${checkResult.plateNumber} detected by ${cameraName}. Reason: ${checkResult.record.reason}`,
         },
       });
+
+      // Also create an Incident for the new system
+      await prisma.incident.create({
+        data: {
+          type: 'BLACKLIST_DETECTION',
+          title: `Blacklisted Vehicle Detected: ${checkResult.plateNumber}`,
+          description: `Reason: ${checkResult.record.reason}`,
+          severity: checkResult.record.severity,
+          source: detection.source === 'AI' ? 'AI' : 'SIMULATION',
+          latitude: detection.latitude || 0,
+          longitude: detection.longitude || 0,
+          cameraId: detection.cameraId,
+          vehicleId: detection.vehicleId,
+          timestamp: detection.timestamp,
+        },
+      });
     }
 
     return {

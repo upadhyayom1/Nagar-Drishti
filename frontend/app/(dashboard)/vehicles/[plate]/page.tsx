@@ -112,7 +112,7 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
                       <span className="text-[10px] font-mono text-slate-400">{formatDateTime(d.timestamp)}</span>
                     </div>
                     <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs font-mono text-slate-400">
-                      <span className="text-cyan-400 font-semibold">{d.cameraId}</span>
+                      <span className="text-cyan-400 font-semibold">{d.cameraName}</span>
                       <span>Speed: <span className="text-white font-bold">{d.speed} km/h</span></span>
                       <span>Confidence: <span className="text-violet-400 font-bold">{d.confidence}%</span></span>
                       <span>Heading: {d.direction}</span>

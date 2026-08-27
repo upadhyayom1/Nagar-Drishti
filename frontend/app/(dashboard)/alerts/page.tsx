@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -128,26 +129,33 @@ function AlertCard({
   );
 }
 
-function FilterPill({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function FilterPill({ label, count, active, onClick }: { label: string; count?: number; active: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
       className={cn(
-        'text-xs font-display font-semibold px-4 py-1.5 rounded-xl border transition-all duration-200 capitalize',
+        'text-xs font-display font-semibold px-4 py-2 rounded-xl border transition-all duration-200 capitalize flex items-center gap-2',
         active
-          ? 'bg-cyan-500/15 text-cyan-300 border-cyan-400/40 shadow-[0_0_15px_rgba(6,182,212,0.18)]'
+          ? 'bg-cyan-500/15 text-cyan-300 border-cyan-400/40 shadow-[0_0_15px_rgba(6,182,212,0.18)] font-bold'
           : 'bg-white/[0.04] text-slate-400 border-white/10 hover:border-white/20 hover:text-white',
       )}
     >
-      {label}
+      <span>{label}</span>
+      {count !== undefined && (
+        <span className={cn('text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold', active ? 'bg-cyan-400/20 text-cyan-200' : 'bg-white/10 text-slate-400')}>
+          {count}
+        </span>
+      )}
     </button>
   );
 }
 
 export default function AlertsPage() {
   const queryClient = useQueryClient();
-  const { data: alerts = [], refetch, isFetching } = useQuery({ queryKey: ['alerts'], queryFn: alertService.getAlerts });
+  const { data: alerts = [], refetch, isFetching } = useQuery({ queryKey: ['alerts'], queryFn: alertService.getAlerts, refetchInterval: 5_000 });
   const { alertSeverityFilter, setAlertSeverityFilter } = useFilterStore();
+  const [activeCategory, setActiveCategory] = useState<'all' | 'blacklist' | 'congestion'>('all');
+
   const acknowledgeAlert = useMutation({
     mutationFn: alertService.acknowledgeAlert,
     onSuccess: () => {
@@ -161,7 +169,7 @@ export default function AlertsPage() {
   const handleExportCSV = () => {
     if (alerts.length === 0) return;
     const headers = ['ID', 'Title', 'Severity', 'Type', 'Camera', 'VehiclePlate', 'Timestamp', 'Description'];
-    const rows = alerts.map(a => [
+    const rows = alerts.map((a: Alert) => [
       a.id,
       `"${a.title.replace(/"/g, '""')}"`,
       a.severity,
@@ -169,9 +177,9 @@ export default function AlertsPage() {
       `"${a.cameraName.replace(/"/g, '""')}"`,
       a.vehiclePlate || '',
       a.timestamp,
-      `"${a.description.replace(/"/g, '""')}"`
+      `"${a.description.replace(/"/g, '""')}"`,
     ]);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
@@ -185,58 +193,24 @@ export default function AlertsPage() {
     ? alerts
     : alerts.filter((a: Alert) => a.severity === alertSeverityFilter);
 
-  const sorted = [...filtered].sort((a: Alert, b: Alert) => {
-    const order = { critical: 0, high: 1, medium: 2, low: 3 };
-    return (order[a.severity as keyof typeof order] ?? 4) - (order[b.severity as keyof typeof order] ?? 4);
-  });
-
-  const blacklistAlerts = sorted.filter(a => a.type === 'BLACKLIST_MATCH' || a.type === 'BLACKLIST_VEHICLE');
-  const congestionAlerts = sorted.filter(a => a.type === 'CONGESTION' || a.type === 'TRAFFIC_SURGE');
-  const otherAlerts = sorted.filter(a => !['BLACKLIST_MATCH', 'BLACKLIST_VEHICLE', 'CONGESTION', 'TRAFFIC_SURGE'].includes(a.type));
+  const blacklistAlerts = filtered.filter((a: Alert) => a.type === 'BLACKLIST_MATCH' || a.type === 'BLACKLIST_VEHICLE');
+  const congestionAlerts = filtered.filter((a: Alert) => a.type === 'CONGESTION' || a.type === 'TRAFFIC_SURGE');
 
   const criticalCount = alerts.filter((a: Alert) => a.severity === 'critical').length;
   const highCount     = alerts.filter((a: Alert) => a.severity === 'high').length;
 
-  const renderSection = (title: string, sectionAlerts: Alert[], icon: React.ReactNode, glowColor: string) => {
-    if (sectionAlerts.length === 0) return null;
-    return (
-      <div className="mb-10">
-        <div className="flex items-center gap-2 mb-4">
-          <div className={`p-1.5 rounded-lg bg-${glowColor}-500/15 text-${glowColor}-400 border border-${glowColor}-500/30`}>
-            {icon}
-          </div>
-          <h2 className="text-lg font-bold text-white font-display tracking-wide">{title}</h2>
-          <Badge variant="default" size="sm" className="ml-2 bg-white/5 border-white/10 text-slate-300">
-            {sectionAlerts.length}
-          </Badge>
-        </div>
-        <div className="space-y-4">
-          <AnimatePresence>
-            {sectionAlerts.map((alert: Alert, i: number) => (
-              <AlertCard
-                key={alert.id}
-                alert={alert}
-                index={i}
-                onAcknowledge={(id) => acknowledgeAlert.mutate(id)}
-              />
-            ))}
-          </AnimatePresence>
-        </div>
-      </div>
-    );
-  };
-
   return (
-    <PageWrapper className="space-y-6 font-body">
+    <PageWrapper className="space-y-8 font-body">
+      {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-white font-display">Sentinel Threat Alerts</h1>
+          <h1 className="text-2xl font-bold text-white font-display">Sentinel Threat & Congestion Alerts</h1>
           <p className="text-xs font-mono text-slate-400 mt-0.5 uppercase tracking-wider">
-            <span className="text-rose-400 font-bold">{alerts.length}</span> active automated neural intelligence triggers
+            <span className="text-rose-400 font-bold">{alerts.length}</span> active neural intelligence events detected across Prayagraj
           </p>
         </div>
         <div className="flex items-center gap-2.5 flex-wrap">
-          <Badge variant="danger"  dot pulse>{criticalCount} Critical</Badge>
+          <Badge variant="danger" dot pulse>{criticalCount} Critical</Badge>
           <Badge variant="warning" dot>{highCount} High Priority</Badge>
 
           <Button
@@ -247,7 +221,7 @@ export default function AlertsPage() {
             className="text-xs"
           >
             <RefreshCw size={13} className={isFetching ? 'animate-spin text-cyan-400' : ''} />
-            Refresh
+            Sync
           </Button>
 
           <Button
@@ -262,23 +236,106 @@ export default function AlertsPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap mb-6">
-        <Filter size={14} className="text-cyan-400/70 mr-1" />
-        {(['all', 'critical', 'high', 'medium', 'low'] as const).map((s) => (
-          <FilterPill key={s} label={s === 'all' ? 'All Alerts' : s} active={alertSeverityFilter === s} onClick={() => setAlertSeverityFilter(s)} />
-        ))}
+      {/* Primary Category Switcher & Severity Filters */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+        {/* Category Tabs */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <FilterPill label="All Alerts" count={alerts.length} active={activeCategory === 'all'} onClick={() => setActiveCategory('all')} />
+          <FilterPill label="Blacklisted Threats" count={blacklistAlerts.length} active={activeCategory === 'blacklist'} onClick={() => setActiveCategory('blacklist')} />
+          <FilterPill label="Congestion Spikes" count={congestionAlerts.length} active={activeCategory === 'congestion'} onClick={() => setActiveCategory('congestion')} />
+        </div>
+
+        {/* Severity Filter */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Filter size={13} className="text-slate-400 mr-1" />
+          {(['all', 'critical', 'high', 'medium', 'low'] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => setAlertSeverityFilter(s)}
+              className={cn(
+                'text-[11px] font-mono px-2.5 py-1 rounded-lg border transition-all capitalize',
+                alertSeverityFilter === s
+                  ? 'bg-white/15 text-white border-white/30 font-bold'
+                  : 'bg-transparent text-slate-400 border-transparent hover:text-white',
+              )}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="space-y-2">
-        {renderSection('Blacklisted Vehicles', blacklistAlerts, <Shield size={16} />, 'rose')}
-        {renderSection('Congestion Alerts', congestionAlerts, <AlertTriangle size={16} />, 'amber')}
-        {renderSection('Other Anomalies', otherAlerts, <Bell size={16} />, 'cyan')}
-      </div>
+      {/* ── SECTION 1: BLACKLISTED THREAT ALERTS ────────────────────────────────────────────── */}
+      {(activeCategory === 'all' || activeCategory === 'blacklist') && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-rose-500/15 text-rose-400 border border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.2)]">
+                <Shield size={18} />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-white font-display">Blacklisted Vehicle Watchlist Triggers</h2>
+                <p className="text-[11px] text-slate-400 font-mono">Real-time alerts for flagged or high-priority watchlist plates</p>
+              </div>
+            </div>
+            <Badge variant="danger" size="md">{blacklistAlerts.length} Flagged</Badge>
+          </div>
 
-      {sorted.length === 0 && (
-        <div className="text-center py-20">
-          <Bell size={40} className="mx-auto mb-3 text-cyan-400/20" />
-          <p className="text-xs font-mono text-slate-400">No active alerts matching the selected filter</p>
+          <div className="space-y-3.5">
+            <AnimatePresence>
+              {blacklistAlerts.map((alert: Alert, index: number) => (
+                <AlertCard
+                  key={alert.id}
+                  alert={alert}
+                  index={index}
+                  onAcknowledge={(id) => acknowledgeAlert.mutate(id)}
+                />
+              ))}
+            </AnimatePresence>
+            {blacklistAlerts.length === 0 && (
+              <GlassCard padding="md" className="text-center py-10 border-dashed border-white/10">
+                <Shield size={32} className="mx-auto mb-2 text-rose-400/30" />
+                <p className="text-xs font-mono text-slate-400">No active blacklisted vehicle threats detected at optical nodes.</p>
+              </GlassCard>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── SECTION 2: TRAFFIC CONGESTION & VOLUME SURGES ───────────────────────────────────── */}
+      {(activeCategory === 'all' || activeCategory === 'congestion') && (
+        <div className="space-y-4 pt-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                <AlertTriangle size={18} />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-white font-display">Traffic Congestion & Density Surges</h2>
+                <p className="text-[11px] text-slate-400 font-mono">Automated alerts triggered when vehicle volume exceeds sector thresholds</p>
+              </div>
+            </div>
+            <Badge variant="warning" size="md">{congestionAlerts.length} Surges</Badge>
+          </div>
+
+          <div className="space-y-3.5">
+            <AnimatePresence>
+              {congestionAlerts.map((alert: Alert, index: number) => (
+                <AlertCard
+                  key={alert.id}
+                  alert={alert}
+                  index={index}
+                  onAcknowledge={(id) => acknowledgeAlert.mutate(id)}
+                />
+              ))}
+            </AnimatePresence>
+            {congestionAlerts.length === 0 && (
+              <GlassCard padding="md" className="text-center py-10 border-dashed border-white/10">
+                <AlertTriangle size={32} className="mx-auto mb-2 text-amber-400/30" />
+                <p className="text-xs font-mono text-slate-400">All city sectors and camera corridors are operating within normal traffic density parameters.</p>
+              </GlassCard>
+            )}
+          </div>
         </div>
       )}
     </PageWrapper>

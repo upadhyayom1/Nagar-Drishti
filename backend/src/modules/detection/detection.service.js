@@ -6,7 +6,7 @@ async function recordDetection(data, { evaluateCongestion = true } = {}) {
   const { speed, ...detectionData } = data;
   const timestamp = detectionData.timestamp ? new Date(detectionData.timestamp) : new Date();
   const detection = await prisma.detection.create({ data: { ...detectionData, timestamp } });
-  await prisma.vehicle.update({
+  await prisma.vehicle.updateMany({
     where: { id: detectionData.vehicleId },
     data: {
       lastSeen: timestamp,

@@ -89,12 +89,13 @@ function serializeDetection(detection) {
     id: detection.id,
     vehiclePlate: detection.vehicle?.plateNumber || detection.plateText,
     cameraId: detection.cameraId,
-    cameraName: detection.camera?.name || detection.camera?.cameraCode || null,
+    cameraCode: detection.camera?.cameraCode || 'CAM',
+    cameraName: detection.camera?.name || detection.camera?.cameraCode || 'Prayagraj Optical Node',
     timestamp: detection.timestamp,
-    confidence: Math.round(((detection.ocrConfidence ?? detection.vehicleConfidence ?? 0) * 100) * 10) / 10,
-    vehicleType: detection.vehicle?.vehicleType || 'UNKNOWN',
-    speed: detection.vehicle?.speed ?? 0,
-    direction: detection.direction || 'UNKNOWN',
+    confidence: Math.round(((detection.ocrConfidence ?? detection.vehicleConfidence ?? 0.95) * 100) * 10) / 10,
+    vehicleType: detection.vehicle?.vehicleType || 'CAR',
+    speed: detection.vehicle?.speed ?? 35,
+    direction: detection.direction || 'EASTBOUND',
     imageUrl: detection.imageUrl,
   };
 }

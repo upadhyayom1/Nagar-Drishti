@@ -1,6 +1,6 @@
 export type CameraStatus = 'online' | 'warning' | 'offline';
 export type AlertSeverity = 'critical' | 'high' | 'medium' | 'low';
-export type AlertType = 'BLACKLIST_VEHICLE' | 'ROUTE_ANOMALY' | 'TRAFFIC_SURGE' | 'CAMERA_OFFLINE';
+export type AlertType = 'BLACKLIST_VEHICLE' | 'BLACKLIST_MATCH' | 'ROUTE_ANOMALY' | 'TRAFFIC_SURGE' | 'CONGESTION' | 'CAMERA_OFFLINE';
 export type TrafficLevel = 'low' | 'moderate' | 'high' | 'congested';
 
 export interface Camera {
@@ -17,12 +17,14 @@ export interface Camera {
   fps: number | null;
   lastUpdated: string;
   zone: string;
+  road?: string;
 }
 
 export interface Detection {
   id: string;
   vehiclePlate: string;
   cameraId: string;
+  cameraCode?: string;
   cameraName: string;
   timestamp: string;
   confidence: number;
@@ -55,6 +57,7 @@ export interface VehicleJourney {
 
 export interface Waypoint {
   cameraId: string;
+  cameraCode?: string;
   cameraName: string;
   lat: number;
   lng: number;
