@@ -190,8 +190,41 @@ export default function AlertsPage() {
     return (order[a.severity as keyof typeof order] ?? 4) - (order[b.severity as keyof typeof order] ?? 4);
   });
 
+  const blacklistAlerts = sorted.filter(a => a.type === 'BLACKLIST_MATCH' || a.type === 'BLACKLIST_VEHICLE');
+  const congestionAlerts = sorted.filter(a => a.type === 'CONGESTION' || a.type === 'TRAFFIC_SURGE');
+  const otherAlerts = sorted.filter(a => !['BLACKLIST_MATCH', 'BLACKLIST_VEHICLE', 'CONGESTION', 'TRAFFIC_SURGE'].includes(a.type));
+
   const criticalCount = alerts.filter((a: Alert) => a.severity === 'critical').length;
   const highCount     = alerts.filter((a: Alert) => a.severity === 'high').length;
+
+  const renderSection = (title: string, sectionAlerts: Alert[], icon: React.ReactNode, glowColor: string) => {
+    if (sectionAlerts.length === 0) return null;
+    return (
+      <div className="mb-10">
+        <div className="flex items-center gap-2 mb-4">
+          <div className={`p-1.5 rounded-lg bg-${glowColor}-500/15 text-${glowColor}-400 border border-${glowColor}-500/30`}>
+            {icon}
+          </div>
+          <h2 className="text-lg font-bold text-white font-display tracking-wide">{title}</h2>
+          <Badge variant="default" size="sm" className="ml-2 bg-white/5 border-white/10 text-slate-300">
+            {sectionAlerts.length}
+          </Badge>
+        </div>
+        <div className="space-y-4">
+          <AnimatePresence>
+            {sectionAlerts.map((alert: Alert, i: number) => (
+              <AlertCard
+                key={alert.id}
+                alert={alert}
+                index={i}
+                onAcknowledge={(id) => acknowledgeAlert.mutate(id)}
+              />
+            ))}
+          </AnimatePresence>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <PageWrapper className="space-y-6 font-body">
@@ -229,24 +262,17 @@ export default function AlertsPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap mb-6">
         <Filter size={14} className="text-cyan-400/70 mr-1" />
         {(['all', 'critical', 'high', 'medium', 'low'] as const).map((s) => (
           <FilterPill key={s} label={s === 'all' ? 'All Alerts' : s} active={alertSeverityFilter === s} onClick={() => setAlertSeverityFilter(s)} />
         ))}
       </div>
 
-      <div className="space-y-4">
-        <AnimatePresence>
-          {sorted.map((alert: Alert, i: number) => (
-            <AlertCard
-              key={alert.id}
-              alert={alert}
-              index={i}
-              onAcknowledge={(id) => acknowledgeAlert.mutate(id)}
-            />
-          ))}
-        </AnimatePresence>
+      <div className="space-y-2">
+        {renderSection('Blacklisted Vehicles', blacklistAlerts, <Shield size={16} />, 'rose')}
+        {renderSection('Congestion Alerts', congestionAlerts, <AlertTriangle size={16} />, 'amber')}
+        {renderSection('Other Anomalies', otherAlerts, <Bell size={16} />, 'cyan')}
       </div>
 
       {sorted.length === 0 && (

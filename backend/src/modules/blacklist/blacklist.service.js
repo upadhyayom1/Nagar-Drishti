@@ -103,13 +103,21 @@ async function processDetectionForBlacklist(detection) {
     });
 
     if (!existingAlert) {
+      let cameraName = detection.cameraId;
+      if (detection.camera && detection.camera.name) {
+        cameraName = detection.camera.name;
+      } else {
+        const cam = await prisma.camera.findUnique({ where: { id: detection.cameraId }});
+        if (cam) cameraName = cam.name + (cam.location ? ` (${cam.location})` : '');
+      }
+
       await prisma.alert.create({
         data: {
           type: 'BLACKLIST_MATCH',
           severity: checkResult.record.severity,
           vehicleId: detection.vehicleId,
           cameraId: detection.cameraId,
-          message: `Blacklisted vehicle ${checkResult.plateNumber} detected by camera ${detection.cameraId}. Reason: ${checkResult.record.reason}`,
+          message: `Blacklisted vehicle ${checkResult.plateNumber} detected by ${cameraName}. Reason: ${checkResult.record.reason}`,
         },
       });
     }

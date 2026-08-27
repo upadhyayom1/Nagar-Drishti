@@ -1,33 +1,79 @@
 const turf = require('@turf/turf');
 const { prisma } = require('../../lib/prisma');
 const { recordDetection } = require('../detection/detection.service');
+const { evaluateCongestionAlert } = require('../traffic/traffic.service');
+
+const VEHICLE_SPEED_RANGES = {
+  AUTO: [22, 34],
+  BUS: [28, 42],
+  CAR: [35, 58],
+  MOTORCYCLE: [32, 54],
+  SCOOTER: [25, 40],
+  TAXI: [32, 52],
+  TRUCK: [24, 38],
+  VAN: [30, 46],
+};
+
+function getSimulationSpeed(vehicle) {
+  const [minimum, maximum] = VEHICLE_SPEED_RANGES[vehicle.vehicleType] || VEHICLE_SPEED_RANGES.CAR;
+  const baseline = Number.isFinite(vehicle.speed) && vehicle.speed > 0
+    ? Math.min(maximum, Math.max(minimum, vehicle.speed))
+    : minimum + ((maximum - minimum) / 2);
+  return Math.round((baseline + ((Math.random() - 0.5) * 8)) * 10) / 10;
+}
+
+function calculateDistanceMeters(longitudeA, latitudeA, longitudeB, latitudeB) {
+  const earthRadius = 6371000;
+  const latitudeDelta = (latitudeB - latitudeA) * (Math.PI / 180);
+  const longitudeDelta = (longitudeB - longitudeA) * (Math.PI / 180);
+  const meanLatitude = ((latitudeA + latitudeB) / 2) * (Math.PI / 180);
+  const eastWest = longitudeDelta * Math.cos(meanLatitude);
+  return earthRadius * Math.hypot(latitudeDelta, eastWest);
+}
+
+function sampleVehicles(vehicles, maximumVehicles) {
+  const blacklisted = vehicles.filter((vehicle) => vehicle.status === 'BLACKLISTED');
+  const active = vehicles.filter((vehicle) => vehicle.status !== 'BLACKLISTED');
+  const remainingSlots = Math.max(0, maximumVehicles - blacklisted.length);
+  const shuffledActive = [...active].sort(() => Math.random() - 0.5);
+  return [...blacklisted, ...shuffledActive.slice(0, remainingSlots)];
+}
 
 class SimulationEngine {
   constructor() {
     this.running = false;
-    this.speed = 1;
-    this.time = new Date('2026-01-01T10:00:00Z');
+    this.speed = 2;
+    this.time = new Date();
     this.vehicles = [];
     this.cameras = [];
     this.roads = [];
     this.recentDetections = [];
     this.timer = null;
+    this.tickInProgress = false;
     this.tickRateMs = 1000;
-    this.detectionRadiusMeters = 20; 
+    this.detectionRadiusMeters = 150;
+    this.maximumVehicles = Math.min(Math.max(Number(process.env.SIMULATION_VEHICLE_COUNT) || 250, 25), 1000);
+    this.persistenceBatchSize = 25;
+    this.persistedDetectionCount = 0;
+    this.lastPersistenceError = null;
     
     this.graph = new Map(); // Node -> Array of Edges
     this.nodesList = []; // Helper for picking random nodes
+    this.lastHealthCheck = new Date(this.time);
   }
 
   async init() {
     this.roads = await prisma.road.findMany();
     this.cameras = await prisma.camera.findMany();
-    const dbVehicles = await prisma.vehicle.findMany({ where: { status: 'ACTIVE' } });
+    const dbVehicles = await prisma.vehicle.findMany({ where: { status: { in: ['ACTIVE', 'BLACKLISTED'] } } });
 
     this.buildGraph();
+    if (this.nodesList.length === 0) {
+      throw new Error('Simulation cannot start because no routable road geometry is available.');
+    }
 
     // Map DB vehicles to simulation state
-    this.vehicles = dbVehicles.map(v => {
+    this.vehicles = sampleVehicles(dbVehicles, this.maximumVehicles).map(v => {
       const startNode = this.nodesList[Math.floor(Math.random() * this.nodesList.length)];
       const destNode = this.selectDestination(startNode);
       const route = this.calculateRoute(startNode, destNode);
@@ -38,7 +84,7 @@ class SimulationEngine {
         id: v.id,
         plateNumber: v.plateNumber,
         type: v.vehicleType || 'CAR',
-        speed: v.speed || 40, // km/h
+        speed: getSimulationSpeed(v),
         
         currentNode: startNode,
         destinationNode: destNode,
@@ -49,12 +95,16 @@ class SimulationEngine {
         currentRoadId: route.length > 0 ? route[0].roadId : null,
         
         recentNodes: [startNode],
-        activeCameras: new Set()
+        activeCameras: new Set(),
+        lastCameraId: null,
+        lastCameraTimestamp: null
       };
     });
   }
   
   buildGraph() {
+    this.graph.clear();
+    this.nodesList = [];
     const nodeCounts = new Map();
     
     // First pass: Count coordinate occurrences to find intersections
@@ -199,9 +249,23 @@ class SimulationEngine {
 
   start() {
     if (this.running) return;
+    if (!this.vehicles.length || !this.cameras.length || !this.nodesList.length) {
+      throw new Error('Simulation is not ready. Seed the Prayagraj network and restart the backend.');
+    }
     this.running = true;
     this.lastTickTime = Date.now();
-    this.timer = setInterval(() => this.tick(), this.tickRateMs);
+    this.timer = setInterval(() => {
+      if (this.tickInProgress) return;
+      this.tickInProgress = true;
+      this.tick()
+        .catch((error) => {
+          this.lastPersistenceError = error.message;
+          console.error('Simulation tick failed:', error);
+        })
+        .finally(() => {
+          this.tickInProgress = false;
+        });
+    }, this.tickRateMs);
   }
 
   pause() {
@@ -212,8 +276,11 @@ class SimulationEngine {
 
   async reset() {
     this.pause();
-    this.time = new Date('2026-01-01T10:00:00Z');
+    this.time = new Date();
+    this.lastHealthCheck = new Date(this.time);
     this.recentDetections = [];
+    this.persistedDetectionCount = 0;
+    this.lastPersistenceError = null;
     await this.init(); 
   }
 
@@ -230,6 +297,7 @@ class SimulationEngine {
     this.time = new Date(this.time.getTime() + simDeltaSec * 1000);
 
     const detectionsToSave = [];
+    const transitionsToSave = [];
 
     // Move vehicles
     for (let v of this.vehicles) {
@@ -282,9 +350,7 @@ class SimulationEngine {
         for (const cam of this.cameras) {
             if (cam.status !== 'ONLINE') continue;
             
-            const camPoint = turf.point([cam.longitude, cam.latitude]);
-            const vPoint = turf.point(v.coords);
-            const dist = turf.distance(camPoint, vPoint, { units: 'meters' });
+            const dist = calculateDistanceMeters(cam.longitude, cam.latitude, v.coords[0], v.coords[1]);
 
             if (dist <= this.detectionRadiusMeters) {
                 if (!v.activeCameras.has(cam.id)) {
@@ -298,13 +364,43 @@ class SimulationEngine {
                         plateText: v.plateNumber,
                         timestamp: new Date(this.time),
                         source: 'SIMULATION',
+                        speed: v.speed,
                         vehicleConfidence: 0.95 + (Math.random() * 0.04),
+                        ocrConfidence: 0.90 + (Math.random() * 0.09),
+                        lane: Math.floor(Math.random() * 3) + 1,
+                        direction: cam.direction || (Math.random() > 0.5 ? 'NORTHBOUND' : 'SOUTHBOUND'),
                         latitude: v.coords[1],
                         longitude: v.coords[0]
                     };
-                    detectionsToSave.push(detection);
-                    this.recentDetections.unshift(detection);
-                    if (this.recentDetections.length > 100) this.recentDetections.pop();
+                    detectionsToSave.push({ data: detection, vehicle: v, cameraId: cam.id });
+
+                    // Generate Camera Transition
+                    if (v.lastCameraId && v.lastCameraId !== cam.id) {
+                        const travelTimeSeconds = Math.round((this.time.getTime() - v.lastCameraTimestamp.getTime()) / 1000);
+                        const lastCam = this.cameras.find(c => c.id === v.lastCameraId);
+                        let distanceMeters = null;
+                        let averageSpeed = null;
+                        if (lastCam) {
+                            distanceMeters = calculateDistanceMeters(lastCam.longitude, lastCam.latitude, cam.longitude, cam.latitude);
+                            if (travelTimeSeconds > 0) {
+                                averageSpeed = (distanceMeters / travelTimeSeconds) * 3.6; // km/h
+                            }
+                        }
+
+                        if (travelTimeSeconds > 0 && distanceMeters > 0) {
+                            transitionsToSave.push({
+                                sourceCameraId: v.lastCameraId,
+                                destinationCameraId: cam.id,
+                                vehicleId: v.id,
+                                timestamp: new Date(this.time),
+                                travelTimeSeconds,
+                                distanceMeters,
+                                averageSpeed
+                            });
+                        }
+                    }
+                    v.lastCameraId = cam.id;
+                    v.lastCameraTimestamp = new Date(this.time);
                 }
             } else {
                 if (v.activeCameras.has(cam.id)) {
@@ -315,11 +411,64 @@ class SimulationEngine {
     }
 
     if (detectionsToSave.length > 0) {
-      try {
-        await Promise.all(detectionsToSave.map((detection) => recordDetection(detection)));
-      } catch (err) {
-        console.error('Failed to save simulation detections:', err);
+      const results = [];
+      for (let index = 0; index < detectionsToSave.length; index += this.persistenceBatchSize) {
+        const batch = detectionsToSave.slice(index, index + this.persistenceBatchSize);
+        const batchResults = await Promise.allSettled(batch.map(({ data }) => recordDetection(data, { evaluateCongestion: false })));
+        results.push(...batchResults);
       }
+      const persisted = [];
+      let hasPersistenceFailure = false;
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          persisted.push(result.value.detection);
+          return;
+        }
+        const failedDetection = detectionsToSave[index];
+        failedDetection.vehicle.activeCameras.delete(failedDetection.cameraId);
+        hasPersistenceFailure = true;
+        this.lastPersistenceError = result.reason instanceof Error ? result.reason.message : 'Unable to save simulation detection';
+        console.error('Failed to save simulation detection:', result.reason);
+      });
+      if (persisted.length > 0) {
+        this.recentDetections = [...persisted.reverse(), ...this.recentDetections].slice(0, 100);
+        this.persistedDetectionCount += persisted.length;
+        if (!hasPersistenceFailure) this.lastPersistenceError = null;
+        const affectedCameraIds = [...new Set(persisted.map((detection) => detection.cameraId))];
+        const congestionResults = await Promise.allSettled(
+          affectedCameraIds.map((cameraId) => evaluateCongestionAlert(cameraId, this.time)),
+        );
+        congestionResults.forEach((result) => {
+          if (result.status === 'rejected') console.error('Failed to evaluate simulation congestion:', result.reason);
+        });
+      }
+    }
+
+    if (transitionsToSave.length > 0) {
+      try {
+        await prisma.cameraTransition.createMany({ data: transitionsToSave });
+      } catch (err) {
+        console.error('Failed to save camera transitions:', err);
+      }
+    }
+
+    // Health Checks (Every 60 simulation seconds)
+    if (this.time.getTime() - this.lastHealthCheck.getTime() >= 60000) {
+        this.lastHealthCheck = new Date(this.time);
+        if (this.cameras.length > 0) {
+            const healthRecords = this.cameras.map(cam => ({
+                cameraId: cam.id,
+                status: cam.status,
+                recordedAt: new Date(this.time),
+                responseMs: cam.status === 'ONLINE' ? Math.floor(Math.random() * 100) + 20 : null,
+                errorMessage: cam.status === 'ONLINE' ? null : 'Connection timeout'
+            }));
+            try {
+                await prisma.cameraHealth.createMany({ data: healthRecords });
+            } catch (err) {
+                console.error('Failed to save camera health:', err);
+            }
+        }
     }
   }
 
@@ -331,8 +480,10 @@ class SimulationEngine {
       stats: {
         vehicles: this.vehicles.length,
         cameras: this.cameras.length,
-        recentDetections: this.recentDetections.length
+        recentDetections: this.recentDetections.length,
+        persistedDetections: this.persistedDetectionCount,
       },
+      lastPersistenceError: this.lastPersistenceError,
       vehicles: this.vehicles.map(v => ({
         id: v.id,
         plateNumber: v.plateNumber,

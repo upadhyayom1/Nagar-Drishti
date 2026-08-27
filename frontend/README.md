@@ -55,7 +55,7 @@ cd ../backend
 npm run dev
 ```
 
-The API defaults to `http://localhost:5000/api`.
+The API defaults to `http://localhost:8000/api`.
 
 ### 5. Run the Development Server
 

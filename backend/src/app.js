@@ -60,6 +60,8 @@ app.use((err, req, res, next) => {
 const engine = require('./modules/simulation/engine');
 engine.init().then(() => {
   console.log('Simulation engine initialized with DB data.');
+  engine.start();
+  console.log('Simulation engine started automatically.');
 }).catch(err => {
   console.error('Failed to init simulation engine:', err);
 });

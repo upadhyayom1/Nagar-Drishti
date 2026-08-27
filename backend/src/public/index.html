@@ -32,6 +32,7 @@
         .det-plate { font-weight: bold; font-size: 0.95rem; }
         .det-type { background: #444; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; color: #cbd5e1; }
         .det-source { font-size: 0.65rem; color: #a855f7; text-transform: uppercase; font-weight: bold; text-align: right; }
+        #sim-message { min-height: 1.1rem; margin: -6px 0 0; color: #fca5a5; font-size: 0.75rem; }
 
         .camera-marker { font-size: 24px; text-align: center; transition: transform 0.2s; }
         .camera-pulse { animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) forwards; color: #ef4444; text-shadow: 0 0 10px #ef4444; }
@@ -65,6 +66,7 @@
                 <button class="speed-btn" id="spd-5" onclick="setSpeed(5)">5x</button>
                 <button class="speed-btn" id="spd-10" onclick="setSpeed(10)">10x</button>
             </div>
+            <p id="sim-message" role="status"></p>
         </div>
 
         <div class="stat-box">
@@ -92,7 +94,7 @@
         const roadNames = {};
         let totalDetectionsCount = 0;
         
-        const typeEmojis = { 'CAR': '🚗', 'BIKE': '🏍', 'BUS': '🚌', 'TRUCK': '🚚', 'AUTO': '🛺' };
+        const typeEmojis = { 'CAR': '🚗', 'MOTORCYCLE': '🏍️', 'SCOOTER': '🛵', 'BUS': '🚌', 'TRUCK': '🚚', 'AUTO': '🛺', 'TAXI': '🚕', 'VAN': '🚐' };
         const statusSymbols = { 'ONLINE': '🟢', 'OFFLINE': '🔴', 'MAINTENANCE': '🟡' };
 
         async function initMap() {
@@ -128,18 +130,20 @@
                         let rName = roadNames[cam.roadId] || 'Unknown Road';
                         let statSym = statusSymbols[cam.status] || '⚪';
                         
+                        const detections = Array.isArray(dData.data) ? dData.data : [];
+                        const lastDetection = detections[0];
                         let popupHtml = `<div class="popup-content">
                             <b>CAMERA ${cam.cameraCode}</b><br>
                             Status: ${statSym} ${cam.status}<br>
                             Road: ${rName}<br>
                             Direction: ${cam.direction || 'N/A'}<br>
                             <hr>
-                            Vehicles Seen: <b>${dData.data ? dData.data.count : 0}</b><br>
+                            Recent Detections: <b>${detections.length}</b><br>
                         `;
                         
-                        if (dData.data && dData.data.lastDetection) {
-                            popupHtml += `Last Vehicle: <b>${dData.data.lastDetection.vehicle.plateNumber}</b><br>`;
-                            popupHtml += `Last Detection: ${new Date(dData.data.lastDetection.timestamp).toLocaleTimeString()}<br>`;
+                        if (lastDetection) {
+                            popupHtml += `Last Vehicle: <b>${lastDetection.vehiclePlate}</b><br>`;
+                            popupHtml += `Last Detection: ${new Date(lastDetection.timestamp).toLocaleTimeString()}<br>`;
                         } else {
                             popupHtml += `Last Detection: None<br>`;
                         }
@@ -162,9 +166,12 @@
 
                     document.getElementById('sim-time').innerText = new Date(state.simulationTime).toLocaleTimeString();
                     document.getElementById('stat-vehicles').innerText = state.stats.vehicles;
+                    document.getElementById('stat-cameras').innerText = state.stats.cameras;
+                    document.getElementById('stat-detections').innerText = state.stats.persistedDetections;
                     document.getElementById('stat-status').innerText = state.running ? 'RUNNING' : 'PAUSED';
                     document.getElementById('stat-status').style.color = state.running ? '#10b981' : '#60a5fa';
                     document.getElementById('stat-speed').innerText = state.speed + 'x';
+                    document.getElementById('sim-message').innerText = state.lastPersistenceError || '';
                     
                     // Update speed buttons UI
                     document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
@@ -186,7 +193,7 @@
                             vehicleMarkers[v.id] = L.marker([v.latitude, v.longitude], { icon }).addTo(map);
                             
                             vehicleMarkers[v.id].on('click', async () => {
-                                const vRes = await fetch(`/api/detections/${v.id}`);
+                                const vRes = await fetch(`/api/detections/vehicle/${encodeURIComponent(v.plateNumber)}`);
                                 const vData = await vRes.json();
                                 
                                 let rName = roadNames[v.roadId] || 'Unknown Road';
@@ -202,11 +209,11 @@
                                 
                                 if (vData.data && vData.data.length > 0) {
                                     const lastDet = vData.data[vData.data.length - 1];
-                                    popupHtml = popupHtml.replace('<hr>', `Last Camera: ${lastDet.camera.cameraCode}<br>Last Detection: ${new Date(lastDet.timestamp).toLocaleTimeString()}<br><hr>`);
+                                    popupHtml = popupHtml.replace('<hr>', `Last Camera: ${lastDet.cameraName}<br>Last Detection: ${new Date(lastDet.timestamp).toLocaleTimeString()}<br><hr>`);
                                     
                                     popupHtml += `<ul class="history-list">`;
                                     vData.data.forEach(det => {
-                                        popupHtml += `<li>${det.camera.cameraCode} &rarr; ${new Date(det.timestamp).toLocaleTimeString()}</li>`;
+                                        popupHtml += `<li>${det.cameraName} &rarr; ${new Date(det.timestamp).toLocaleTimeString()}</li>`;
                                     });
                                     popupHtml += `</ul>`;
                                 } else {
@@ -285,31 +292,31 @@
             } catch (err) { console.error("Poll error:", err); }
         }
 
-        async function startSim() { await fetch('/api/simulation/start', { method: 'POST' }); }
-        async function pauseSim() { await fetch('/api/simulation/pause', { method: 'POST' }); }
-        async function resetSim() { await fetch('/api/simulation/reset', { method: 'POST' }); }
+        async function runSimulationAction(path, options = {}) {
+            try {
+                const response = await fetch(path, options);
+                const payload = await response.json();
+                if (!response.ok || !payload.success) throw new Error(payload.message || 'Simulation request failed');
+                document.getElementById('sim-message').innerText = '';
+                await pollState();
+            } catch (error) {
+                document.getElementById('sim-message').innerText = error.message;
+            }
+        }
+
+        async function startSim() { await runSimulationAction('/api/simulation/start', { method: 'POST' }); }
+        async function pauseSim() { await runSimulationAction('/api/simulation/pause', { method: 'POST' }); }
+        async function resetSim() { await runSimulationAction('/api/simulation/reset', { method: 'POST' }); }
         async function setSpeed(s) {
-            await fetch('/api/simulation/speed', {
+            await runSimulationAction('/api/simulation/speed', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ speed: s })
             });
-            pollState(); // Instant UI update
-        }
-
-        // Fetch Total Detections separately
-        async function fetchTotalDetections() {
-            try {
-                const res = await fetch('/api/detections');
-                const data = await res.json();
-                if (data.success && data.data) {
-                    // The API currently returns recent 100 array.
-                    // We need a total count. We will add this to the simulation backend state.
-                }
-            } catch(e) {}
         }
 
         initMap();
+        pollState();
         setInterval(pollState, 1000);
     </script>
 </body>

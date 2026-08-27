@@ -5,8 +5,12 @@ exports.getState = (req, res) => {
 };
 
 exports.start = (req, res) => {
-  engine.start();
-  res.json({ success: true, message: 'Simulation started', state: engine.getState() });
+  try {
+    engine.start();
+    res.json({ success: true, message: 'Simulation started', state: engine.getState() });
+  } catch (error) {
+    res.status(409).json({ success: false, message: error.message, state: engine.getState() });
+  }
 };
 
 exports.pause = (req, res) => {
@@ -15,13 +19,17 @@ exports.pause = (req, res) => {
 };
 
 exports.reset = async (req, res) => {
-  await engine.reset();
-  res.json({ success: true, message: 'Simulation reset', state: engine.getState() });
+  try {
+    await engine.reset();
+    res.json({ success: true, message: 'Simulation reset', state: engine.getState() });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
 
 exports.setSpeed = (req, res) => {
   const { speed } = req.body;
-  if (!speed || typeof speed !== 'number') {
+  if (!Number.isFinite(speed) || speed <= 0 || speed > 50) {
     return res.status(400).json({ success: false, message: 'Invalid speed' });
   }
   engine.setSpeed(speed);

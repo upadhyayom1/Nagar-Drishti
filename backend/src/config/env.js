@@ -5,7 +5,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url(),
   JWT_SECRET: z.string().min(10),
   JWT_EXPIRES_IN: z.string().default('1d'),
-  PORT: z.string().default('5000'),
+  PORT: z.string().default('8000'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PLATE_RECOGNIZER_API_KEY: z.string().optional().default('dummy-key'),
 });

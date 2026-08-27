@@ -1,22 +1,22 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { X, Bell, Shield, TrendingUp, AlertTriangle, WifiOff, Car, ExternalLink } from 'lucide-react';
+import { X, Bell, Shield, TrendingUp, AlertTriangle, WifiOff, Car, ExternalLink, Maximize2, Minimize2 } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { alertService } from '@/services/alertService';
 import { Badge } from '@/components/ui/Badge';
 import { formatTime } from '@/lib/utils';
 import type { Alert } from '@/types';
 
-function getAlertIcon(type: string) {
+function renderAlertIcon(type: string, className: string) {
   switch (type) {
-    case 'BLACKLIST_VEHICLE': return Shield;
-    case 'ROUTE_ANOMALY':     return TrendingUp;
-    case 'TRAFFIC_SURGE':     return AlertTriangle;
-    case 'CAMERA_OFFLINE':    return WifiOff;
-    default:                  return Bell;
+    case 'BLACKLIST_VEHICLE': return <Shield size={14} className={className} />;
+    case 'ROUTE_ANOMALY':     return <TrendingUp size={14} className={className} />;
+    case 'TRAFFIC_SURGE':     return <AlertTriangle size={14} className={className} />;
+    case 'CAMERA_OFFLINE':    return <WifiOff size={14} className={className} />;
+    default:                  return <Bell size={14} className={className} />;
   }
 }
 
@@ -30,11 +30,13 @@ function severityVariant(s: string): 'danger' | 'warning' | 'info' | 'default' {
 export function NotificationsPanel() {
   const { notificationsOpen, setNotificationsOpen } = useUIStore();
   const panelRef = useRef<HTMLDivElement>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const { data: alerts = [] } = useQuery({
     queryKey: ['recentAlerts'],
-    queryFn: () => alertService.getRecentAlerts(8),
+    queryFn: () => alertService.getRecentAlerts(100),
     enabled: notificationsOpen,
+    refetchInterval: 5_000,
   });
 
   // Close on outside click
@@ -73,14 +75,12 @@ export function NotificationsPanel() {
       {/* Slide-in Panel */}
       <div
         ref={panelRef}
-        className="fixed top-4 right-4 z-50 w-[380px] max-h-[calc(100dvh-2rem)] flex flex-col animate-slide-in-right"
+        className={`fixed top-0 right-0 z-50 h-[100dvh] max-w-full flex flex-col animate-slide-in-right transition-[width] duration-300 ${isExpanded ? 'w-full sm:w-[760px]' : 'w-full sm:w-[420px]'}`}
         style={{
           background: 'rgba(10, 14, 30, 0.97)',
           backdropFilter: 'blur(32px) saturate(180%)',
-          border: '1px solid rgba(255,255,255,0.12)',
-          borderTop: '1px solid rgba(255,255,255,0.22)',
-          borderRadius: '1.35rem',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(99,102,241,0.15)',
+          borderLeft: '1px solid rgba(255,255,255,0.12)',
+          boxShadow: '-10px 0 40px rgba(0,0,0,0.8), -2px 0 10px rgba(99,102,241,0.1)',
         }}
       >
         {/* Header */}
@@ -99,20 +99,31 @@ export function NotificationsPanel() {
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setNotificationsOpen(false)}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.07] transition-all"
-          >
-            <X size={16} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setIsExpanded((expanded) => !expanded)}
+              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.07] transition-all"
+              aria-label={isExpanded ? 'Restore Sentinel feed sidebar' : 'Expand Sentinel feed'}
+              title={isExpanded ? 'Restore sidebar width' : 'Expand Sentinel feed'}
+            >
+              {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </button>
+            <button
+              onClick={() => setNotificationsOpen(false)}
+              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.07] transition-all"
+              aria-label="Close Sentinel feed"
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
 
         {/* Alerts List */}
-        <div className="overflow-y-auto flex-1 p-3 space-y-2">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 space-y-2">
           {alerts.map((alert: Alert) => {
-            const Icon = getAlertIcon(alert.type);
             const isCritical = alert.severity === 'critical';
             const isHigh = alert.severity === 'high';
+            const iconClassName = isCritical ? 'text-rose-400' : isHigh ? 'text-amber-400' : 'text-cyan-400';
 
             return (
               <div
@@ -131,14 +142,14 @@ export function NotificationsPanel() {
                     isHigh ? 'bg-amber-500/20 text-amber-400' :
                     'bg-cyan-500/20 text-cyan-400'
                   }`}>
-                    <Icon size={14} />
+                    {renderAlertIcon(alert.type, iconClassName)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 mb-0.5">
                       <p className="text-xs font-display font-bold text-white truncate">{alert.title}</p>
                       <Badge variant={severityVariant(alert.severity)} size="sm">{alert.severity}</Badge>
                     </div>
-                    <p className="text-[11px] text-slate-400 leading-snug line-clamp-2 font-body">{alert.description}</p>
+                    <p className="text-[11px] text-slate-400 leading-snug font-body">{alert.description}</p>
                     <div className="flex items-center justify-between mt-2">
                       {alert.vehiclePlate && (
                         <Link
