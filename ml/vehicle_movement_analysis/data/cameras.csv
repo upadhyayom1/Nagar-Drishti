@@ -1,0 +1,53 @@
+id,cameraCode,name,latitude,longitude,direction,roadId,zoneId,status,createdAt,updatedAt
+"cmt91fv8z000sigire33an5ib","PRY-CAM-001","High Court — MG Marg",25.4509,81.8321,"EASTBOUND","cmt91fl4l0009igir7hrw8p17","cmt91ffhu0000igir161ble4m","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv8z000tigirsvaml9c5","PRY-CAM-002","MG Marg — Civil Lines",25.4501,81.8407,"EASTBOUND","cmt91fl4l0009igir7hrw8p17","cmt91ffhu0000igir161ble4m","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv8z000uigir1og59wru","PRY-CAM-003","Civil Lines Bus Stand",25.4516,81.8468,"EASTBOUND","cmt91fl4l0009igir7hrw8p17","cmt91ffhu0000igir161ble4m","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv8z000vigir3g4s3qru","PRY-CAM-004","Lohia Marg — Station Approach",25.4468,81.8382,"SOUTHBOUND","cmt91fl4m000aigiry0g2mnn4","cmt91ffhu0000igir161ble4m","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90000wigir77nm3tfh","PRY-CAM-005","Prayagraj Junction Entry",25.443,81.8265,"WESTBOUND","cmt91fl4m000aigiry0g2mnn4","cmt91ffhu0000igir161ble4m","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90000xigirj8skoheb","PRY-CAM-006","Zero Road Junction",25.4376,81.8299,"SOUTHBOUND","cmt91fl4m000aigiry0g2mnn4","cmt91ffhu0000igir161ble4m","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90000yigir2iwuj510","PRY-CAM-007","Katra Crossing",25.4655,81.8565,"NORTHBOUND","cmt91fl4l0009igir7hrw8p17","cmt91ffhx0001igir14x37akj","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90000zigiryiaymeag","PRY-CAM-008","Allahabad University Gate",25.4586,81.8644,"EASTBOUND","cmt91fl4m000bigir09q0301r","cmt91ffhx0001igir14x37akj","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv900010igir0s6tu5dp","PRY-CAM-009","George Town Junction",25.4624,81.8716,"SOUTHBOUND","cmt91fl4m000bigir09q0301r","cmt91ffhx0001igir14x37akj","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv900011igirw3ns8htu","PRY-CAM-010","Allapur Junction",25.447,81.8707,"SOUTHBOUND","cmt91fl4m000bigir09q0301r","cmt91ffhx0001igir14x37akj","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv900012igirialllwm3","PRY-CAM-011","Bairhana Junction",25.4408,81.8778,"EASTBOUND","cmt91fl4m000digirgcfjn65z","cmt91ffhx0002igir0l5kqrc4","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv900013igirvuc26zl2","PRY-CAM-012","Daraganj Junction",25.431,81.8862,"SOUTHBOUND","cmt91fl4m000digirgcfjn65z","cmt91ffhx0002igir0l5kqrc4","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv900014igir94b1wl1h","PRY-CAM-013","Sangam Parade Approach",25.4165,81.8822,"SOUTHBOUND","cmt91fl4m000eigirbfvw3s2h","cmt91ffhx0002igir0l5kqrc4","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv900015igirs8gaa8iv","PRY-CAM-014","Minto Park Approach",25.4271,81.85,"SOUTHEASTBOUND","cmt91fl4m000figir4r0jddol","cmt91ffhx0002igir0l5kqrc4","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv900016igirutk75an8","PRY-CAM-015","New Yamuna Bridge North",25.4253,81.8598,"SOUTHBOUND","cmt91fl4m000gigiriu3t2elv","cmt91ffhx0003igirs5mr7cau","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv900017igir1jngw0gb","PRY-CAM-016","New Yamuna Bridge Pylon",25.4192,81.8624,"SOUTHBOUND","cmt91fl4m000gigiriu3t2elv","cmt91ffhx0003igirs5mr7cau","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv900018igirocd3fx2r","PRY-CAM-017","New Yamuna Bridge South",25.412,81.865,"SOUTHBOUND","cmt91fl4m000gigiriu3t2elv","cmt91ffhx0003igirs5mr7cau","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv900019igirwxtki85c","PRY-CAM-018","Naini Chungi",25.4025,81.8692,"SOUTHBOUND","cmt91fl4m000gigiriu3t2elv","cmt91ffhx0003igirs5mr7cau","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001aigir8vmruy2a","PRY-CAM-019","Naini Market",25.3943,81.877,"SOUTHEASTBOUND","cmt91fl4m000higirg0w6qycv","cmt91ffhx0003igirs5mr7cau","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001bigirspse39bz","PRY-CAM-020","Mirzapur Road Exit",25.3867,81.888,"SOUTHEASTBOUND","cmt91fl4m000higirg0w6qycv","cmt91ffhx0003igirs5mr7cau","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001cigirw7xln2y9","PRY-CAM-021","Teliarganj Crossing",25.4874,81.8654,"NORTHBOUND","cmt91fl4m000cigirfs0xd7ms","cmt91ffhx0004igirfy1jca52","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001digirlaqgavpb","PRY-CAM-022","Phaphamau Entry",25.5403,81.882,"NORTHBOUND","cmt91fl4m000cigirfs0xd7ms","cmt91ffhx0004igirfy1jca52","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001eigir59daazjs","PRY-CAM-023","Shastri Bridge West",25.4365,81.895,"EASTBOUND","cmt91fl4m000iigirvnmaxg6x","cmt91ffhx0005igir0d0cfqix","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001figirszfrx0oz","PRY-CAM-024","Shastri Bridge Deck",25.4378,81.904,"EASTBOUND","cmt91fl4m000iigirvnmaxg6x","cmt91ffhx0005igir0d0cfqix","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001gigir2jhm3ljs","PRY-CAM-025","Shastri Bridge East",25.4388,81.913,"EASTBOUND","cmt91fl4m000iigirvnmaxg6x","cmt91ffhx0005igir0d0cfqix","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001higirvvxkh41c","PRY-CAM-026","Jhunsi Police Chowki",25.436,81.925,"EASTBOUND","cmt91fl4m000jigir42w3rol5","cmt91ffhx0005igir0d0cfqix","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001iigirztcyjyr4","PRY-CAM-027","Jhunsi Entry",25.4345,81.936,"EASTBOUND","cmt91fl4m000jigir42w3rol5","cmt91ffhx0005igir0d0cfqix","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001jigirsuklyy88","PRY-CAM-028","Subedarganj Crossing",25.4421,81.8023,"WESTBOUND","cmt91fl4m000ligirodchyapn","cmt91ffhx0006igirivg8tg8s","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001kigir74rqfyj0","PRY-CAM-029","Bamrauli Approach",25.439,81.745,"WESTBOUND","cmt91fl4m000ligirodchyapn","cmt91ffhx0006igirivg8tg8s","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001ligirzg9eqnit","PRY-CAM-030","Airport Main Gate",25.44,81.735,"WESTBOUND","cmt91fl4m000ligirodchyapn","cmt91ffhx0006igirivg8tg8s","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001migirq6dg29qm","PRY-CAM-031","Karamchari Nagar",25.42,81.81,"SOUTHBOUND","cmt91fl4m000migirykh11eug","cmt91ffhx0006igirivg8tg8s","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001nigir98rockbe","PRY-CAM-032","Jhalwa Chouraha",25.432,81.785,"SOUTHBOUND","cmt91fl4m000migirykh11eug","cmt91ffhx0006igirivg8tg8s","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001oigirvdajbf1s","PRY-CAM-033","IIIT Allahabad Gate",25.43,81.77,"SOUTHBOUND","cmt91fl4m000migirykh11eug","cmt91ffhx0006igirivg8tg8s","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001pigirk1iamc8u","PRY-CAM-034","Johnston Ganj",25.445,81.83,"SOUTHBOUND","cmt91fl4m000nigirhu4oirfm","cmt91ffhx0008igir6gn1yi8k","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001qigirijw5qeex","PRY-CAM-035","Chowk Market",25.44,81.835,"SOUTHBOUND","cmt91fl4m000nigirhu4oirfm","cmt91ffhx0008igir6gn1yi8k","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001rigirxpsncmh9","PRY-CAM-036","Meerapur Junction",25.43,81.835,"SOUTHBOUND","cmt91fl4m000nigirhu4oirfm","cmt91ffhx0008igir6gn1yi8k","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001sigirwt3vyvbr","PRY-CAM-037","Old Yamuna Bridge North",25.423,81.85,"SOUTHBOUND","cmt91fl4m000pigirwp6ea57f","cmt91ffhx0008igir6gn1yi8k","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001tigir3gz5a7ca","PRY-CAM-038","Old Yamuna Bridge South",25.41,81.855,"SOUTHBOUND","cmt91fl4m000pigirwp6ea57f","cmt91ffhx0003igirs5mr7cau","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001uigira5qeddev","PRY-CAM-039","Naini Station",25.39,81.86,"SOUTHBOUND","cmt91fl4m000oigircvsygg5a","cmt91ffhx0003igirs5mr7cau","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001vigirpjenmd7c","PRY-CAM-040","Naini Industrial Hub",25.385,81.865,"SOUTHBOUND","cmt91fl4m000oigircvsygg5a","cmt91ffhx0003igirs5mr7cau","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001wigir3j181ev4","PRY-CAM-041","ARAI Gate",25.37,81.85,"SOUTHBOUND","cmt91fl4m000oigircvsygg5a","cmt91ffhx0007igirkmlpsunk","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001xigirokvpwj8n","PRY-CAM-042","Dandi Crossing",25.365,81.84,"SOUTHBOUND","cmt91fl4m000oigircvsygg5a","cmt91ffhx0007igirkmlpsunk","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001yigire9c9ci8f","PRY-CAM-043","Ghoorpur Toll Plaza",25.35,81.82,"SOUTHBOUND","cmt91fl4m000rigirmhz964in","cmt91ffhx0007igirkmlpsunk","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv90001zigirpdsqxfxd","PRY-CAM-044","Sohbatiabagh",25.45,81.855,"EASTBOUND","cmt91fl4l0009igir7hrw8p17","cmt91ffhx0001igir14x37akj","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv900020igirlyyrvbcx","PRY-CAM-045","Allen Ganj",25.468,81.86,"NORTHBOUND","cmt91fl4m000qigirk3gdsmpv","cmt91ffhx0001igir14x37akj","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv900021igirst2og71t","PRY-CAM-046","Govindpur",25.48,81.87,"NORTHBOUND","cmt91fl4m000qigirk3gdsmpv","cmt91ffhx0001igir14x37akj","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv910022igirz515l0yi","PRY-CAM-047","Rajapur",25.47,81.845,"EASTBOUND","cmt91fl4l0009igir7hrw8p17","cmt91ffhu0000igir161ble4m","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv910023igirgq03osod","PRY-CAM-048","Rambagh Station",25.44,81.845,"EASTBOUND","cmt91fl4m000nigirhu4oirfm","cmt91ffhx0008igir6gn1yi8k","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv910024igirtsmfh82q","PRY-CAM-049","Sangam Tent City Area",25.42,81.885,"SOUTHBOUND","cmt91fl4m000eigirbfvw3s2h","cmt91ffhx0002igir0l5kqrc4","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv910025igirsl8tpsfc","PRY-CAM-050","Alopi Bagh",25.45,81.875,"EASTBOUND","cmt91fl4m000digirgcfjn65z","cmt91ffhx0002igir0l5kqrc4","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv910026igir3448326n","PRY-CAM-051","Phaphamau Bridge Mid",25.52,81.875,"NORTHBOUND","cmt91fl4m000cigirfs0xd7ms","cmt91ffhx0004igirfy1jca52","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z
+"cmt91fv910027igir0rmj1in0","PRY-CAM-052","Shantipuram Highway",25.545,81.87,"NORTHBOUND","cmt91fl4m000cigirfs0xd7ms","cmt91ffhx0004igirfy1jca52","ONLINE",2026-08-25T19:08:33.395Z,2026-08-25T19:08:33.395Z

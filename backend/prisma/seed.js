@@ -18,6 +18,7 @@ async function main() {
     create: {
       username: 'admin',
       passwordHash: adminPassword,
+      name: 'Admin',
       role: 'ADMIN',
     },
   });
