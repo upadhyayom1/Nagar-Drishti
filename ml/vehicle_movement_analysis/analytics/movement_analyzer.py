@@ -5,7 +5,7 @@ from math import radians, sin, cos, sqrt, atan2
 
 class VehicleMovementAnalyzer:
     def __init__(self, detections_path: str, cameras_path: str, roads_path: str, zones_path: str):
-        """Initializes the analyzer by loading dataset references."""
+        """Initializes the analyzer by loading dataset references and mapping exact schema columns."""
         self.detections_df = pd.read_csv(detections_path)
         self.cameras_df = pd.read_csv(cameras_path)
         self.roads_df = pd.read_csv(roads_path)
@@ -24,8 +24,9 @@ class VehicleMovementAnalyzer:
         return R * c
 
     def get_vehicle_trajectory(self, vehicle_id: str):
-        """Reconstructs chronologically ordered trajectory for a specific vehicle."""
-        v_data = self.detections_df[self.detections_df['vehicle_id'] == vehicle_id].sort_values('timestamp')
+        """Reconstructs chronologically ordered trajectory for a specific vehicle using exact schema keys."""
+        # Using exact column names: 'vehicleId', 'cameraId', 'plateText'
+        v_data = self.detections_df[self.detections_df['vehicleId'] == vehicle_id].sort_values('timestamp')
         if v_data.empty:
             return None
         
@@ -35,10 +36,10 @@ class VehicleMovementAnalyzer:
         for _, row in v_data.iterrows():
             point_info = {
                 "timestamp": row['timestamp'].isoformat(),
-                "camera_id": row['camera_id'],
+                "camera_id": row['cameraId'],
                 "latitude": row['latitude'],
                 "longitude": row['longitude'],
-                "plate": row['plate']
+                "plate": row['plateText']
             }
             
             if prev_row is not None:
@@ -62,11 +63,11 @@ class VehicleMovementAnalyzer:
 
     def detect_speed_violations(self, speed_limit_default: float = 50.0):
         """Identifies instances where a vehicle exceeds speed thresholds between camera checkpoints."""
-        df = self.detections_df.sort_values(['vehicle_id', 'timestamp'])
-        df['prev_lat'] = df.groupby('vehicle_id')['latitude'].shift(1)
-        df['prev_lon'] = df.groupby('vehicle_id')['longitude'].shift(1)
-        df['prev_time'] = df.groupby('vehicle_id')['timestamp'].shift(1)
-        df['prev_cam'] = df.groupby('vehicle_id')['camera_id'].shift(1)
+        df = self.detections_df.sort_values(['vehicleId', 'timestamp'])
+        df['prev_lat'] = df.groupby('vehicleId')['latitude'].shift(1)
+        df['prev_lon'] = df.groupby('vehicleId')['longitude'].shift(1)
+        df['prev_time'] = df.groupby('vehicleId')['timestamp'].shift(1)
+        df['prev_cam'] = df.groupby('vehicleId')['cameraId'].shift(1)
 
         valid_segments = df.dropna(subset=['prev_lat']).copy()
         
@@ -78,10 +79,10 @@ class VehicleMovementAnalyzer:
                 speed = dist / hours
                 if speed > speed_limit_default:
                     violations.append({
-                        "vehicle_id": row['vehicle_id'],
-                        "plate": row['plate'],
+                        "vehicle_id": row['vehicleId'],
+                        "plate": row['plateText'],
                         "from_camera": row['prev_cam'],
-                        "to_camera": row['camera_id'],
+                        "to_camera": row['cameraId'],
                         "speed_kmh": round(speed, 2),
                         "speed_limit": speed_limit_default,
                         "timestamp": row['timestamp'].isoformat()
@@ -92,8 +93,9 @@ class VehicleMovementAnalyzer:
         """Returns overall high-level metrics on camera activity and detection density."""
         summary = {
             "total_detections": len(self.detections_df),
-            "unique_vehicles": self.detections_df['vehicle_id'].nunique(),
+            "unique_vehicles": self.detections_df['vehicleId'].nunique(),
+            # Using 'status' column from cameras.csv
             "active_cameras": self.cameras_df[self.cameras_df['status'] == 'ONLINE'].shape[0],
-            "busiest_cameras": self.detections_df['camera_id'].value_counts().head(5).to_dict()
+            "busiest_cameras": self.detections_df['cameraId'].value_counts().head(5).to_dict()
         }
         return summary

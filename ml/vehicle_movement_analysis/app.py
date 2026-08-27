@@ -1,6 +1,12 @@
-from fastapi import FastAPI, HTTPException, Query
-from movement_analyzer import VehicleMovementAnalyzer
+import sys
 import os
+
+# 1. Append directory to path FIRST so Python can find local modules
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# 2. Now perform your imports safely
+from fastapi import FastAPI, HTTPException, Query
+from analytics.movement_analyzer import VehicleMovementAnalyzer
 
 app = FastAPI(
     title="Vehicle Movement Analysis API",
