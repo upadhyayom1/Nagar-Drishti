@@ -74,10 +74,10 @@ export default function LandingPage() {
     }
   }, [setTheme]);
 
-  const rawVehicles = stats?.totalVehiclesToday ?? 2847;
-  const rawNodes = systemHealth?.summary?.total ?? 10;
-  const rawOnline = systemHealth?.summary?.online ?? 10;
-  const rawAlerts = stats?.activeAlerts ?? 4;
+  const rawVehicles = stats?.totalVehiclesToday ?? 0;
+  const rawNodes = systemHealth?.summary?.total ?? 0;
+  const rawOnline = systemHealth?.summary?.online ?? 0;
+  const rawAlerts = stats?.activeAlerts ?? 0;
 
   const telemetryFacts = [
     {

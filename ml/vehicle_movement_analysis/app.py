@@ -1,294 +1,149 @@
-import sys
-import os
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
+import traceback
 import pandas as pd
+import os
 
-# Add the current directory to Python's path
+from analytics.movement_analyzer import VehicleMovementAnalyzer, analyze_ocr_movement
+from analytics.interceptor import VehicleInterceptor
+
+app = FastAPI(title="Nagar-Drishti Movement & Interceptor API", version="2.1")
+
+
+class TransitionInput(BaseModel):
+    sourceCameraId: str
+    destinationCameraId: str
+    destinationCameraCode: str
+    destinationCameraName: str
+    destinationZone: str | None = None
+    destinationRoad: str | None = None
+    travelTimeSeconds: float | None = None
+    vehicleId: str | None = None
+
+
+class NextCameraRequest(BaseModel):
+    vehicleId: str
+    lastCameraId: str
+    transitions: list[TransitionInput] = Field(default_factory=list)
+    vehicleTransitions: list[TransitionInput] = Field(default_factory=list)
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, BASE_DIR)
-
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.middleware.cors import CORSMiddleware
-
-from analytics.movement_analyzer import (
-    VehicleMovementAnalyzer,
-    analyze_ocr_movement
-)
-
-
-# ============================================================
-# FastAPI Application
-# ============================================================
-
-app = FastAPI(
-    title="Nagar-Drishti Vehicle Movement Analysis API",
-    description=(
-        "FastAPI service for urban vehicle trajectory tracking, "
-        "traffic analysis, speed violation detection, and OCR "
-        "vehicle movement analysis."
-    ),
-    version="1.0.0"
-)
-
-
-# ============================================================
-# CORS Configuration
-# ============================================================
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
-# ============================================================
-# Data Configuration
-# ============================================================
-
 DATA_DIR = os.path.join(BASE_DIR, "data")
 
 DETECTIONS_PATH = os.path.join(DATA_DIR, "detections.csv")
 CAMERAS_PATH = os.path.join(DATA_DIR, "cameras.csv")
 ROADS_PATH = os.path.join(DATA_DIR, "roads.csv")
 ZONES_PATH = os.path.join(DATA_DIR, "zones.csv")
+BLACKLIST_PATH = os.path.join(DATA_DIR, "blacklisted_vehicles_checkpoints.json")
 
-
-# ============================================================
-# Initialize Vehicle Movement Analyzer
-# ============================================================
-
-try:
-    analyzer = VehicleMovementAnalyzer(
-        detections_path=DETECTIONS_PATH,
-        cameras_path=CAMERAS_PATH,
-        roads_path=ROADS_PATH,
-        zones_path=ZONES_PATH
-    )
-except Exception as e:
-    analyzer = None
-    print(f"WARNING: Failed to initialize VehicleMovementAnalyzer: {e}")
-
-
-# ============================================================
-# Prepare OCR Movement Analysis Data
-# ============================================================
-
-MERGED_DATA = None
-
+analyzer_engine = None
+interceptor_engine = None
+raw_detections = None
+raw_cameras = None
 
 @app.on_event("startup")
-def load_and_prepare_csv_data():
-    """
-    Load and merge CSV data required by the OCR movement analysis
-    pipeline.
-    """
-
-    global MERGED_DATA
-
+def startup_event():
+    global analyzer_engine, interceptor_engine, raw_detections, raw_cameras
     try:
-        roads = pd.read_csv(ROADS_PATH)
-        zones = pd.read_csv(ZONES_PATH)
-        cameras = pd.read_csv(CAMERAS_PATH)
-        detections = pd.read_csv(DETECTIONS_PATH)
+        if os.path.exists(DETECTIONS_PATH):
+            raw_detections = pd.read_csv(DETECTIONS_PATH, low_memory=False)
+        if os.path.exists(CAMERAS_PATH):
+            raw_cameras = pd.read_csv(CAMERAS_PATH, low_memory=False)
 
-        # Map detection camera code:
-        # C001 -> PRY-CAM-001
-        detections["mapped_code"] = detections["cameraCode"].apply(
-            lambda c: f"PRY-CAM-{int(c[1:]):03d}"
-        )
-
-        # Merge detections with cameras
-        merged = detections.merge(
-            cameras,
-            left_on="mapped_code",
-            right_on="cameraCode",
-            how="left",
-            suffixes=("", "_cam")
-        )
-
-        # Merge roads
-        merged = merged.merge(
-            roads,
-            left_on="roadId",
-            right_on="id",
-            how="left",
-            suffixes=("", "_road")
-        )
-
-        # Merge zones
-        merged = merged.merge(
-            zones,
-            left_on="zoneId",
-            right_on="id",
-            how="left",
-            suffixes=("", "_zone")
-        )
-
-        MERGED_DATA = merged
-
-        print(
-            f"OCR movement data initialized successfully: "
-            f"{len(MERGED_DATA)} detections loaded."
-        )
-
+        analyzer_engine = VehicleMovementAnalyzer(DETECTIONS_PATH, CAMERAS_PATH, ROADS_PATH, ZONES_PATH)
+        interceptor_engine = VehicleInterceptor(raw_detections, raw_cameras, BLACKLIST_PATH)
+        print("Successfully loaded Nagar-Drishti ML analysis modules.")
     except Exception as e:
-        MERGED_DATA = None
-        print(f"WARNING: Failed to load OCR movement data: {e}")
+        print(f"Startup Warning: {e}")
 
-
-# ============================================================
-# Root Endpoint
-# ============================================================
-
-@app.get("/")
-def read_root():
-    return {
-        "message": "Welcome to the Nagar-Drishti Vehicle Movement Analysis Engine API",
-        "status": "running"
-    }
-
-
-# ============================================================
-# Health Check
-# ============================================================
 
 @app.get("/health")
-def health_check():
-    return {
-        "status": "healthy" if analyzer is not None else "degraded",
-        "analyzer_initialized": analyzer is not None,
-        "ocr_data_initialized": MERGED_DATA is not None
-    }
+def health():
+    return {"status": "ok", "service": "vehicle-movement-analysis", "modelLoaded": interceptor_engine is not None}
 
 
-# ============================================================
-# Traffic Summary
-# ============================================================
+@app.post("/api/blacklisted/predict-next")
+def predict_live_next_camera(request: NextCameraRequest):
+    scores = {}
 
-@app.get("/api/summary")
-def get_summary():
+    def add_transition(transition: TransitionInput, weight: int):
+        if transition.sourceCameraId != request.lastCameraId:
+            return
+        current = scores.setdefault(transition.destinationCameraId, {"transition": transition, "score": 0, "travel_times": []})
+        current["score"] += weight
+        if transition.travelTimeSeconds and transition.travelTimeSeconds > 0:
+            current["travel_times"].append(transition.travelTimeSeconds)
 
-    if analyzer is None:
-        raise HTTPException(
-            status_code=500,
-            detail="Vehicle movement analyzer is not initialized."
-        )
+    for transition in request.transitions:
+        add_transition(transition, 1)
+    for transition in request.vehicleTransitions:
+        add_transition(transition, 3)
 
-    try:
-        return analyzer.get_traffic_summary()
+    if not scores:
+        return {"vehicleId": request.vehicleId, "prediction": None, "alternatives": []}
 
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to generate traffic summary: {str(e)}"
-        )
+    ranked = sorted(scores.values(), key=lambda candidate: candidate["score"], reverse=True)
+    total_score = sum(candidate["score"] for candidate in ranked)
 
+    def serialize(candidate):
+        transition = candidate["transition"]
+        average_seconds = sum(candidate["travel_times"]) / len(candidate["travel_times"]) if candidate["travel_times"] else None
+        confidence = "HIGH" if candidate["score"] >= 12 else "MODERATE" if candidate["score"] >= 4 else "LOW"
+        return {
+            "cameraId": transition.destinationCameraId,
+            "cameraCode": transition.destinationCameraCode,
+            "cameraName": transition.destinationCameraName,
+            "zone": transition.destinationZone,
+            "road": transition.destinationRoad,
+            "probability": candidate["score"] / total_score,
+            "etaMinutes": max(1, round(average_seconds / 60)) if average_seconds else None,
+            "confidence": confidence,
+            "basis": "VEHICLE_AND_NETWORK_TRANSITIONS" if request.vehicleTransitions else "NETWORK_TRANSITIONS",
+        }
 
-# ============================================================
-# Vehicle Trajectory
-# ============================================================
+    return {"vehicleId": request.vehicleId, "prediction": serialize(ranked[0]), "alternatives": [serialize(candidate) for candidate in ranked[1:4]]}
 
 @app.get("/api/vehicle/{vehicle_id}/trajectory")
-def get_vehicle_trajectory(vehicle_id: str):
-
-    if analyzer is None:
-        raise HTTPException(
-            status_code=500,
-            detail="Vehicle movement analyzer is not initialized."
-        )
-
+def get_trajectory(vehicle_id: str):
     try:
-        trajectory_data = analyzer.get_vehicle_trajectory(vehicle_id)
-
+        if not analyzer_engine:
+            raise HTTPException(status_code=500, detail="Analyzer engine not initialized.")
+        res = analyzer_engine.get_vehicle_trajectory(vehicle_id)
+        if not res:
+            raise HTTPException(status_code=404, detail=f"Vehicle ID '{vehicle_id}' not found.")
+        return res
+    except HTTPException as he:
+        raise he
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to retrieve vehicle trajectory: {str(e)}"
-        )
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
-    if not trajectory_data:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Vehicle ID '{vehicle_id}' not found."
-        )
-
-    return trajectory_data
-
-
-# ============================================================
-# Speed Violations
-# ============================================================
-
-@app.get("/api/violations")
-def get_speed_violations(
-    speed_limit: float = Query(
-        50.0,
-        description="Speed threshold limit in km/h"
-    )
-):
-
-    if analyzer is None:
-        raise HTTPException(
-            status_code=500,
-            detail="Vehicle movement analyzer is not initialized."
-        )
-
-    if speed_limit <= 0:
-        raise HTTPException(
-            status_code=400,
-            detail="Speed limit must be greater than 0."
-        )
-
+@app.get("/api/vehicle/{vehicle_id}/ocr-analysis")
+def get_ocr_analysis(vehicle_id: str):
     try:
-        violations = analyzer.detect_speed_violations(
-            speed_limit_default=speed_limit
-        )
-
+        if raw_detections is None:
+            raise HTTPException(status_code=500, detail="Detections data not loaded.")
+        res = analyze_ocr_movement(raw_detections, vehicle_id)
+        if not res:
+            raise HTTPException(status_code=404, detail=f"Vehicle ID '{vehicle_id}' not found in detections.")
+        return res
+    except HTTPException as he:
+        raise he
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to detect speed violations: {str(e)}"
-        )
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
-    return {
-        "speed_limit_threshold": speed_limit,
-        "total_violations": len(violations),
-        "violations": violations
-    }
-
-
-# ============================================================
-# OCR Vehicle Movement Analysis
-# ============================================================
-
-@app.get("/api/analyze/{identifier}")
-def analyze_vehicle(identifier: str):
-
-    if MERGED_DATA is None:
-        raise HTTPException(
-            status_code=500,
-            detail="OCR movement data pipeline is not initialized."
-        )
-
+@app.get("/api/blacklisted/predict-next/{vehicle_id}")
+def predict_blacklisted_next(vehicle_id: str):
     try:
-        result = analyze_ocr_movement(
-            MERGED_DATA,
-            identifier,
-            dwell_threshold_mins=8.0
-        )
-
+        if not interceptor_engine:
+            raise HTTPException(status_code=500, detail="Interceptor engine not initialized.")
+        res = interceptor_engine.predict_next_for_vehicle(vehicle_id)
+        if "error" in res:
+            raise HTTPException(status_code=404, detail=res["error"])
+        return res
+    except HTTPException as he:
+        raise he
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to analyze vehicle movement: {str(e)}"
-        )
-
-    if not result:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Vehicle '{identifier}' not found in detections."
-        )
-
-    return result
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))

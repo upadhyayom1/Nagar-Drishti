@@ -14,7 +14,6 @@ import {
   CheckCircle2,
   Send,
   XCircle,
-  Trash2,
   Image as ImageIcon,
   Video,
   Filter,
@@ -44,8 +43,8 @@ export default function FieldSubmissionsPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['citizenSubmissions'] }),
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => submissionService.deleteSubmission(id),
+  const dismissMutation = useMutation({
+    mutationFn: (id: string) => submissionService.dismissSubmission(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['citizenSubmissions'] }),
   });
 
@@ -240,11 +239,11 @@ export default function FieldSubmissionsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => deleteMutation.mutate(sub.id)}
+                          onClick={() => dismissMutation.mutate(sub.id)}
                           className="text-[var(--text-tertiary)] hover:text-[var(--status-critical)]"
-                          title="Delete Record"
+                          title="Reject report"
                         >
-                          <Trash2 size={13} />
+                          <XCircle size={13} />
                         </Button>
                       </div>
                     </div>

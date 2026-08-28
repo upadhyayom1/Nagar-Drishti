@@ -33,7 +33,14 @@ async function addBlacklistedVehicle(data) {
       status: 'ACTIVE',
     },
   });
-  await prisma.vehicle.updateMany({ where: { plateNumber: normalizedPlate }, data: { status: 'BLACKLISTED' } });
+  await prisma.vehicle.upsert({
+    where: { plateNumber: normalizedPlate },
+    update: { status: 'BLACKLISTED' },
+    create: {
+      plateNumber: normalizedPlate,
+      status: 'BLACKLISTED',
+    },
+  });
   return record;
 }
 
@@ -102,26 +109,52 @@ async function processDetectionForBlacklist(detection) {
       }
     });
 
-    if (!existingAlert) {
-      let cameraName = detection.cameraId;
-      if (detection.camera && detection.camera.name) {
-        cameraName = detection.camera.name;
-      } else {
-        const cam = await prisma.camera.findUnique({ where: { id: detection.cameraId }});
-        if (cam) cameraName = cam.name + (cam.location ? ` (${cam.location})` : '');
-      }
+    let cameraName = detection.cameraId;
+    if (detection.camera && detection.camera.name) {
+      cameraName = detection.camera.name;
+    } else {
+      const cam = await prisma.camera.findUnique({ where: { id: detection.cameraId }});
+      if (cam) cameraName = cam.name + (cam.location ? ` (${cam.location})` : '');
+    }
 
+    const alertMessage = `Blacklisted vehicle ${checkResult.plateNumber} detected by ${cameraName}. Reason: ${checkResult.record.reason}`;
+
+    // Find any existing ACTIVE alert for this vehicle to update, preventing duplicate notifications
+    const existingActiveAlert = await prisma.alert.findFirst({
+      where: {
+        type: 'BLACKLIST_MATCH',
+        vehicleId: detection.vehicleId,
+        status: 'ACTIVE',
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (existingActiveAlert) {
+      await prisma.alert.update({
+        where: { id: existingActiveAlert.id },
+        data: {
+          cameraId: detection.cameraId,
+          severity: checkResult.record.severity,
+          message: alertMessage,
+          createdAt: detection.timestamp || new Date(),
+        },
+      });
+    } else {
       await prisma.alert.create({
         data: {
           type: 'BLACKLIST_MATCH',
           severity: checkResult.record.severity,
           vehicleId: detection.vehicleId,
           cameraId: detection.cameraId,
-          message: `Blacklisted vehicle ${checkResult.plateNumber} detected by ${cameraName}. Reason: ${checkResult.record.reason}`,
+          message: alertMessage,
+          status: 'ACTIVE',
+          createdAt: detection.timestamp || new Date(),
         },
       });
+    }
 
-      // Also create an Incident for the new system
+    if (!existingAlert) {
+      // Also record an Incident for the incident log
       await prisma.incident.create({
         data: {
           type: 'BLACKLIST_DETECTION',

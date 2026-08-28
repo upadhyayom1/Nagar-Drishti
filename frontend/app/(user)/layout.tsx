@@ -4,11 +4,13 @@ import Link from 'next/link';
 import { ShieldCheck, ArrowLeft, Sun, Moon } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { Button } from '@/components/ui/Button';
+import { AuthGuard } from '@/components/layout/AuthGuard';
 
 export default function UserPortalLayout({ children }: { children: React.ReactNode }) {
   const { theme, toggleTheme } = useUIStore();
 
   return (
+    <AuthGuard allowedRoles={['USER']}>
     <div className="min-h-screen bg-[var(--bg-void)] text-[var(--text-primary)] flex flex-col font-body selection:bg-[var(--brand-teal)]/30">
       
       {/* ── Ambient Lights ── */}
@@ -65,5 +67,6 @@ export default function UserPortalLayout({ children }: { children: React.ReactNo
         <p>© {new Date().getFullYear()} UrbanPulse Public Safety · Municipal Citizen Reporting System</p>
       </footer>
     </div>
+    </AuthGuard>
   );
 }

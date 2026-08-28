@@ -2,6 +2,7 @@ const turf = require('@turf/turf');
 const { prisma } = require('../../lib/prisma');
 const { recordDetection } = require('../detection/detection.service');
 const { evaluateCongestionAlert } = require('../traffic/traffic.service');
+const { pruneStorage } = require('../system/storage.service');
 
 const VEHICLE_SPEED_RANGES = {
   AUTO: [22, 34],
@@ -358,8 +359,6 @@ class SimulationEngine {
                 if (!v.activeCameras.has(cam.id)) {
                     v.activeCameras.add(cam.id);
                     
-                    console.log(`[DETECTION] Vehicle: ${v.id} Plate: ${v.plateNumber} Camera: ${cam.cameraCode || cam.id} Distance: ${dist.toFixed(1)}m Time: ${this.time.toISOString()} Source: SIMULATION`);
-                    
                     const detection = {
                         vehicleId: v.id,
                         cameraId: cam.id,
@@ -471,6 +470,12 @@ class SimulationEngine {
                 console.error('Failed to save camera health:', err);
             }
         }
+    }
+
+    // Storage Quota Guard (Every 15 simulation minutes)
+    if (!this.lastStoragePrune || (this.time.getTime() - this.lastStoragePrune.getTime() >= 15 * 60 * 1000)) {
+      this.lastStoragePrune = new Date(this.time);
+      pruneStorage().catch(err => console.error('Background storage prune error:', err.message));
     }
   }
 

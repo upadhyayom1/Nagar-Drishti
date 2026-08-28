@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useUIStore } from '@/store/uiStore';
 import { useRouter } from 'next/navigation';
+import { authService } from '@/services/authService';
+import { useAuthStore } from '@/store/authStore';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -16,10 +18,16 @@ interface UserProfileModalProps {
 export function UserProfileModal({ isOpen, onClose }: UserProfileModalProps) {
   const router = useRouter();
   const { theme, toggleTheme } = useUIStore();
+  const user = useAuthStore((state) => state.user);
+  const clearUser = useAuthStore((state) => state.logout);
+  const displayName = user?.name || user?.username || 'Operator';
+  const initials = displayName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase();
 
   if (!isOpen) return null;
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await authService.logout().catch(() => undefined);
+    clearUser();
     onClose();
     router.push('/login');
   };
@@ -61,7 +69,7 @@ export function UserProfileModal({ isOpen, onClose }: UserProfileModalProps) {
                 <div className="relative">
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#00f0ff] via-[#6366f1] to-[#ec4899] p-0.5 shadow-[0_0_20px_rgba(0,240,255,0.4)]">
                     <div className="w-full h-full rounded-2xl bg-[#0c1222] flex items-center justify-center text-xl font-bold font-display text-white">
-                      RK
+                      {initials}
                     </div>
                   </div>
                   <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-400 border-2 border-[#0c1222] shadow-[0_0_8px_#10b981]" />
@@ -69,11 +77,11 @@ export function UserProfileModal({ isOpen, onClose }: UserProfileModalProps) {
 
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-bold font-display text-[var(--text-primary)]">Rahul Krishnan</h2>
-                    <Badge variant="cyan" size="sm">LEVEL 4 CLEARANCE</Badge>
+                    <h2 className="text-lg font-bold font-display text-[var(--text-primary)]">{displayName}</h2>
+                    <Badge variant="cyan" size="sm">{user?.role === 'ADMIN' ? 'ADMIN ACCESS' : 'USER ACCESS'}</Badge>
                   </div>
                   <p className="text-xs font-mono text-[var(--text-secondary)] mt-0.5">
-                    Sector Dispatch Director · Command Zone 1
+                    {user?.role === 'ADMIN' ? 'Municipal command center' : 'Citizen reporting portal'}
                   </p>
                 </div>
               </div>

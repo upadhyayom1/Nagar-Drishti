@@ -6,8 +6,17 @@ const router = Router();
 
 const upload = multer({
   storage: multer.memoryStorage(),
+  limits: {
+    files: 20,
+    fileSize: 10 * 1024 * 1024,
+  },
+  fileFilter: (req, file, callback) => {
+    if (file.mimetype.startsWith('image/')) return callback(null, true);
+    return callback(new Error('Only image files can be processed for plate recognition'));
+  },
 });
 
+router.get('/status', ocrController.getStatus);
 router.post(
   '/',
   upload.array('plateImages', 20),

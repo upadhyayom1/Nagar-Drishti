@@ -15,7 +15,7 @@ const login = async (username, passwordPlain) => {
   const isMatch = await bcrypt.compare(passwordPlain, user.passwordHash);
 
   if (!isMatch) {
-    throw new Error('Invalid email or password');
+    throw new Error('Invalid username or password');
   }
 
   const token = jwt.sign(
@@ -59,4 +59,16 @@ const register = async (data) => {
   return { user, token };
 };
 
-module.exports = { login, register };
+const getUserById = async (id) => prisma.user.findUnique({
+  where: { id },
+  select: {
+    id: true,
+    username: true,
+    email: true,
+    name: true,
+    phone: true,
+    role: true,
+  },
+});
+
+module.exports = { login, register, getUserById };

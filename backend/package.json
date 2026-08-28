@@ -7,6 +7,7 @@
     "dev": "node server.js",
     "start": "node server.js",
     "postinstall": "prisma generate",
+    "prune:storage": "node src/scripts/prune-storage.js",
     "seed": "node prisma/seed.js",
     "seed:prayagraj-network": "node src/scripts/seedPrayagrajNetwork.js",
     "generate:historical": "node src/scripts/historical/generateHistoricalData.js",

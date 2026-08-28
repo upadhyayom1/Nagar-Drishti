@@ -389,6 +389,11 @@ export default function BlacklistPage() {
                               </p>
                             </div>
 
+                            <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-black/40 border border-white/[0.05] text-[10px] font-data">
+                              <div><span className="block text-[9px] font-display uppercase font-bold text-slate-400">Estimated arrival</span><span className="font-bold text-cyan-300">{vehicle.nextProbableCamera.etaMinutes ? `~${vehicle.nextProbableCamera.etaMinutes} min` : 'Calculating'}</span></div>
+                              <div><span className="block text-[9px] font-display uppercase font-bold text-slate-400">Confidence</span><span className="font-bold text-violet-300">{vehicle.nextProbableCamera.confidence || 'LOW'}</span></div>
+                            </div>
+
                             {/* Probability Bar */}
                             <div>
                               <div className="flex justify-between text-[10px] font-mono text-slate-400 mb-1">
@@ -404,6 +409,11 @@ export default function BlacklistPage() {
                                 />
                               </div>
                             </div>
+
+                            <Link href={`/cameras/${vehicle.nextProbableCamera.cameraId}`} className="block pt-1">
+                              <span className="text-[11px] font-mono text-violet-300 hover:text-violet-200 flex items-center gap-1 font-semibold transition-colors"><Camera size={12} /> Open predicted camera feed ({vehicle.nextProbableCamera.cameraCode}) →</span>
+                            </Link>
+                            {vehicle.nextProbableCamera.alternativeCameras && vehicle.nextProbableCamera.alternativeCameras.length > 0 && <p className="text-[10px] font-mono text-slate-400">Alternatives: {vehicle.nextProbableCamera.alternativeCameras.map((camera) => `${camera.cameraCode} (${Math.round(camera.probability * 100)}%)`).join(' · ')}</p>}
                           </div>
                         ) : (
                           <div className="py-3 px-3.5 rounded-xl bg-black/40 border border-dashed border-violet-500/20 text-center space-y-2">
@@ -411,15 +421,13 @@ export default function BlacklistPage() {
                               <Zap size={14} className="animate-pulse" />
                             </div>
                             <div>
-                              <p className="text-xs font-bold text-slate-200 font-display">
-                                ML Route Prediction Model Ready
-                              </p>
+                              <p className="text-xs font-bold text-slate-200 font-display">No route prediction yet</p>
                               <p className="text-[10px] text-slate-400 font-mono mt-0.5 leading-relaxed">
-                                Telemetry vector slot active · Awaiting ML microservice inference
+                                A prediction appears after this vehicle receives a camera sighting and the network has an onward camera route.
                               </p>
                             </div>
                             <span className="inline-block text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-slate-400">
-                              Status: Prediction Hook Linked (NULL State)
+                              Status: waiting for route telemetry
                             </span>
                           </div>
                         )}
