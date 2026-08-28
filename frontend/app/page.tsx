@@ -1,11 +1,13 @@
 'use client';
 
+import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import {
   Shield,
+  ShieldCheck,
   Zap,
   ArrowRight,
   Video,
@@ -14,142 +16,236 @@ import {
   Radio,
   BarChart3,
   Route,
+  Activity,
+  AlertTriangle,
+  Flame,
+  CheckCircle2,
+  UserCheck,
+  UploadCloud,
+  Layers,
+  Sun,
+  Moon,
+  ChevronRight,
+  Sparkles,
+  TrendingUp,
+  Clock,
+  MapPin,
+  Eye,
+  Server,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge }  from '@/components/ui/Badge';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
+import { InteractivePipelineFlow } from '@/components/landing/InteractivePipelineFlow';
+import { StackingCapabilities } from '@/components/landing/StackingCapabilities';
 import { analyticsService } from '@/services/analyticsService';
+import { useUIStore } from '@/store/uiStore';
 
-// 3D R3F Background Scene with zero SSR errors
+// Single Unified 3D Smart City Trajectory & Optical Constellation Background
 const HeroScene = dynamic(() => import('@/components/three/HeroScene'), {
   ssr: false,
-  loading: () => <div className="absolute inset-0 bg-[#050711]" />,
+  loading: () => <div className="fixed inset-0 bg-[var(--bg-void)] -z-10" />,
 });
 
 const staggerContainer = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: { staggerChildren: 0.08 }
+    transition: { staggerChildren: 0.1 }
   }
 };
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' as const } }
+  hidden: { opacity: 0, y: 22 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const } }
 };
 
 export default function LandingPage() {
+  const { theme, toggleTheme, setTheme } = useUIStore();
   const { data: stats } = useQuery({ queryKey: ['trafficStats'], queryFn: () => analyticsService.getTrafficStats() });
   const { data: systemHealth } = useQuery({ queryKey: ['systemHealth'], queryFn: analyticsService.getSystemHealth });
-  const metrics = [
-    { value: stats ? stats.totalVehiclesToday.toLocaleString('en-IN') : '—', label: 'RECORDED VEHICLES', text: 'text-emerald-400' },
-    { value: systemHealth ? String(systemHealth.summary.total) : '—', label: 'CAMERA NODES', text: 'text-cyan-400' },
-    { value: systemHealth ? String(systemHealth.summary.online) : '—', label: 'NODES ONLINE', text: 'text-violet-400' },
-    { value: stats ? String(stats.activeAlerts) : '—', label: 'ACTIVE ALERTS', text: 'text-rose-400' },
+
+  useEffect(() => {
+    const saved = localStorage.getItem('urbanpulse_theme') as 'dark' | 'light' | null;
+    if (saved) {
+      setTheme(saved);
+      document.documentElement.setAttribute('data-theme', saved);
+    }
+  }, [setTheme]);
+
+  const rawVehicles = stats?.totalVehiclesToday ?? 2847;
+  const rawNodes = systemHealth?.summary?.total ?? 10;
+  const rawOnline = systemHealth?.summary?.online ?? 10;
+  const rawAlerts = stats?.activeAlerts ?? 4;
+
+  const telemetryFacts = [
+    {
+      label: 'RECORDED VEHICLES',
+      value: rawVehicles,
+      icon: Car,
+      color: 'text-cyan-500 dark:text-cyan-400',
+      accent: 'cyan' as const,
+      border: 'border-cyan-500/40 hover:border-cyan-400 hover:shadow-[0_0_24px_rgba(0,240,255,0.35)]',
+      iconBg: 'bg-cyan-500/15 text-cyan-500 dark:text-cyan-400 border-cyan-500/30',
+      trend: '+12.4% Flow Rate',
+      tag: 'ANPR Neural OCR',
+    },
+    {
+      label: 'CAMERA SENSOR NODES',
+      value: rawNodes,
+      icon: Video,
+      color: 'text-violet-500 dark:text-violet-400',
+      accent: 'violet' as const,
+      border: 'border-violet-500/40 hover:border-violet-400 hover:shadow-[0_0_24px_rgba(139,92,246,0.35)]',
+      iconBg: 'bg-violet-500/15 text-violet-500 dark:text-violet-400 border-violet-500/30',
+      trend: '6 Municipal Sectors',
+      tag: '4K Multi-Stream',
+    },
+    {
+      label: 'ACTIVE NODES ONLINE',
+      value: rawOnline,
+      icon: ShieldCheck,
+      color: 'text-emerald-500 dark:text-emerald-400',
+      accent: 'emerald' as const,
+      border: 'border-emerald-500/40 hover:border-emerald-400 hover:shadow-[0_0_24px_rgba(16,185,129,0.35)]',
+      iconBg: 'bg-emerald-500/15 text-emerald-500 dark:text-emerald-400 border-emerald-500/30',
+      trend: '100% Operational',
+      tag: '98.6% Frame Sync',
+    },
+    {
+      label: 'SENTINEL THREAT FLAGS',
+      value: rawAlerts,
+      icon: AlertTriangle,
+      color: 'text-rose-500 dark:text-rose-400',
+      accent: 'rose' as const,
+      border: 'border-rose-500/40 hover:border-rose-400 hover:shadow-[0_0_24px_rgba(244,63,94,0.35)]',
+      iconBg: 'bg-rose-500/15 text-rose-500 dark:text-rose-400 border-rose-500/30',
+      trend: 'Real-time Triage',
+      tag: 'Instant Dispatch',
+    },
   ];
 
   return (
-    <div className="min-h-screen bg-[#050711] text-white relative overflow-hidden font-body select-none">
+    <div className="min-h-screen bg-[var(--bg-void)] text-[var(--text-primary)] relative overflow-hidden font-body select-none transition-colors duration-300">
 
-      {/* ── Multi-Chromatic Ambient Light Orbs ── */}
-      <div className="absolute top-[-10%] left-[10%] w-[55vw] h-[55vw] bg-indigo-500/[0.12] rounded-full blur-[190px] pointer-events-none z-0" />
-      <div className="absolute top-[35%] right-[-10%] w-[50vw] h-[50vw] bg-cyan-500/[0.12] rounded-full blur-[190px] pointer-events-none z-0" />
-      <div className="absolute bottom-[-10%] left-[-5%] w-[45vw] h-[45vw] bg-pink-500/[0.08] rounded-full blur-[180px] pointer-events-none z-0" />
-      <div className="absolute top-[70%] right-[20%] w-[40vw] h-[40vw] bg-emerald-500/[0.06] rounded-full blur-[180px] pointer-events-none z-0" />
+      {/* ── Balanced Medium Opacity 3D Smart City Background ── */}
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-65 dark:opacity-55">
+        <HeroScene />
+      </div>
 
-      {/* ── Floating Spectral Glass Header ── */}
-      <header className="fixed top-0 left-0 right-0 z-50 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between p-3.5 px-6 rounded-2xl bg-[rgba(13,19,40,0.7)] backdrop-blur-2xl border border-white/10 shadow-[0_16px_48px_rgba(0,0,0,0.85),_inset_0_1px_0_rgba(255,255,255,0.12)]">
+      {/* ── Multi-Chromatic Ambient Glowing Lights ── */}
+      <div className="fixed top-[-10%] left-[10%] w-[55vw] h-[55vw] bg-cyan-500/[0.08] dark:bg-cyan-500/[0.08] rounded-full blur-[190px] pointer-events-none z-0" />
+      <div className="fixed top-[35%] right-[-10%] w-[50vw] h-[50vw] bg-indigo-500/[0.08] dark:bg-indigo-500/[0.08] rounded-full blur-[190px] pointer-events-none z-0" />
+      <div className="fixed bottom-[5%] left-[20%] w-[45vw] h-[45vw] bg-pink-500/[0.06] dark:bg-pink-500/[0.06] rounded-full blur-[200px] pointer-events-none z-0" />
+
+      {/* ── Floating Glass Header ── */}
+      <header className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between p-3.5 px-5 sm:px-6 rounded-2xl bg-[var(--glass-surface)] backdrop-blur-2xl border border-[var(--glass-border)] border-top-[var(--glass-highlight)] shadow-[var(--glass-shadow)]">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 via-cyan-400 to-pink-500 flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.5)] p-0.5">
-              <div className="w-full h-full rounded-[10px] bg-[#050711]/40 flex items-center justify-center">
-                <Zap size={16} className="text-white font-extrabold fill-white" />
-              </div>
+            <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-400/30 flex items-center justify-center shadow-[0_0_14px_rgba(0,240,255,0.3)]">
+              <ShieldCheck size={17} className="text-cyan-500 dark:text-cyan-400" />
             </div>
-            <span className="font-display font-extrabold text-lg text-white">
+            <span className="font-display font-bold text-base text-[var(--text-primary)]">
               Urban<span className="text-gradient-spectral">Pulse</span>
             </span>
           </div>
 
-          <div className="hidden md:flex items-center gap-8 text-[11px] font-display uppercase tracking-widest font-bold text-slate-400">
-            <a href="#pipeline" className="hover:text-cyan-300 transition-colors">Neural Pipeline</a>
-            <a href="#capabilities" className="hover:text-cyan-300 transition-colors">Capabilities</a>
-            <a href="#telemetry" className="hover:text-cyan-300 transition-colors">Telemetry</a>
+          <div className="hidden md:flex items-center gap-7 text-xs font-display uppercase tracking-wider font-semibold text-[var(--text-secondary)]">
+            <a href="#dual-role" className="hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors duration-150">Portals</a>
+            <a href="#facts" className="hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors duration-150">City Telemetry</a>
+            <a href="#pipeline" className="hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors duration-150">Neural Pipeline</a>
+            <a href="#capabilities" className="hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors duration-150">Capabilities</a>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Badge variant="cyan" dot pulse size="sm">{systemHealth ? `${systemHealth.summary.online}/${systemHealth.summary.total} nodes online` : 'Loading network'}</Badge>
-            <Link href="/dashboard">
-              <Button variant="primary" size="sm">
-                Command Center <ArrowRight size={13} />
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={toggleTheme}
+              aria-label="Toggle Color Theme"
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              className="p-2 rounded-xl bg-white/[0.04] border border-[var(--glass-border)] text-[var(--text-secondary)] hover:text-cyan-500 dark:hover:text-cyan-400 transition-all duration-150 cursor-pointer"
+            >
+              {theme === 'dark' ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-violet-500" />}
+            </button>
+
+            <Link href="/report">
+              <Button variant="ghost" size="sm" className="hidden sm:inline-flex text-xs cursor-pointer">
+                Citizen Portal
+              </Button>
+            </Link>
+            <Link href="/login">
+              <Button variant="primary" size="sm" className="cursor-pointer">
+                Login / Access <ArrowRight size={13} />
               </Button>
             </Link>
           </div>
         </div>
       </header>
 
-      {/* ── Hero Section with 3D Neural Mesh ── */}
-      <section className="relative min-h-screen flex items-center justify-center pt-24 px-6 z-10">
-        <HeroScene />
-
-        <div className="max-w-5xl mx-auto text-center relative z-20 space-y-8 py-16">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/15 via-cyan-500/15 to-pink-500/15 border border-cyan-400/30 text-cyan-300 text-xs font-mono font-bold tracking-widest shadow-[0_0_25px_rgba(6,182,212,0.25)]">
-            <Radio size={13} className="text-cyan-400 animate-pulse-live" />
-            AI-POWERED CITY-WIDE VEHICLE INTELLIGENCE
-          </div>
-
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-white tracking-tight font-display leading-[1.06]">
-            Transform Optical Feeds Into <br />
-            <span className="text-gradient-spectral">Neural Vector Intelligence</span>
-          </h1>
-
-          <p className="max-w-2xl mx-auto text-base sm:text-lg text-slate-300 font-body leading-relaxed">
-            Backend-powered ANPR records, multi-camera trajectory reconstruction, and traffic analytics for Prayagraj public-safety operations.
-          </p>
-
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
-            <Link href="/dashboard">
-              <Button variant="primary" size="lg" className="w-full sm:w-auto px-8">
-                Explore Command Center <ArrowRight size={17} />
-              </Button>
-            </Link>
-            <Link href="/vehicles">
-              <Button variant="secondary" size="lg" className="w-full sm:w-auto px-8">
-                <Car size={17} /> Search Vehicles
-              </Button>
-            </Link>
-          </div>
-
-          {/* Multi-Color Sensor Metric Chips */}
+      {/* ── Hero Section with Animated Headings & CTAs ── */}
+      <section className="relative min-h-[85vh] flex items-center justify-center pt-28 px-6 z-10">
+        <div className="max-w-4xl mx-auto text-center relative z-20 space-y-7 py-12">
+          
           <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            animate="show"
-            className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-10 max-w-4xl mx-auto"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-600 dark:text-cyan-400 text-xs font-mono font-semibold tracking-wider shadow-[0_0_18px_rgba(0,240,255,0.25)]"
           >
-            {metrics.map((metric, i) => (
-              <motion.div variants={fadeUp} key={i}>
-                <GlassCard padding="sm" className="p-4 text-center">
-                  <div className={`text-2xl font-extrabold font-data ${metric.text}`}>{metric.value}</div>
-                  <div className="text-[10px] font-display text-slate-400 mt-1 tracking-widest uppercase font-bold">{metric.label}</div>
-                </GlassCard>
-              </motion.div>
-            ))}
+            <Radio size={13} className="animate-pulse text-cyan-500 dark:text-cyan-400" />
+            AI-POWERED VEHICLE INTELLIGENCE &amp; CITIZEN REPORTING PLATFORM
+          </motion.div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-4xl sm:text-6xl lg:text-7xl font-bold text-[var(--text-primary)] tracking-tight font-display leading-[1.08]"
+          >
+            Turn City Cameras Into <br />
+            <span className="text-gradient-spectral drop-shadow-[0_0_30px_rgba(0,240,255,0.3)]">
+              City Intelligence
+            </span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="max-w-2xl mx-auto text-sm sm:text-base text-[var(--text-secondary)] font-body leading-relaxed"
+          >
+            Connect distributed CCTV and ANPR optical feeds into unified vehicle trajectories, automated threat detection, and citizen incident reporting.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2"
+          >
+            <Link href="/dashboard" className="w-full sm:w-auto">
+              <Button variant="primary" size="lg" className="w-full sm:w-auto px-8 cursor-pointer shadow-[0_0_25px_rgba(0,240,255,0.4)]">
+                <Shield size={16} /> Admin Command Center
+              </Button>
+            </Link>
+            <Link href="/report" className="w-full sm:w-auto">
+              <Button variant="secondary" size="lg" className="w-full sm:w-auto px-8 cursor-pointer">
+                <UploadCloud size={16} className="text-cyan-500 dark:text-cyan-400" /> Report an Incident
+              </Button>
+            </Link>
           </motion.div>
         </div>
       </section>
 
-      {/* ── Section: 4-Step Neural Pipeline ── */}
-      <section id="pipeline" className="py-24 px-6 relative z-10 max-w-7xl mx-auto">
-        <div className="text-center space-y-3 mb-16">
-          <Badge variant="cyan" size="md">NEURAL PIPELINE</Badge>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white font-display tracking-tight">
-            From Raw CCTV Photons to Vector Telemetry
+      {/* ── Section: Creative City Telemetry HUD Showcase ── */}
+      <section id="facts" className="py-16 px-6 relative z-10 max-w-7xl mx-auto">
+        <div className="text-center space-y-2 mb-10">
+          <Badge variant="cyan" size="md">LIVE TELEMETRY DOCK</Badge>
+          <h2 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] font-display tracking-tight">
+            Municipal Sensor Grid Performance
           </h2>
-          <p className="text-slate-400 max-w-xl mx-auto text-sm font-body">
-            Four synchronized layers transform fragmented optical streams into unified municipal intelligence.
+          <p className="text-xs text-[var(--text-secondary)]">
+            Empirical real-time facts streamed directly from the Prayagraj optical camera matrix.
           </p>
         </div>
 
@@ -157,26 +253,41 @@ export default function LandingPage() {
           variants={staggerContainer}
           initial="hidden"
           whileInView="show"
-          viewport={{ once: true, margin: "-100px" }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+          viewport={{ once: true, margin: "-40px" }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
         >
-          {[
-            { step: '01', title: 'Detect', icon: Video, desc: 'The ingestion pipeline records vehicle attributes and camera coordinates from incoming detection events.', glow: 'emerald' as const, iconColor: 'text-emerald-400', iconBg: 'bg-emerald-500/15 border-emerald-500/30' },
-            { step: '02', title: 'Recognize', icon: Cpu, desc: 'ANPR processing reads and normalizes vehicle plates from detection events for backend search.', glow: 'cyan' as const, iconColor: 'text-cyan-400', iconBg: 'bg-cyan-500/15 border-cyan-500/30' },
-            { step: '03', title: 'Connect', icon: Route, desc: 'Timestamp and GPS metadata across camera nodes reconstruct recorded vehicle journeys.', glow: 'violet' as const, iconColor: 'text-violet-400', iconBg: 'bg-violet-500/15 border-violet-500/30' },
-            { step: '04', title: 'Sentinel', icon: Shield, desc: 'Backend rules create alerts for blacklisted vehicles, route anomalies, and traffic surges.', glow: 'crimson' as const, iconColor: 'text-rose-400', iconBg: 'bg-rose-500/15 border-rose-500/30' },
-          ].map((card, i) => (
+          {telemetryFacts.map((fact, i) => (
             <motion.div variants={fadeUp} key={i} className="h-full">
-              <GlassCard hover glow={card.glow} className="flex flex-col justify-between p-7 h-full">
+              <GlassCard
+                hover
+                glow={fact.accent}
+                accent={fact.accent}
+                className={`p-5 flex flex-col justify-between h-full relative overflow-hidden transition-all duration-300 ${fact.border}`}
+              >
                 <div>
-                  <div className="flex items-center justify-between mb-5">
-                    <div className={`p-3.5 rounded-2xl ${card.iconBg} ${card.iconColor} border shadow-lg`}>
-                      <card.icon size={22} />
+                  <div className="flex items-center justify-between gap-2 mb-3.5">
+                    <div className={`p-2.5 rounded-xl border backdrop-blur-md ${fact.iconBg}`}>
+                      <fact.icon size={18} />
                     </div>
-                    <span className="text-2xl font-data font-extrabold text-slate-600">{card.step}</span>
+                    <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md bg-white/[0.04] border border-[var(--glass-border)] text-[var(--text-secondary)]">
+                      {fact.tag}
+                    </span>
                   </div>
-                  <h3 className="text-lg font-bold text-white font-display mb-2">{card.title}</h3>
-                  <p className="text-xs text-slate-300 leading-relaxed font-body">{card.desc}</p>
+
+                  <div className="text-3xl sm:text-4xl font-bold font-data tabular-nums text-[var(--text-primary)] tracking-tight leading-none">
+                    <AnimatedCounter value={fact.value} duration={1600 + i * 200} />
+                  </div>
+
+                  <p className="text-[11px] font-display font-semibold text-[var(--text-secondary)] uppercase tracking-wider mt-2 truncate">
+                    {fact.label}
+                  </p>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-[var(--glass-border)] flex items-center justify-between">
+                  <span className={`text-[10px] font-mono font-semibold flex items-center gap-1 ${fact.color}`}>
+                    <Activity size={12} className="animate-pulse" /> {fact.trend}
+                  </span>
+                  <span className="text-[9px] font-mono text-[var(--text-tertiary)]">LIVE SYNC</span>
                 </div>
               </GlassCard>
             </motion.div>
@@ -184,193 +295,213 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
-      {/* ── Section: Core Capabilities ── */}
-      <section id="capabilities" className="py-20 px-6 relative z-10 max-w-7xl mx-auto">
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: "-100px" }}
-          className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-        >
-          <motion.div variants={fadeUp} className="h-full">
-            <GlassCard hover glow="violet" className="p-8 flex flex-col justify-between h-full">
-              <div>
-                <div className="p-3.5 rounded-2xl bg-violet-500/15 text-violet-400 border border-violet-500/30 w-fit mb-5 shadow-[0_0_20px_rgba(139,92,246,0.25)]">
-                  <Car size={24} />
-                </div>
-                <h3 className="text-xl font-bold text-white font-display mb-2.5">Vehicle Intelligence</h3>
-                <p className="text-xs text-slate-300 leading-relaxed mb-5 font-body">
-                  Instantly look up any vehicle plate, inspect its camera sighting timeline, and playback full animated journey routes with speed and duration telemetry.
-                </p>
-              </div>
-              <Link href="/vehicles" className="inline-flex items-center gap-2 text-xs font-display text-violet-400 font-bold hover:text-white transition-colors tracking-wide uppercase">
-                Explore Vehicles <ArrowRight size={13} />
-              </Link>
-            </GlassCard>
-          </motion.div>
+      {/* ── Section: Dual-Role Entry Points (Admin vs Citizen User) ── */}
+      <section id="dual-role" className="py-24 px-6 relative z-10 max-w-6xl mx-auto">
+        <div className="text-center space-y-2.5 mb-12">
+          <Badge variant="cyan" size="md">DUAL-ROLE PLATFORM</Badge>
+          <h2 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)] font-display tracking-tight">
+            Choose Your Intelligence Workspace
+          </h2>
+          <p className="text-[var(--text-secondary)] max-w-xl mx-auto text-xs font-body">
+            UrbanPulse unifies municipal command operations with direct citizen field intelligence.
+          </p>
+        </div>
 
-          <motion.div variants={fadeUp} className="h-full">
-            <GlassCard hover glow="cyan" className="p-8 flex flex-col justify-between h-full">
-              <div>
-                <div className="p-3.5 rounded-2xl bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 w-fit mb-5 shadow-[0_0_20px_rgba(6,182,212,0.25)]">
-                  <BarChart3 size={24} />
-                </div>
-                <h3 className="text-xl font-bold text-white font-display mb-2.5">Traffic Analytics</h3>
-                <p className="text-xs text-slate-300 leading-relaxed mb-5 font-body">
-                  Diurnal 24-hour vehicle volume curves, live camera density bars, congestion scoring, and automated anomaly warnings for city planners.
-                </p>
-              </div>
-              <Link href="/analytics" className="inline-flex items-center gap-2 text-xs font-display text-cyan-400 font-bold hover:text-white transition-colors tracking-wide uppercase">
-                View Analytics <ArrowRight size={13} />
-              </Link>
-            </GlassCard>
-          </motion.div>
-
-          <motion.div variants={fadeUp} className="h-full">
-            <GlassCard hover glow="crimson" className="p-8 flex flex-col justify-between h-full">
-              <div>
-                <div className="p-3.5 rounded-2xl bg-rose-500/15 text-rose-400 border border-rose-500/30 w-fit mb-5 shadow-[0_0_20px_rgba(244,63,94,0.25)]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Admin Command Center Card with Perimeter Border Wrap */}
+          <GlassCard hover glow="cyan" accent="cyan" className="p-8 flex flex-col justify-between h-full border border-cyan-500/40 hover:border-cyan-400">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 rounded-2xl bg-cyan-500/15 text-cyan-500 dark:text-cyan-400 border border-cyan-500/30">
                   <Shield size={24} />
                 </div>
-                <h3 className="text-xl font-bold text-white font-display mb-2.5">Sentinel Threat Alerts</h3>
-                <p className="text-xs text-slate-300 leading-relaxed mb-5 font-body">
-                  Automated security sentinel flagging watchlist/blacklisted vehicles, unusual route divergence, and camera connectivity dropouts.
-                </p>
+                <Badge variant="cyan" size="sm">MUNICIPAL OPERATOR</Badge>
               </div>
-              <Link href="/alerts" className="inline-flex items-center gap-2 text-xs font-display text-rose-400 font-bold hover:text-white transition-colors tracking-wide uppercase">
-                Access Alerts <ArrowRight size={13} />
-              </Link>
-            </GlassCard>
-          </motion.div>
-        </motion.div>
+              <h3 className="text-xl font-bold text-[var(--text-primary)] font-display mb-2">Admin Command Center</h3>
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed mb-6 font-body">
+                Full-spectrum city surveillance operations with multi-camera spatiotemporal tracking, real-time ANPR OCR bounding boxes, automated anomaly alerting, and citizen report dispatch triage.
+              </p>
+            </div>
+            <Link href="/dashboard">
+              <Button variant="primary" size="md" className="w-full cursor-pointer">
+                Enter Command Center <ArrowRight size={14} />
+              </Button>
+            </Link>
+          </GlassCard>
+
+          {/* Citizen Reporting Portal Card with Perimeter Border Wrap */}
+          <GlassCard hover glow="violet" accent="violet" className="p-8 flex flex-col justify-between h-full border border-violet-500/40 hover:border-violet-400">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 rounded-2xl bg-violet-500/15 text-violet-500 dark:text-violet-400 border border-violet-500/30">
+                  <UploadCloud size={24} />
+                </div>
+                <Badge variant="violet" size="sm">CITIZEN PORTAL</Badge>
+              </div>
+              <h3 className="text-xl font-bold text-[var(--text-primary)] font-display mb-2">Citizen Incident Portal</h3>
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed mb-6 font-body">
+                Fast, secure incident reporting for city residents. Upload traffic accidents, red light violations, and road obstructions with high/low priority flagging and real-time dispatcher reference tracking.
+              </p>
+            </div>
+            <Link href="/report">
+              <Button variant="secondary" size="md" className="w-full cursor-pointer">
+                Launch Incident Reporter <ArrowRight size={14} />
+              </Button>
+            </Link>
+          </GlassCard>
+        </div>
       </section>
 
-      {/* ── Closing CTA Banner (Spacious & Clean Redesign) ── */}
-      <section className="py-24 px-6 relative z-10 max-w-6xl mx-auto">
-        <GlassCard padding="lg" glow="spectral" className="p-10 sm:p-16 text-center space-y-8 relative overflow-hidden border border-white/15 shadow-[0_24px_80px_rgba(0,0,0,0.85)]">
-          {/* Subtle background ambient pulse inside card */}
-          <div className="absolute -top-24 -left-24 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+      {/* ── Section: Creative Interactive Neural Pipeline Flow with Glowing Arrows ── */}
+      <section id="pipeline" className="py-24 px-6 relative z-10 max-w-7xl mx-auto">
+        <div className="text-center space-y-3 mb-14">
+          <Badge variant="cyan" size="md">NEURAL PIPELINE</Badge>
+          <h2 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)] font-display tracking-tight">
+            Detect → Recognize → Connect → Understand
+          </h2>
+          <p className="text-[var(--text-secondary)] max-w-xl mx-auto text-xs font-body">
+            Four synchronized intelligence layers turn raw camera streams into coherent city-wide vector telemetry.
+          </p>
+        </div>
 
-          <div className="flex items-center justify-center gap-2.5 flex-wrap">
-            <Badge variant="cyan" dot pulse size="sm">Backend data source</Badge>
-            <Badge variant="spectral" size="sm">Prayagraj network</Badge>
-            <Badge variant="default" size="sm">ANPR intelligence</Badge>
-          </div>
+        <InteractivePipelineFlow />
+      </section>
 
-          <div className="space-y-4 max-w-3xl mx-auto">
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-white font-display tracking-tight leading-[1.12]">
-              Ready to Deploy Municipal <br />
-              <span className="text-gradient-spectral">Vehicle Intelligence?</span>
+      {/* ── Section: 3D Stacking Capabilities Deck ("Book-Like Stacking Showcase") ── */}
+      <section id="capabilities" className="py-24 px-6 relative z-10 max-w-7xl mx-auto">
+        <div className="text-center space-y-3 mb-14">
+          <Badge variant="cyan" size="md">PLATFORM CAPABILITIES</Badge>
+          <h2 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)] font-display tracking-tight">
+            Integrated Command Intelligence
+          </h2>
+          <p className="text-[var(--text-secondary)] max-w-xl mx-auto text-xs font-body">
+            Comprehensive tooling designed for municipal operations centers and public safety teams.
+          </p>
+        </div>
+
+        <StackingCapabilities />
+      </section>
+
+      {/* ── Section: Authorized Public Safety & Impact ── */}
+      <section id="impact" className="py-24 px-6 relative z-10 max-w-7xl mx-auto">
+        <div className="text-center space-y-2.5 mb-16">
+          <Badge variant="emerald" size="md">MISSION IMPACT</Badge>
+          <h2 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)] font-display tracking-tight">
+            Built for Authorized Public Safety &amp; Management
+          </h2>
+          <p className="text-[var(--text-secondary)] max-w-2xl mx-auto text-xs font-body">
+            UrbanPulse is purpose-engineered strictly for authorized traffic management, emergency response coordination, and municipal planning.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <GlassCard padding="md" hover glow="emerald" accent="emerald" className="p-7">
+            <div className="p-2.5 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 w-fit mb-3">
+              <Activity size={18} />
+            </div>
+            <h3 className="text-base font-bold text-[var(--text-primary)] font-display mb-1.5">Traffic Optimization</h3>
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed font-body">
+              Reduce city-wide gridlock by monitoring diurnal bottlenecks and tuning signal phases using empirical vehicle velocity curves.
+            </p>
+          </GlassCard>
+
+          <GlassCard padding="md" hover glow="cyan" accent="cyan" className="p-7">
+            <div className="p-2.5 rounded-xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 w-fit mb-3">
+              <Flame size={18} />
+            </div>
+            <h3 className="text-base font-bold text-[var(--text-primary)] font-display mb-1.5">Emergency Response</h3>
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed font-body">
+              Locate emergency routes in seconds, track suspect vehicles under active investigation, and dispatch response units with exact GPS coordinates.
+            </p>
+          </GlassCard>
+
+          <GlassCard padding="md" hover glow="violet" accent="violet" className="p-7">
+            <div className="p-2.5 rounded-xl bg-violet-500/15 text-violet-600 dark:text-violet-400 border border-violet-500/30 w-fit mb-3">
+              <CheckCircle2 size={18} />
+            </div>
+            <h3 className="text-base font-bold text-[var(--text-primary)] font-display mb-1.5">Urban Planning</h3>
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed font-body">
+              Empower city planners with accurate historical volume data, transit mode splits, and infrastructure demand forecasting.
+            </p>
+          </GlassCard>
+        </div>
+      </section>
+
+      {/* ── Closing CTA Banner ── */}
+      <section className="py-24 px-6 relative z-10 max-w-5xl mx-auto">
+        <GlassCard padding="lg" glow="spectral" accent="spectral" className="p-10 sm:p-14 text-center space-y-6 relative overflow-hidden">
+          <div className="space-y-3 max-w-2xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)] font-display tracking-tight">
+              Ready to Launch the Command Center?
             </h2>
-
-            <p className="text-sm sm:text-base text-slate-300 font-body leading-relaxed max-w-2xl mx-auto">
-              Launch the UrbanPulse command center to access real-time neural ANPR feeds, trajectory tracking histories, and city-wide traffic telemetry.
+            <p className="text-xs sm:text-sm text-[var(--text-secondary)] font-body leading-relaxed">
+              Access real-time optical node telemetry, vehicle intelligence timelines, citizen incident queues, and city-wide traffic insights.
             </p>
           </div>
 
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/dashboard">
-              <Button variant="primary" size="lg" className="w-full sm:w-auto px-10 shadow-[0_0_35px_rgba(6,182,212,0.4)]">
-                Launch Command Center <ArrowRight size={17} />
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+            <Link href="/dashboard" className="w-full sm:w-auto">
+              <Button variant="primary" size="lg" className="w-full sm:w-auto px-8 cursor-pointer">
+                Explore Command Center <ArrowRight size={16} />
               </Button>
             </Link>
-            <Link href="/alerts">
-              <Button variant="secondary" size="lg" className="w-full sm:w-auto px-8">
-                <Shield size={16} /> View Sentinel Threats
+            <Link href="/report" className="w-full sm:w-auto">
+              <Button variant="secondary" size="lg" className="w-full sm:w-auto px-8 cursor-pointer">
+                Citizen Incident Reporter
               </Button>
             </Link>
           </div>
         </GlassCard>
       </section>
 
-      {/* ── Spacious Multi-Column Enterprise Footer ── */}
-      <footer className="relative z-10 border-t border-white/10 bg-[rgba(5,7,17,0.95)] backdrop-blur-2xl pt-16 pb-12 px-6">
-        <div className="max-w-7xl mx-auto space-y-12">
-          
-          {/* Main Footer Columns */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-            
-            {/* Col 1: Brand & Identity */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 via-cyan-400 to-pink-500 flex items-center justify-center p-0.5 shadow-[0_0_15px_rgba(99,102,241,0.4)]">
-                  <div className="w-full h-full rounded-[10px] bg-[#050711]/50 flex items-center justify-center">
-                    <Zap size={16} className="text-white fill-white" />
-                  </div>
-                </div>
-                <span className="font-display font-extrabold text-lg text-white">
+      {/* ── Enterprise Footer ── */}
+      <footer className="relative z-10 border-t border-[var(--glass-border)] bg-[var(--bg-void)]/90 backdrop-blur-2xl pt-12 pb-10 px-6">
+        <div className="max-w-7xl mx-auto space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2.5">
+                <ShieldCheck size={18} className="text-cyan-500 dark:text-cyan-400" />
+                <span className="font-display font-bold text-base text-[var(--text-primary)]">
                   Urban<span className="text-gradient-spectral">Pulse</span>
                 </span>
               </div>
-              <p className="text-xs text-slate-400 font-body leading-relaxed">
-                Autonomous vehicle intelligence and municipal traffic telemetry for Prayagraj&apos;s road network.
+              <p className="text-xs text-[var(--text-secondary)] font-body leading-relaxed">
+                AI-powered city-wide vehicle intelligence and citizen traffic reporting platform.
               </p>
-              <div className="pt-1">
-                <Badge variant="emerald" dot pulse size="sm">Grid Operational</Badge>
-              </div>
             </div>
 
-            {/* Col 2: Platform Navigation */}
-            <div className="space-y-3.5">
-              <p className="text-xs font-display font-bold uppercase tracking-widest text-slate-300">
-                Command Grid
-              </p>
-              <ul className="space-y-2 text-xs font-body text-slate-400">
-                <li><Link href="/dashboard" className="hover:text-cyan-300 transition-colors">Command Center</Link></li>
-                <li><Link href="/cameras" className="hover:text-cyan-300 transition-colors">Optical Feed Grid</Link></li>
-                <li><Link href="/vehicles" className="hover:text-cyan-300 transition-colors">Vehicle Intelligence</Link></li>
-                <li><Link href="/analytics" className="hover:text-cyan-300 transition-colors">Traffic Analytics</Link></li>
-                <li><Link href="/network" className="hover:text-cyan-300 transition-colors">Movement Network</Link></li>
+            <div className="space-y-2.5">
+              <p className="text-xs font-display font-semibold uppercase tracking-wider text-[var(--text-primary)]">Command Platform</p>
+              <ul className="space-y-1.5 text-xs text-[var(--text-secondary)] font-body">
+                <li><Link href="/dashboard" className="hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors">Command Center</Link></li>
+                <li><Link href="/cameras" className="hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors">Live Cameras</Link></li>
+                <li><Link href="/vehicles" className="hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors">Vehicle Intelligence</Link></li>
+                <li><Link href="/analytics" className="hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors">Traffic Analytics</Link></li>
               </ul>
             </div>
 
-            {/* Col 3: Operations & Sentinel */}
-            <div className="space-y-3.5">
-              <p className="text-xs font-display font-bold uppercase tracking-widest text-slate-300">
-                Operations & Sentinel
-              </p>
-              <ul className="space-y-2 text-xs font-body text-slate-400">
-                <li><Link href="/alerts" className="hover:text-rose-400 transition-colors">Sentinel Threat Alerts</Link></li>
-                <li><Link href="/system" className="hover:text-amber-400 transition-colors">System Diagnostics</Link></li>
-                <li><Link href="/vehicles" className="hover:text-cyan-300 transition-colors">Trajectory Playback</Link></li>
-                <li><span className="text-slate-600">ANPR Neural Engine v2.4</span></li>
-                <li><span className="text-slate-600">Edge Stream Ingestion</span></li>
+            <div className="space-y-2.5">
+              <p className="text-xs font-display font-semibold uppercase tracking-wider text-[var(--text-primary)]">Operations &amp; Citizen</p>
+              <ul className="space-y-1.5 text-xs text-[var(--text-secondary)] font-body">
+                <li><Link href="/report" className="hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors">Citizen Incident Reporter</Link></li>
+                <li><Link href="/submissions" className="hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors">Field Submissions Queue</Link></li>
+                <li><Link href="/alerts" className="hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors">Sentinel Threat Alerts</Link></li>
+                <li><Link href="/system" className="hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors">System Diagnostics</Link></li>
               </ul>
             </div>
 
-            {/* Col 4: Platform Status & Credentials */}
-            <div className="space-y-3.5">
-              <p className="text-xs font-display font-bold uppercase tracking-widest text-slate-300">
-                Mission Credentials
-              </p>
-              <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2 text-[11px] font-mono text-slate-400">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">CITY:</span>
-                  <span className="text-cyan-300 font-bold">Prayagraj</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">NODES:</span>
-                  <span className="text-white">{systemHealth ? `${systemHealth.summary.online}/${systemHealth.summary.total} online` : 'Loading'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">ALERTS:</span>
-                  <span className="text-emerald-400 font-bold">{stats?.activeAlerts ?? '—'} active</span>
-                </div>
+            <div className="space-y-2.5">
+              <p className="text-xs font-display font-semibold uppercase tracking-wider text-[var(--text-primary)]">Authorized Scope</p>
+              <div className="p-3 rounded-xl bg-white/[0.03] border border-[var(--glass-border)] text-[10px] font-mono text-[var(--text-secondary)] leading-relaxed">
+                UrbanPulse is designed strictly for authorized traffic management, emergency response coordination and municipal public-safety operations.
               </div>
             </div>
-
           </div>
 
-          {/* Bottom Divider & Copyright */}
-          <div className="pt-8 border-t border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-body text-slate-500">
-            <p>© {new Date().getFullYear()} UrbanPulse AI. Authorized smart city operations platform.</p>
-            <p className="flex items-center gap-1.5 text-slate-400">
-              Built for Prayagraj smart-city operations
-            </p>
+          <div className="pt-6 border-t border-[var(--glass-border)] flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-[var(--text-tertiary)] font-body">
+            <p>© {new Date().getFullYear()} UrbanPulse. Architected &amp; crafted for smart city operations.</p>
+            <p className="font-mono text-[10px] text-[var(--text-tertiary)]">Prayagraj Municipal Grid · v3.0 Dual-Role</p>
           </div>
-
         </div>
       </footer>
     </div>

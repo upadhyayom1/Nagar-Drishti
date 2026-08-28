@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Video, Crosshair } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useFilterStore } from '@/store/filterStore';
+import { useUIStore } from '@/store/uiStore';
 import { roadService } from '@/services/roadService';
 import type { Camera } from '@/types';
 
@@ -21,18 +22,19 @@ interface MapViewProps {
 
 function statusColor(status: string): string {
   switch (status) {
-    case 'online':  return '#10b981'; // Emerald
-    case 'warning': return '#f59e0b'; // Amber
-    case 'offline': return '#f43f5e'; // Crimson
-    default:        return '#94a3b8';
+    case 'online':   return '#00E6B0'; // emerald
+    case 'warning':  return '#f59e0b'; // amber
+    case 'offline':  return '#f43f5e'; // rose
+    case 'critical': return '#f43f5e';
+    default:         return '#00f0ff';
   }
 }
 
-function statusVariant(status: string): 'success' | 'warning' | 'danger' {
+function statusVariant(status: string): 'ok' | 'warn' | 'critical' {
   switch (status) {
-    case 'online':  return 'success';
-    case 'warning': return 'warning';
-    default:        return 'danger';
+    case 'online':   return 'ok';
+    case 'warning':  return 'warn';
+    default:         return 'critical';
   }
 }
 
@@ -63,8 +65,8 @@ function MapViewController({ center, zoom }: { center: [number, number]; zoom: n
   const handleReset = () => {
     map.closePopup();
     map.flyTo(center, zoom, {
-      duration: 1.0,
-      easeLinearity: 0.25,
+      duration: 1.2,
+      easeLinearity: 0.2,
     });
   };
 
@@ -73,7 +75,7 @@ function MapViewController({ center, zoom }: { center: [number, number]; zoom: n
       <button
         onClick={handleReset}
         title="Reset Map to Sector Grid View"
-        className="px-3 py-1.5 rounded-xl bg-slate-950/90 text-cyan-300 hover:text-white hover:bg-cyan-500/20 border border-cyan-500/30 hover:border-cyan-400/60 transition-all text-xs font-display font-bold flex items-center gap-1.5 shadow-[0_0_20px_rgba(6,182,212,0.25)] backdrop-blur-md"
+        className="px-3.5 py-1.5 rounded-xl bg-[var(--bg-elevated)]/90 text-cyan-400 hover:text-white hover:bg-cyan-500/20 border border-[var(--glass-border)] hover:border-cyan-400/60 transition-all text-xs font-display font-semibold flex items-center gap-1.5 shadow-[0_0_18px_rgba(0,240,255,0.25)] backdrop-blur-md cursor-pointer"
       >
         <Crosshair size={13} className="text-cyan-400" />
         Reset Grid View
@@ -88,11 +90,18 @@ export function MapView({
   zoom = 12,
   className,
 }: MapViewProps) {
+  const { theme } = useUIStore();
   const { showHeatmap, showTrajectories, showTrafficDensity } = useFilterStore();
   const { data: roads = [] } = useQuery({ queryKey: ['roads'], queryFn: roadService.getRoads });
   const mapCenter: [number, number] = cameras.length
     ? [cameras.reduce((sum, camera) => sum + camera.lat, 0) / cameras.length, cameras.reduce((sum, camera) => sum + camera.lng, 0) / cameras.length]
     : center;
+
+  // Fastly SSL URLs for clean tiles without "API KEY REQUIRED" watermark
+  const darkTileUrl = 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png';
+  const lightTileUrl = 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/rastertiles/voyager/{z}/{x}/{y}.png';
+
+  const tileUrl = theme === 'light' ? lightTileUrl : darkTileUrl;
 
   return (
     <div className="w-full h-full min-h-[480px] relative rounded-2xl overflow-hidden group">
@@ -107,9 +116,10 @@ export function MapView({
         <MapResizeHandler />
         <MapViewController center={mapCenter} zoom={zoom} />
 
-        {/* CartoDB Dark Matter Base Tiles */}
+        {/* Clean Theme-Adaptive Tiles (No Watermark) */}
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          key={theme}
+          url={tileUrl}
           subdomains="abcd"
           maxZoom={19}
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
@@ -120,9 +130,9 @@ export function MapView({
             key={road.id}
             positions={road.geometry.coordinates.map(([longitude, latitude]) => [latitude, longitude] as [number, number])}
             pathOptions={{
-              color: '#38bdf8',
+              color: theme === 'light' ? '#0284c7' : '#00f0ff',
               weight: showTrajectories ? 3.5 : 2,
-              opacity: showTrajectories ? 0.8 : 0.42,
+              opacity: showTrajectories ? 0.9 : 0.45,
               dashArray: showTrajectories ? '8 6' : undefined,
             }}
           />
@@ -130,7 +140,7 @@ export function MapView({
 
         {/* ── Layer 1: Density Heatmap Halos ── */}
         {showHeatmap && cameras.map((c) => {
-          const heatColor = c.trafficLevel === 'congested' ? '#f43f5e' : c.trafficLevel === 'high' ? '#f59e0b' : '#06b6d4';
+          const heatColor = c.trafficLevel === 'congested' ? '#f43f5e' : c.trafficLevel === 'high' ? '#f59e0b' : '#00f0ff';
           return (
             <Circle
               key={`heat-${c.id}`}
@@ -140,86 +150,89 @@ export function MapView({
                 color: heatColor,
                 fillColor: heatColor,
                 fillOpacity: 0.18,
-                weight: 1,
+                weight: 1.5,
                 dashArray: '4 4',
               }}
             />
           );
         })}
 
-        {/* ── Layer 2: Traffic Density Radii ── */}
+        {/* ── Layer 2: Live Density Rings ── */}
         {showTrafficDensity && cameras.map((c) => {
-          const isHeavy = c.trafficLevel === 'congested' || c.trafficLevel === 'high';
+          const ringColor = c.trafficLevel === 'congested' ? '#f43f5e' : c.trafficLevel === 'high' ? '#f59e0b' : '#00E6B0';
+          const radius = c.vehiclesDetected > 300 ? 550 : c.vehiclesDetected > 150 ? 380 : 220;
           return (
-            <CircleMarker
+            <Circle
               key={`density-${c.id}`}
               center={[c.lat, c.lng]}
-              radius={isHeavy ? 20 : 14}
+              radius={radius}
               pathOptions={{
-                color: isHeavy ? '#f43f5e' : '#38bdf8',
-                fillColor: isHeavy ? '#f43f5e' : '#06b6d4',
-                fillOpacity: 0.25,
+                color: ringColor,
+                fillColor: ringColor,
+                fillOpacity: 0.16,
                 weight: 1.5,
               }}
             />
           );
         })}
 
-        {/* ── Primary Optical Camera Nodes ── */}
-        {cameras.map((camera) => {
-          const color = statusColor(camera.status);
-          const isOnline = camera.status === 'online';
+        {/* ── Camera Station Markers ── */}
+        {cameras.map((c) => {
+          const color = statusColor(c.status);
+          const isSelected = false;
 
           return (
             <CircleMarker
-              key={camera.id}
-              center={[camera.lat, camera.lng]}
-              radius={isOnline ? 8 : 6}
+              key={c.id}
+              center={[c.lat, c.lng]}
+              radius={isSelected ? 10 : 7}
               pathOptions={{
-                color,
+                color: color,
                 fillColor: color,
-                fillOpacity: isOnline ? 0.9 : 0.5,
-                weight: isOnline ? 2.5 : 1.5,
+                fillOpacity: 0.9,
+                weight: isSelected ? 3 : 2,
               }}
             >
-              <Popup>
-                <div className="min-w-[240px] p-4 text-white font-body">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div>
-                      <p className="font-bold text-sm text-white font-display leading-tight">
-                        {camera.name}
-                      </p>
-                      <p className="text-[10px] text-cyan-400 font-data font-bold mt-0.5">
-                        {camera.cameraCode} · {camera.zone}
-                      </p>
-                    </div>
-                    <Badge variant={statusVariant(camera.status)} size="sm" dot pulse={isOnline}>
-                      {camera.status}
+              <Popup className="glassmorphism-popup">
+                <div className="p-4 space-y-3 min-w-[210px] text-[var(--text-primary)] font-body">
+                  <div className="flex items-center justify-between gap-2 border-b border-[var(--glass-border)] pb-2">
+                    <span className="font-mono text-xs font-bold text-cyan-400 tracking-wider">
+                      {c.cameraCode}
+                    </span>
+                    <Badge variant={statusVariant(c.status)} size="sm" dot>
+                      {c.status}
                     </Badge>
                   </div>
 
-                  <p className="text-xs text-slate-400 mb-3 font-normal font-body">
-                    {camera.location}
-                  </p>
+                  <div>
+                    <h4 className="font-display font-bold text-sm text-[var(--text-primary)] leading-tight">
+                      {c.name}
+                    </h4>
+                    <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">
+                      {c.location}
+                    </p>
+                  </div>
 
-                  <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-slate-950/90 border border-cyan-500/20 text-[10px] font-data mb-3">
+                  <div className="grid grid-cols-2 gap-2 text-xs font-mono bg-white/[0.04] p-2 rounded-xl border border-[var(--glass-border)]">
                     <div>
-                      <span className="text-slate-400 block text-[9px] font-display uppercase font-bold">VEHICLES</span>
-                      <span className="text-cyan-400 font-extrabold text-xs font-data">{camera.vehiclesDetected}</span>
+                      <span className="text-[9px] text-[var(--text-secondary)] block uppercase">Detections</span>
+                      <span className="font-bold text-cyan-400">{c.vehiclesDetected}</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block text-[9px] font-display uppercase font-bold">DETECTIONS</span>
-                      <span className="text-white font-bold text-xs font-data">{camera.detectionCount}</span>
+                      <span className="text-[9px] text-[var(--text-secondary)] block uppercase">Traffic</span>
+                      <span className="font-bold text-[var(--text-primary)] capitalize">{c.trafficLevel}</span>
                     </div>
                   </div>
 
-                  <Link
-                    href={`/cameras/${camera.id}`}
-                    className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold text-slate-950 bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-400 hover:opacity-90 shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all font-display"
-                  >
-                    <Video size={13} />
-                    Open Live Feed
-                  </Link>
+                  <div className="pt-1">
+                    <Link
+                      href={`/cameras/${c.id}`}
+                      className="inline-flex items-center justify-center gap-1.5 w-full py-1.5 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 text-xs font-display font-bold hover:bg-cyan-500/30 transition-all shadow-[0_0_12px_rgba(6,182,212,0.3)]"
+                    >
+                      <Video size={12} />
+                      Live Camera Telemetry
+                    </Link>
+                  </div>
                 </div>
               </Popup>
             </CircleMarker>

@@ -1,6 +1,6 @@
 export type CameraStatus = 'online' | 'warning' | 'offline';
 export type AlertSeverity = 'critical' | 'high' | 'medium' | 'low';
-export type AlertType = 'BLACKLIST_VEHICLE' | 'BLACKLIST_MATCH' | 'ROUTE_ANOMALY' | 'TRAFFIC_SURGE' | 'CONGESTION' | 'CAMERA_OFFLINE';
+export type AlertType = 'BLACKLIST_VEHICLE' | 'ROUTE_ANOMALY' | 'TRAFFIC_SURGE' | 'CAMERA_OFFLINE';
 export type TrafficLevel = 'low' | 'moderate' | 'high' | 'congested';
 
 export interface Camera {
@@ -17,14 +17,12 @@ export interface Camera {
   fps: number | null;
   lastUpdated: string;
   zone: string;
-  road?: string;
 }
 
 export interface Detection {
   id: string;
   vehiclePlate: string;
   cameraId: string;
-  cameraCode?: string;
   cameraName: string;
   timestamp: string;
   confidence: number;
@@ -57,7 +55,6 @@ export interface VehicleJourney {
 
 export interface Waypoint {
   cameraId: string;
-  cameraCode?: string;
   cameraName: string;
   lat: number;
   lng: number;
@@ -147,4 +144,19 @@ export interface SystemNode {
 export interface SystemHealth {
   summary: { total: number; online: number; warning: number; offline: number; activeAlerts: number };
   nodes: SystemNode[];
+}
+
+export interface CitizenSubmission {
+  id: string;
+  title: string;
+  description: string;
+  location: string;
+  priority: 'HIGH' | 'LOW';
+  mediaUrl?: string;
+  mediaType?: 'image' | 'video';
+  submitterName: string;
+  submitterContact?: string;
+  timestamp: string;
+  status: 'PENDING' | 'REVIEWED' | 'DISPATCHED' | 'DISMISSED';
+  vehiclePlate?: string;
 }
