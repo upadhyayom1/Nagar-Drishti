@@ -93,13 +93,20 @@ async function evaluateCongestionAlert(cameraId, timestamp = new Date()) {
   if (!camera || !['high', 'congested'].includes(camera.trafficLevel)) return null;
 
   const severity = camera.trafficLevel === 'congested' ? 'CRITICAL' : 'HIGH';
-  const recentAlert = await prisma.alert.findFirst({
-    where: { type: 'CONGESTION', cameraId, status: 'ACTIVE', createdAt: { gte: from } },
+  const existingActiveAlert = await prisma.alert.findFirst({
+    where: { type: 'CONGESTION', cameraId, status: 'ACTIVE' },
     orderBy: { createdAt: 'desc' },
   });
   const message = `Heavy traffic congestion detected at ${camera.name || camera.cameraCode} with ${camera.vehiclesDetected || camera.vehicleCount} active vehicles tracked in sector.`;
-  if (recentAlert) return prisma.alert.update({ where: { id: recentAlert.id }, data: { severity, message } });
-  return prisma.alert.create({ data: { type: 'CONGESTION', severity, cameraId, message } });
+  if (existingActiveAlert) {
+    return prisma.alert.update({
+      where: { id: existingActiveAlert.id },
+      data: { severity, message, createdAt: new Date(timestamp) },
+    });
+  }
+  return prisma.alert.create({
+    data: { type: 'CONGESTION', severity, cameraId, message, status: 'ACTIVE', createdAt: new Date(timestamp) },
+  });
 }
 
 const calculateCongestionLevel = (vehicleCount, averageSpeed) => {
