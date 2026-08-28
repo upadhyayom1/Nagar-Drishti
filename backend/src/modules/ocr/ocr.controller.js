@@ -2,13 +2,11 @@ const ocrService = require('./ocr.service');
 const { prisma } = require('../../lib/prisma');
 const { recordDetection } = require('../detection/detection.service');
 
-const getStatus = (req, res) => {
+const getStatus = async (req, res) => {
+  const status = await ocrService.getStatus();
   res.status(200).json({
     success: true,
-    data: {
-      configured: Boolean(process.env.PLATE_RECOGNIZER_API_KEY),
-      provider: 'Plate Recognizer',
-    },
+    data: status,
   });
 };
 

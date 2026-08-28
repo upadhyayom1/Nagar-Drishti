@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { apiClient, unwrapApiResponse } from './apiClient';
 
 export interface PlateRecognitionResult {
@@ -27,7 +28,11 @@ export const ocrService = {
     formData.append('cameraId', cameraId);
     formData.append('captureTime', captureTime);
 
-    const response = await apiClient.post<{ results: PlateRecognitionResult[] }>('/ocr', formData);
-    return unwrapApiResponse(response).results;
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+    const response = await axios.post<{ success: boolean; data: { results: PlateRecognitionResult[] } }>(`${API_URL}/ocr`, formData, {
+      withCredentials: true,
+    });
+    
+    return response.data.data.results;
   },
 };

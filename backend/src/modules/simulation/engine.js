@@ -359,8 +359,6 @@ class SimulationEngine {
                 if (!v.activeCameras.has(cam.id)) {
                     v.activeCameras.add(cam.id);
                     
-                    console.log(`[DETECTION] Vehicle: ${v.id} Plate: ${v.plateNumber} Camera: ${cam.cameraCode || cam.id} Distance: ${dist.toFixed(1)}m Time: ${this.time.toISOString()} Source: SIMULATION`);
-                    
                     const detection = {
                         vehicleId: v.id,
                         cameraId: cam.id,

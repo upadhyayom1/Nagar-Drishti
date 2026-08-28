@@ -119,6 +119,7 @@ export interface BlacklistedVehicle {
 }
 
 export interface NextCameraPrediction {
+  cameraId: string;
   cameraCode: string;
   cameraName: string;
   zone?: string;
@@ -126,6 +127,7 @@ export interface NextCameraPrediction {
   probability: number;
   etaMinutes?: number;
   confidence?: 'HIGH' | 'MODERATE' | 'LOW';
+  basis?: 'VEHICLE_AND_NETWORK_TRANSITIONS' | 'NETWORK_TRANSITIONS' | 'NEAREST_CAMERA_FALLBACK';
   alternativeCameras?: Array<{ cameraCode: string; cameraName: string; probability: number }>;
 }
 
