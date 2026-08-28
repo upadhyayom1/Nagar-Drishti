@@ -1,10 +1,21 @@
 const blacklistService = require('./blacklist.service');
+const blacklistIntelligenceService = require('./blacklist.intelligence.service');
 
 const getBlacklistedVehicles = async (req, res) => {
   try {
     const { status } = req.query;
     const vehicles = await blacklistService.getBlacklistedVehicles({ status });
     res.json({ success: true, data: vehicles });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const getBlacklistIntelligence = async (req, res) => {
+  try {
+    const { status } = req.query;
+    const intelligence = await blacklistIntelligenceService.getBlacklistIntelligence({ status });
+    res.json({ success: true, data: intelligence });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -50,6 +61,7 @@ const getAlerts = async (req, res) => {
 
 module.exports = {
   getBlacklistedVehicles,
+  getBlacklistIntelligence,
   addBlacklistedVehicle,
   deactivateBlacklistedVehicle,
   checkPlate,

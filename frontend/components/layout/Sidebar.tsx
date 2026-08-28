@@ -10,6 +10,7 @@ import {
   BarChart3,
   Network,
   Bell,
+  Shield,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -44,8 +45,10 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         borderActive: 'border-cyan-400/60',
         glowShadow: 'shadow-[0_0_22px_rgba(0,240,255,0.35)]',
         leftPillColor: 'bg-[#00f0ff] shadow-[0_0_10px_#00f0ff]',
-        iconColor: 'text-cyan-400 drop-shadow-[0_0_8px_rgba(0,240,255,0.7)]',
-        hoverClass: 'hover:border-cyan-400/50 hover:bg-cyan-500/10 hover:shadow-[0_0_16px_rgba(0,240,255,0.2)] hover:text-cyan-400',
+        iconColor:
+          'text-cyan-400 drop-shadow-[0_0_8px_rgba(0,240,255,0.7)]',
+        hoverClass:
+          'hover:border-cyan-400/50 hover:bg-cyan-500/10 hover:shadow-[0_0_16px_rgba(0,240,255,0.2)] hover:text-cyan-400',
       },
       {
         name: 'Live Cameras',
@@ -56,8 +59,10 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         borderActive: 'border-emerald-400/60',
         glowShadow: 'shadow-[0_0_22px_rgba(0,230,176,0.35)]',
         leftPillColor: 'bg-[#00E6B0] shadow-[0_0_10px_#00E6B0]',
-        iconColor: 'text-emerald-400 drop-shadow-[0_0_8px_rgba(0,230,176,0.7)]',
-        hoverClass: 'hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:shadow-[0_0_16px_rgba(0,230,176,0.2)] hover:text-emerald-400',
+        iconColor:
+          'text-emerald-400 drop-shadow-[0_0_8px_rgba(0,230,176,0.7)]',
+        hoverClass:
+          'hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:shadow-[0_0_16px_rgba(0,230,176,0.2)] hover:text-emerald-400',
       },
       {
         name: 'Vehicle Intelligence',
@@ -68,8 +73,10 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         borderActive: 'border-sky-400/60',
         glowShadow: 'shadow-[0_0_22px_rgba(56,189,248,0.35)]',
         leftPillColor: 'bg-[#38bdf8] shadow-[0_0_10px_#38bdf8]',
-        iconColor: 'text-sky-400 drop-shadow-[0_0_8px_rgba(56,189,248,0.7)]',
-        hoverClass: 'hover:border-sky-400/50 hover:bg-sky-500/10 hover:shadow-[0_0_16px_rgba(56,189,248,0.2)] hover:text-sky-400',
+        iconColor:
+          'text-sky-400 drop-shadow-[0_0_8px_rgba(56,189,248,0.7)]',
+        hoverClass:
+          'hover:border-sky-400/50 hover:bg-sky-500/10 hover:shadow-[0_0_16px_rgba(56,189,248,0.2)] hover:text-sky-400',
       },
       {
         name: 'Traffic Analytics',
@@ -80,8 +87,10 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         borderActive: 'border-violet-400/60',
         glowShadow: 'shadow-[0_0_22px_rgba(139,92,246,0.35)]',
         leftPillColor: 'bg-[#8b5cf6] shadow-[0_0_10px_#8b5cf6]',
-        iconColor: 'text-violet-400 drop-shadow-[0_0_8px_rgba(139,92,246,0.7)]',
-        hoverClass: 'hover:border-violet-400/50 hover:bg-violet-500/10 hover:shadow-[0_0_16px_rgba(139,92,246,0.2)] hover:text-violet-400',
+        iconColor:
+          'text-violet-400 drop-shadow-[0_0_8px_rgba(139,92,246,0.7)]',
+        hoverClass:
+          'hover:border-violet-400/50 hover:bg-violet-500/10 hover:shadow-[0_0_16px_rgba(139,92,246,0.2)] hover:text-violet-400',
       },
       {
         name: 'Movement Network',
@@ -92,11 +101,14 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         borderActive: 'border-pink-400/60',
         glowShadow: 'shadow-[0_0_22px_rgba(236,72,153,0.35)]',
         leftPillColor: 'bg-[#ec4899] shadow-[0_0_10px_#ec4899]',
-        iconColor: 'text-pink-400 drop-shadow-[0_0_8px_rgba(236,72,153,0.7)]',
-        hoverClass: 'hover:border-pink-400/50 hover:bg-pink-500/10 hover:shadow-[0_0_16px_rgba(236,72,153,0.2)] hover:text-pink-400',
+        iconColor:
+          'text-pink-400 drop-shadow-[0_0_8px_rgba(236,72,153,0.7)]',
+        hoverClass:
+          'hover:border-pink-400/50 hover:bg-pink-500/10 hover:shadow-[0_0_16px_rgba(236,72,153,0.2)] hover:text-pink-400',
       },
     ],
   },
+
   {
     label: 'Operations & Sentinel',
     items: [
@@ -109,8 +121,10 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         borderActive: 'border-amber-400/60',
         glowShadow: 'shadow-[0_0_22px_rgba(245,158,11,0.35)]',
         leftPillColor: 'bg-[#f59e0b] shadow-[0_0_10px_#f59e0b]',
-        iconColor: 'text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.7)]',
-        hoverClass: 'hover:border-amber-400/50 hover:bg-amber-500/10 hover:shadow-[0_0_16px_rgba(245,158,11,0.2)] hover:text-amber-400',
+        iconColor:
+          'text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.7)]',
+        hoverClass:
+          'hover:border-amber-400/50 hover:bg-amber-500/10 hover:shadow-[0_0_16px_rgba(245,158,11,0.2)] hover:text-amber-400',
       },
       {
         name: 'Sentinel Alerts',
@@ -121,8 +135,24 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         borderActive: 'border-rose-400/60',
         glowShadow: 'shadow-[0_0_22px_rgba(244,63,94,0.35)]',
         leftPillColor: 'bg-[#f43f5e] shadow-[0_0_10px_#f43f5e]',
-        iconColor: 'text-rose-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.7)]',
-        hoverClass: 'hover:border-rose-400/50 hover:bg-rose-500/10 hover:shadow-[0_0_16px_rgba(244,63,94,0.2)] hover:text-rose-400',
+        iconColor:
+          'text-rose-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.7)]',
+        hoverClass:
+          'hover:border-rose-400/50 hover:bg-rose-500/10 hover:shadow-[0_0_16px_rgba(244,63,94,0.2)] hover:text-rose-400',
+      },
+      {
+        name: 'Threat Watchlist',
+        href: '/blacklist',
+        icon: Shield,
+        color: '#fb7185',
+        bgActive: 'bg-rose-500/15',
+        borderActive: 'border-rose-400/60',
+        glowShadow: 'shadow-[0_0_22px_rgba(251,113,133,0.35)]',
+        leftPillColor: 'bg-[#fb7185] shadow-[0_0_10px_#fb7185]',
+        iconColor:
+          'text-rose-400 drop-shadow-[0_0_8px_rgba(251,113,133,0.7)]',
+        hoverClass:
+          'hover:border-rose-400/50 hover:bg-rose-500/10 hover:shadow-[0_0_16px_rgba(251,113,133,0.2)] hover:text-rose-400',
       },
       {
         name: 'System Diagnostics',
@@ -133,8 +163,10 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         borderActive: 'border-teal-400/60',
         glowShadow: 'shadow-[0_0_22px_rgba(20,184,166,0.35)]',
         leftPillColor: 'bg-[#14b8a6] shadow-[0_0_10px_#14b8a6]',
-        iconColor: 'text-teal-400 drop-shadow-[0_0_8px_rgba(20,184,166,0.7)]',
-        hoverClass: 'hover:border-teal-400/50 hover:bg-teal-500/10 hover:shadow-[0_0_16px_rgba(20,184,166,0.2)] hover:text-teal-400',
+        iconColor:
+          'text-teal-400 drop-shadow-[0_0_8px_rgba(20,184,166,0.7)]',
+        hoverClass:
+          'hover:border-teal-400/50 hover:bg-teal-500/10 hover:shadow-[0_0_16px_rgba(20,184,166,0.2)] hover:text-teal-400',
       },
     ],
   },
@@ -143,21 +175,28 @@ const navGroups: { label: string; items: NavItem[] }[] = [
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
-  const toggleSidebar    = useUIStore((s) => s.toggleSidebar);
+  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
 
   return (
     <div className="flex flex-col h-full py-3.5 select-none font-body overflow-hidden">
 
-      {/* ── Brand Mark Header ────────────────────────────────────────── */}
-      <div className={cn('flex items-center gap-3 mb-4 shrink-0', sidebarCollapsed ? 'px-2 justify-center' : 'px-3.5')}>
+      {/* Brand Mark Header */}
+      <div
+        className={cn(
+          'flex items-center gap-3 mb-4 shrink-0',
+          sidebarCollapsed ? 'px-2 justify-center' : 'px-3.5'
+        )}
+      >
         <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-400/40 flex items-center justify-center shadow-[0_0_18px_rgba(0,240,255,0.35)] shrink-0">
           <ShieldCheck size={19} className="text-cyan-400" />
         </div>
+
         {!sidebarCollapsed && (
           <div className="min-w-0">
             <h1 className="text-sm font-bold tracking-tight text-[var(--text-primary)] leading-none font-display">
               Urban<span className="text-gradient-spectral">Pulse</span>
             </h1>
+
             <span className="text-[9px] font-mono text-[var(--text-secondary)] tracking-[0.16em] uppercase mt-1 block">
               AI Command OS
             </span>
@@ -165,7 +204,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         )}
       </div>
 
-      {/* ── Navigation Links (Multi-Color Hover & Active Glows) ──────── */}
+      {/* Navigation Links */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden space-y-4 px-2">
         {navGroups.map((group) => (
           <div key={group.label}>
@@ -174,9 +213,14 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                 {group.label}
               </p>
             )}
+
             <div className="space-y-1">
               {group.items.map((item) => {
-                const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== '/dashboard' &&
+                    pathname.startsWith(item.href));
+
                 return (
                   <Link
                     key={item.href}
@@ -186,14 +230,30 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                     title={sidebarCollapsed ? item.name : undefined}
                     className={cn(
                       'flex items-center gap-2.5 rounded-xl transition-all duration-200 outline-none group relative overflow-hidden border',
-                      sidebarCollapsed ? 'justify-center px-2 py-2.5' : 'px-3 py-2',
+                      sidebarCollapsed
+                        ? 'justify-center px-2 py-2.5'
+                        : 'px-3 py-2',
+
                       isActive
-                        ? cn(item.bgActive, item.borderActive, item.glowShadow, 'font-semibold scale-[1.015] text-[var(--text-primary)]')
-                        : cn('text-[var(--text-secondary)] border-transparent font-medium hover:scale-[1.01]', item.hoverClass),
+                        ? cn(
+                            item.bgActive,
+                            item.borderActive,
+                            item.glowShadow,
+                            'font-semibold scale-[1.015] text-[var(--text-primary)]'
+                          )
+                        : cn(
+                            'text-[var(--text-secondary)] border-transparent font-medium hover:scale-[1.01]',
+                            item.hoverClass
+                          )
                     )}
                   >
                     {isActive && (
-                      <div className={cn('absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-5 rounded-r-full', item.leftPillColor)} />
+                      <div
+                        className={cn(
+                          'absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-5 rounded-r-full',
+                          item.leftPillColor
+                        )}
+                      />
                     )}
 
                     <item.icon
@@ -202,15 +262,19 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                         'shrink-0 transition-colors duration-200',
                         isActive
                           ? item.iconColor
-                          : 'text-[var(--text-secondary)] group-hover:text-current',
+                          : 'text-[var(--text-secondary)] group-hover:text-current'
                       )}
                     />
 
                     {!sidebarCollapsed && (
-                      <span className={cn(
-                        'text-xs tracking-wide truncate transition-colors duration-200 font-display',
-                        isActive ? 'text-[var(--text-primary)] font-semibold' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]',
-                      )}>
+                      <span
+                        className={cn(
+                          'text-xs tracking-wide truncate transition-colors duration-200 font-display',
+                          isActive
+                            ? 'text-[var(--text-primary)] font-semibold'
+                            : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'
+                        )}
+                      >
                         {item.name}
                       </span>
                     )}
@@ -222,17 +286,33 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         ))}
       </nav>
 
-      {/* ── Collapse Toggle & Authorized Operations Notice ───────────── */}
-      <div className={cn('mt-2 shrink-0 hidden md:block', sidebarCollapsed ? 'px-1.5' : 'px-2.5')}>
+      {/* Collapse Toggle & Authorized Operations Notice */}
+      <div
+        className={cn(
+          'mt-2 shrink-0 hidden md:block',
+          sidebarCollapsed ? 'px-1.5' : 'px-2.5'
+        )}
+      >
         <button
           onClick={toggleSidebar}
           className={cn(
             'w-full flex items-center gap-2 py-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.04] border border-transparent transition-all duration-150 mb-2 cursor-pointer',
-            sidebarCollapsed ? 'justify-center' : 'px-2.5',
+            sidebarCollapsed ? 'justify-center' : 'px-2.5'
           )}
-          aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={
+            sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'
+          }
         >
-          {sidebarCollapsed ? <ChevronRight size={14} /> : <><ChevronLeft size={14} /><span className="text-[11px] font-display">Collapse Sidebar</span></>}
+          {sidebarCollapsed ? (
+            <ChevronRight size={14} />
+          ) : (
+            <>
+              <ChevronLeft size={14} />
+              <span className="text-[11px] font-display">
+                Collapse Sidebar
+              </span>
+            </>
+          )}
         </button>
 
         {!sidebarCollapsed && (
@@ -240,6 +320,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             <p className="text-[8px] font-mono text-cyan-400 uppercase tracking-wider font-semibold">
               Authorized Operations
             </p>
+
             <p className="text-[8px] text-[var(--text-tertiary)] mt-0.5 leading-tight font-body">
               UrbanPulse Command Grid
             </p>

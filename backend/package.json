@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js",
+    "postinstall": "prisma generate",
     "seed": "node prisma/seed.js",
     "seed:prayagraj-network": "node src/scripts/seedPrayagrajNetwork.js",
     "generate:historical": "node src/scripts/historical/generateHistoricalData.js",
