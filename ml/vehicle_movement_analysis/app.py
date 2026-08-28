@@ -147,3 +147,28 @@ def predict_blacklisted_next(vehicle_id: str):
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+# forecast
+
+from fastapi import FastAPI, Query, HTTPException
+from forecasting.predictor import TrafficCongestionPredictor
+
+congestion_predictor = TrafficCongestionPredictor()
+
+@app.get("/api/forecast/congestion")
+def get_traffic_congestion_forecast(
+    minutes: int = Query(30, description="Arbitrary future time horizon in minutes (e.g., 15, 30, 60, 75)"),
+    threshold: int = Query(15, description="Vehicle volume threshold to flag a bottleneck")
+):
+    """
+    Predicts traffic bottlenecks and vehicle flow densities for any custom 
+    time window ahead, isolated safely from base tracking pipelines.
+    """
+    try:
+        forecast_result = congestion_predictor.predict_congestion(
+            horizon_mins=minutes, 
+            capacity_threshold=threshold
+        )
+        return forecast_result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Forecasting calculation failed: {str(e)}")
