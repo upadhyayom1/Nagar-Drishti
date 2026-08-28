@@ -8,6 +8,7 @@ import { NotificationsPanel }  from '@/components/layout/NotificationsPanel';
 import { useUIStore }          from '@/store/uiStore';
 import { cn }                  from '@/lib/utils';
 import { X }                   from 'lucide-react';
+import { AuthGuard }           from '@/components/layout/AuthGuard';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { sidebarCollapsed, mobileMenuOpen, setMobileMenuOpen } = useUIStore();
@@ -20,6 +21,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [pathname, setMobileMenuOpen]);
 
   return (
+    <AuthGuard allowedRoles={['ADMIN']}>
     <div
       className="fixed inset-0 flex w-screen h-screen overflow-hidden select-none font-body bg-[var(--bg-void)] text-[var(--text-primary)]"
     >
@@ -87,5 +89,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ── Global Notifications Panel ── */}
       <NotificationsPanel />
     </div>
+    </AuthGuard>
   );
 }

@@ -1,36 +1,35 @@
 const { prisma } = require('../../lib/prisma');
 const { normalizePlateNumber } = require('./blacklist.service');
+const axios = require('axios');
+const { env } = require('../../config/env');
 
-/**
- * ML Next-Camera Prediction Hook
- * 
- * NOTE: The ML service is currently in development.
- * This hook currently returns `null`. When your ML microservice (e.g., FastAPI on port 8001)
- * is ready, plug in the HTTP call inside this function.
- * 
- * @param {string} vehicleId
- * @param {string} lastCameraId
- * @param {Array} history
- * @returns {Promise<Object|null>}
- */
-async function predictNextCamera(vehicleId, lastCameraId, history = []) {
-  // ---------------------------------------------------------------------------
-  // ML SERVICE INTEGRATION HOOK (Placeholder)
-  // When ready, uncomment and configure:
-  //
-  // try {
-  //   const response = await axios.post('http://localhost:8001/api/predict/next-camera', {
-  //     vehicleId,
-  //     lastCameraId,
-  //     trajectory: history.slice(-5)
-  //   });
-  //   return response.data; // { cameraCode, cameraName, probability, etaMinutes, confidence }
-  // } catch (err) {
-  //   console.warn('ML Service prediction unavailable:', err.message);
-  //   return null;
-  // }
-  // ---------------------------------------------------------------------------
-  return null;
+async function predictNextCamera(vehicleId, lastCameraId, history = [], predictionData = null) {
+  if (!predictionData?.sourceCameras.get(lastCameraId)) return null;
+  const serializeTransition = (transition) => ({
+    sourceCameraId: transition.sourceCameraId,
+    destinationCameraId: transition.destinationCameraId,
+    destinationCameraCode: transition.destinationCamera.cameraCode,
+    destinationCameraName: transition.destinationCamera.name,
+    destinationZone: transition.destinationCamera.zone?.name,
+    destinationRoad: transition.destinationCamera.road?.name,
+    travelTimeSeconds: transition.travelTimeSeconds,
+    vehicleId: transition.vehicleId,
+  });
+  try {
+    const networkTransitions = predictionData.networkTransitionsBySource.get(lastCameraId) || [];
+    const vehicleTransitions = predictionData.vehicleTransitionsByKey.get(`${vehicleId}:${lastCameraId}`) || [];
+    const response = await axios.post(`${env.ML_SERVICE_URL}/api/blacklisted/predict-next`, {
+      vehicleId,
+      lastCameraId,
+      transitions: networkTransitions.map(serializeTransition),
+      vehicleTransitions: vehicleTransitions.map(serializeTransition),
+    }, { timeout: 5000 });
+    const prediction = response.data?.prediction;
+    return prediction ? { ...prediction, alternativeCameras: response.data.alternatives || [] } : null;
+  } catch (error) {
+    console.warn(`ML next-camera prediction unavailable for ${vehicleId}:`, error.message);
+    return null;
+  }
 }
 
 /**
@@ -39,43 +38,81 @@ async function predictNextCamera(vehicleId, lastCameraId, history = []) {
  */
 async function getBlacklistIntelligence(filters = {}) {
   const query = {};
-  if (filters.status) query.status = filters.status;
+  if (filters.status && filters.status !== 'ALL') {
+    query.status = filters.status;
+  } else {
+    query.status = 'ACTIVE';
+  }
 
   const blacklisted = await prisma.blacklistedVehicle.findMany({
     where: query,
     orderBy: { createdAt: 'desc' },
+    take: 20,
   });
+
+  if (blacklisted.length === 0) return [];
+
+  const plates = blacklisted.map((b) => normalizePlateNumber(b.plateNumber));
+  const vehicles = await prisma.vehicle.findMany({
+    where: { plateNumber: { in: plates } },
+    include: {
+      detections: {
+        orderBy: { timestamp: 'desc' },
+        take: 5,
+        include: {
+          camera: {
+            select: {
+              id: true,
+              name: true,
+              cameraCode: true,
+              latitude: true,
+              longitude: true,
+              zone: { select: { name: true } },
+              road: { select: { name: true } },
+            },
+          },
+        },
+      },
+      _count: { select: { detections: true } },
+    },
+  });
+
+  const vehicleByPlate = new Map(vehicles.map((v) => [v.plateNumber, v]));
+  const predictionInputs = vehicles
+    .map((vehicle) => ({ vehicleId: vehicle.id, lastCameraId: vehicle.detections[0]?.cameraId }))
+    .filter((input) => input.lastCameraId);
+  const lastCameraIds = [...new Set(predictionInputs.map((input) => input.lastCameraId))];
+  const vehicleIds = [...new Set(predictionInputs.map((input) => input.vehicleId))];
+  const transitionInclude = { destinationCamera: { include: { road: { select: { name: true } }, zone: { select: { name: true } } } } };
+  const [sourceCameras, networkTransitions, vehicleTransitions, onlineCameras] = await Promise.all([
+    lastCameraIds.length ? prisma.camera.findMany({ where: { id: { in: lastCameraIds } }, include: { road: { select: { id: true, name: true } }, zone: { select: { id: true, name: true } } } }) : [],
+    lastCameraIds.length ? prisma.cameraTransition.findMany({ where: { sourceCameraId: { in: lastCameraIds } }, orderBy: { timestamp: 'desc' }, take: 2000, include: transitionInclude }) : [],
+    vehicleIds.length ? prisma.cameraTransition.findMany({ where: { vehicleId: { in: vehicleIds }, sourceCameraId: { in: lastCameraIds } }, orderBy: { timestamp: 'desc' }, take: 1000, include: transitionInclude }) : [],
+    prisma.camera.findMany({ where: { status: 'ONLINE' }, include: { road: { select: { name: true } }, zone: { select: { name: true } } } }),
+  ]);
+  const predictionData = {
+    sourceCameras: new Map(sourceCameras.map((camera) => [camera.id, camera])),
+    networkTransitionsBySource: new Map(),
+    vehicleTransitionsByKey: new Map(),
+    onlineCameras,
+  };
+  for (const transition of networkTransitions) {
+    const transitions = predictionData.networkTransitionsBySource.get(transition.sourceCameraId) || [];
+    transitions.push(transition);
+    predictionData.networkTransitionsBySource.set(transition.sourceCameraId, transitions);
+  }
+  for (const transition of vehicleTransitions) {
+    const key = `${transition.vehicleId}:${transition.sourceCameraId}`;
+    const transitions = predictionData.vehicleTransitionsByKey.get(key) || [];
+    transitions.push(transition);
+    predictionData.vehicleTransitionsByKey.set(key, transitions);
+  }
 
   const enrichedList = await Promise.all(
     blacklisted.map(async (record) => {
       const normalizedPlate = normalizePlateNumber(record.plateNumber);
-
-      // Find vehicle record
-      const vehicle = await prisma.vehicle.findUnique({
-        where: { plateNumber: normalizedPlate },
-      });
-
-      // Find latest detection and history
-      const detections = vehicle
-        ? await prisma.detection.findMany({
-            where: { vehicleId: vehicle.id },
-            orderBy: { timestamp: 'desc' },
-            take: 50,
-            include: {
-              camera: {
-                select: {
-                  id: true,
-                  name: true,
-                  cameraCode: true,
-                  latitude: true,
-                  longitude: true,
-                  zone: { select: { name: true } },
-                  road: { select: { name: true } },
-                },
-              },
-            },
-          })
-        : [];
+      const vehicle = vehicleByPlate.get(normalizedPlate);
+      const detections = vehicle?.detections || [];
 
       // Last sighting details
       let lastSighting = null;
@@ -95,12 +132,11 @@ async function getBlacklistIntelligence(filters = {}) {
         };
       }
 
-      // Unique cameras visited
       const uniqueCameras = new Set(detections.map((d) => d.cameraId));
 
       // Calculate next probable camera location via ML hook
       const nextProbableCamera = vehicle && lastSighting
-        ? await predictNextCamera(vehicle.id, lastSighting.cameraId, detections)
+        ? await predictNextCamera(vehicle.id, lastSighting.cameraId, detections, predictionData)
         : null;
 
       return {
@@ -115,12 +151,13 @@ async function getBlacklistIntelligence(filters = {}) {
           color: vehicle?.color || 'Unknown',
           firstSeen: vehicle?.firstSeen || record.createdAt,
           lastSeen: vehicle?.lastSeen || lastSighting?.timestamp || record.createdAt,
-          totalDetections: detections.length,
-          camerasVisited: uniqueCameras.size,
+          totalDetections: vehicle?._count?.detections || detections.length,
+          camerasVisited: uniqueCameras.size || (lastSighting ? 1 : 0),
           averageSpeed: vehicle?.speed || 38,
+          currentRoad: lastSighting?.road || 'Prayagraj Main Corridor',
         },
         lastSighting,
-        nextProbableCamera, // Currently NULL until ML service is integrated
+        nextProbableCamera,
       };
     })
   );

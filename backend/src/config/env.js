@@ -7,7 +7,8 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('1d'),
   PORT: z.string().default('8000'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PLATE_RECOGNIZER_API_KEY: z.string().optional().default('dummy-key'),
+  ML_SERVICE_URL: z.string().url().default('http://127.0.0.1:8001/ml'),
+  ANPR_SERVICE_URL: z.string().url().default('http://127.0.0.1:8001/anpr'),
 });
 
 const _env = envSchema.safeParse(process.env);

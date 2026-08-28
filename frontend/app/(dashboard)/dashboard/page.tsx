@@ -58,16 +58,19 @@ export default function DashboardPage() {
   const { data: cameras = [] } = useQuery({
     queryKey: ['cameras'],
     queryFn: cameraService.getCameras,
+    refetchInterval: 5_000,
   });
 
   const { data: stats } = useQuery({
     queryKey: ['trafficStats'],
     queryFn: () => analyticsService.getTrafficStats(),
+    refetchInterval: 5_000,
   });
 
   const { data: alerts = [] } = useQuery({
     queryKey: ['recentAlerts'],
     queryFn: () => alertService.getRecentAlerts(5),
+    refetchInterval: 5_000,
   });
 
   const {
@@ -82,13 +85,13 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Active Optical Nodes"
-          value={stats?.activeCameras ?? 10}
+          value={stats?.activeCameras ?? 0}
           icon={CameraIcon}
           colorTheme="emerald"
         />
         <StatCard
           label="Vehicles Tracked Today"
-          value={stats?.totalVehiclesToday?.toLocaleString('en-IN') ?? 2847}
+          value={stats?.totalVehiclesToday?.toLocaleString('en-IN') ?? 0}
           icon={Car}
           colorTheme="cyan"
         />
@@ -101,7 +104,7 @@ export default function DashboardPage() {
         />
         <StatCard
           label="Active Sentinel Flags"
-          value={stats?.activeAlerts ?? 4}
+          value={stats?.activeAlerts ?? 0}
           icon={AlertTriangle}
           subtitle="Real-time threat queue"
           colorTheme="rose"

@@ -20,7 +20,7 @@ exports.getVehicles = async (req, res) => {
     const vehicles = await prisma.vehicle.findMany({
       take: Math.min(Math.max(Number(limit) || 100, 1), 100),
       orderBy: { lastSeen: 'desc' },
-      include: { _count: { select: { detections: true } }, detections: { select: { cameraId: true } } },
+      include: { _count: { select: { detections: true } }, detections: { select: { cameraId: true }, take: 10 } },
     });
     res.status(200).json({ success: true, data: vehicles.map(toVehicleSummary) });
   } catch (error) {
@@ -34,7 +34,7 @@ exports.getVehicle = async (req, res) => {
     const plateNumber = normalizePlate(req.params.plateNumber);
     const vehicle = await prisma.vehicle.findUnique({
       where: { plateNumber },
-      include: { _count: { select: { detections: true } }, detections: { select: { cameraId: true } } },
+      include: { _count: { select: { detections: true } }, detections: { select: { cameraId: true }, take: 25 } },
     });
     if (!vehicle) return res.status(404).json({ success: false, message: 'Vehicle not found' });
     res.status(200).json({ success: true, data: toVehicleSummary(vehicle) });
@@ -42,7 +42,7 @@ exports.getVehicle = async (req, res) => {
     console.error('Error fetching vehicle:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
-}
+};
 
 exports.searchVehicle = async function searchVehicle(req, res, next) {
   try {

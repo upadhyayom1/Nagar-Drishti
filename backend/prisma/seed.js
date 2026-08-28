@@ -11,19 +11,46 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const adminPassword = await bcrypt.hash('admin123', 10);
+  const userPassword = await bcrypt.hash('user123', 10);
 
   const adminUser = await prisma.user.upsert({
     where: { username: 'admin' },
-    update: {},
+    update: { passwordHash: adminPassword },
     create: {
       username: 'admin',
       passwordHash: adminPassword,
-      name: 'Admin',
+      name: 'Central Admin',
       role: 'ADMIN',
     },
   });
 
-  console.log('Seed completed. Admin user:', adminUser.username);
+  const operator = await prisma.user.upsert({
+    where: { username: 'operator.krishnan' },
+    update: { passwordHash: adminPassword },
+    create: {
+      username: 'operator.krishnan',
+      passwordHash: adminPassword,
+      name: 'Officer Krishnan',
+      role: 'ADMIN',
+    },
+  });
+
+  const citizen = await prisma.user.upsert({
+    where: { username: 'citizen.user' },
+    update: { passwordHash: userPassword },
+    create: {
+      username: 'citizen.user',
+      passwordHash: userPassword,
+      name: 'Citizen User',
+      role: 'USER',
+    },
+  });
+
+  console.log('Seed completed successfully:', {
+    admin: adminUser.username,
+    operator: operator.username,
+    citizen: citizen.username,
+  });
 }
 
 main()

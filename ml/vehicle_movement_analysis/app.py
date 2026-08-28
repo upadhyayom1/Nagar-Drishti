@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
 import traceback
 import pandas as pd
 import os
@@ -7,6 +8,24 @@ from analytics.movement_analyzer import VehicleMovementAnalyzer, analyze_ocr_mov
 from analytics.interceptor import VehicleInterceptor
 
 app = FastAPI(title="Nagar-Drishti Movement & Interceptor API", version="2.1")
+
+
+class TransitionInput(BaseModel):
+    sourceCameraId: str
+    destinationCameraId: str
+    destinationCameraCode: str
+    destinationCameraName: str
+    destinationZone: str | None = None
+    destinationRoad: str | None = None
+    travelTimeSeconds: float | None = None
+    vehicleId: str | None = None
+
+
+class NextCameraRequest(BaseModel):
+    vehicleId: str
+    lastCameraId: str
+    transitions: list[TransitionInput] = Field(default_factory=list)
+    vehicleTransitions: list[TransitionInput] = Field(default_factory=list)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -36,6 +55,53 @@ def startup_event():
         print("Successfully loaded Nagar-Drishti ML analysis modules.")
     except Exception as e:
         print(f"Startup Warning: {e}")
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok", "service": "vehicle-movement-analysis", "modelLoaded": interceptor_engine is not None}
+
+
+@app.post("/api/blacklisted/predict-next")
+def predict_live_next_camera(request: NextCameraRequest):
+    scores = {}
+
+    def add_transition(transition: TransitionInput, weight: int):
+        if transition.sourceCameraId != request.lastCameraId:
+            return
+        current = scores.setdefault(transition.destinationCameraId, {"transition": transition, "score": 0, "travel_times": []})
+        current["score"] += weight
+        if transition.travelTimeSeconds and transition.travelTimeSeconds > 0:
+            current["travel_times"].append(transition.travelTimeSeconds)
+
+    for transition in request.transitions:
+        add_transition(transition, 1)
+    for transition in request.vehicleTransitions:
+        add_transition(transition, 3)
+
+    if not scores:
+        return {"vehicleId": request.vehicleId, "prediction": None, "alternatives": []}
+
+    ranked = sorted(scores.values(), key=lambda candidate: candidate["score"], reverse=True)
+    total_score = sum(candidate["score"] for candidate in ranked)
+
+    def serialize(candidate):
+        transition = candidate["transition"]
+        average_seconds = sum(candidate["travel_times"]) / len(candidate["travel_times"]) if candidate["travel_times"] else None
+        confidence = "HIGH" if candidate["score"] >= 12 else "MODERATE" if candidate["score"] >= 4 else "LOW"
+        return {
+            "cameraId": transition.destinationCameraId,
+            "cameraCode": transition.destinationCameraCode,
+            "cameraName": transition.destinationCameraName,
+            "zone": transition.destinationZone,
+            "road": transition.destinationRoad,
+            "probability": candidate["score"] / total_score,
+            "etaMinutes": max(1, round(average_seconds / 60)) if average_seconds else None,
+            "confidence": confidence,
+            "basis": "VEHICLE_AND_NETWORK_TRANSITIONS" if request.vehicleTransitions else "NETWORK_TRANSITIONS",
+        }
+
+    return {"vehicleId": request.vehicleId, "prediction": serialize(ranked[0]), "alternatives": [serialize(candidate) for candidate in ranked[1:4]]}
 
 @app.get("/api/vehicle/{vehicle_id}/trajectory")
 def get_trajectory(vehicle_id: str):

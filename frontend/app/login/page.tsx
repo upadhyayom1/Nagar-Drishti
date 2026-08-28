@@ -9,15 +9,17 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import Link from 'next/link';
+import { useAuthStore } from '@/store/authStore';
 
 function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialRole = searchParams.get('role') === 'user' ? 'user' : 'admin';
+  const setUser = useAuthStore((state) => state.setUser);
 
   const [role, setRole] = useState<'admin' | 'user'>(initialRole);
-  const [username, setUsername] = useState(initialRole === 'admin' ? 'operator.krishnan' : 'citizen.user');
-  const [password, setPassword] = useState('••••••••');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationStep, setVerificationStep] = useState(0);
   const [verifiedSuccess, setVerifiedSuccess] = useState(false);
@@ -26,17 +28,14 @@ function LoginFormContent() {
   const handleRoleSwitch = (newRole: 'admin' | 'user') => {
     setRole(newRole);
     setErrorMessage('');
-    if (newRole === 'admin') {
-      setUsername('operator.krishnan');
-    } else {
-      setUsername('citizen.user');
-    }
+    setUsername('');
+    setPassword('');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username.trim()) {
-      setErrorMessage('Please provide an identifier');
+    if (!username.trim() || !password.trim()) {
+      setErrorMessage('Please provide both username and password');
       return;
     }
 
@@ -44,24 +43,46 @@ function LoginFormContent() {
     setVerificationStep(1);
     setErrorMessage('');
 
-    // Stage 1 -> Stage 2 -> Stage 3 multi-stage sequence
-    setTimeout(() => {
-      setVerificationStep(2);
-    }, 900);
-
-    setTimeout(() => {
-      setVerificationStep(3);
-      setIsVerifying(false);
-      setVerifiedSuccess(true);
-    }, 1800);
-
-    setTimeout(() => {
-      if (role === 'admin') {
-        router.push('/dashboard');
-      } else {
-        router.push('/report');
+    try {
+      // 1. Verify with backend API
+      const { authService } = await import('@/services/authService');
+      const { user } = await authService.login(username, password);
+      const expectedRole = role === 'admin' ? 'ADMIN' : 'USER';
+      if (user.role !== expectedRole) {
+        setErrorMessage(`This account is not authorized for the ${role === 'admin' ? 'admin command center' : 'citizen portal'}.`);
+        setIsVerifying(false);
+        setVerificationStep(0);
+        return;
       }
-    }, 2700);
+      setUser(user);
+
+      // 2. Play multi-stage HUD sequence
+      setTimeout(() => {
+        setVerificationStep(2);
+      }, 700);
+
+      setTimeout(() => {
+        setVerificationStep(3);
+        setIsVerifying(false);
+        setVerifiedSuccess(true);
+      }, 1400);
+
+      setTimeout(() => {
+        if (user.role === 'ADMIN') {
+          router.push('/dashboard');
+        } else {
+          router.push('/report');
+        }
+      }, 2100);
+    } catch (err: unknown) {
+      setIsVerifying(false);
+      setVerificationStep(0);
+      const message =
+        typeof err === 'object' && err !== null && 'response' in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+          : 'Authentication failed. Please check your credentials.';
+      setErrorMessage(message || 'Authentication failed. Please check your credentials.');
+    }
   };
 
   return (
@@ -176,7 +197,7 @@ function LoginFormContent() {
             <div className="space-y-1.5">
               <label className="text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)] font-semibold flex items-center justify-between">
                 <span>{role === 'admin' ? 'Operator Identifier' : 'Citizen Email / Phone'}</span>
-                <span className="text-[10px] text-cyan-400 font-normal">Pre-filled for Demo</span>
+                <span className="text-[10px] text-cyan-400 font-normal">Backend-verified account</span>
               </label>
               <Input
                 value={username}

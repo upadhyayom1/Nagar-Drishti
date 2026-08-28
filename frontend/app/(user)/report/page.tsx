@@ -16,6 +16,8 @@ export default function CitizenReportPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
   const [vehiclePlate, setVehiclePlate] = useState('');
   const [submitterName, setSubmitterName] = useState('');
   const [submitterContact, setSubmitterContact] = useState('');
@@ -39,7 +41,9 @@ export default function CitizenReportPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !description.trim() || !location.trim() || !submitterName.trim()) {
+    const parsedLatitude = Number(latitude);
+    const parsedLongitude = Number(longitude);
+    if (!title.trim() || !description.trim() || !location.trim() || !Number.isFinite(parsedLatitude) || !Number.isFinite(parsedLongitude)) {
       return;
     }
 
@@ -54,6 +58,8 @@ export default function CitizenReportPage() {
         submitterContact: submitterContact.trim() || undefined,
         vehiclePlate: vehiclePlate.trim().toUpperCase() || undefined,
         mediaType,
+        latitude: parsedLatitude,
+        longitude: parsedLongitude,
       });
       setSubmittedResult(result);
     } catch (err) {
@@ -67,6 +73,8 @@ export default function CitizenReportPage() {
     setTitle('');
     setDescription('');
     setLocation('');
+    setLatitude('');
+    setLongitude('');
     setVehiclePlate('');
     setSubmitterContact('');
     setFileName(null);
@@ -283,6 +291,17 @@ export default function CitizenReportPage() {
                   icon={<Car size={15} />}
                   className="h-10 text-xs font-mono"
                 />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-display font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">Latitude *</label>
+                <Input value={latitude} onChange={(e) => setLatitude(e.target.value)} placeholder="e.g. 25.4358" inputMode="decimal" required className="h-10 text-xs font-mono" />
+              </div>
+              <div>
+                <label className="block text-[11px] font-display font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">Longitude *</label>
+                <Input value={longitude} onChange={(e) => setLongitude(e.target.value)} placeholder="e.g. 81.8463" inputMode="decimal" required className="h-10 text-xs font-mono" />
               </div>
             </div>
 

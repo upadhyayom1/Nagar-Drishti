@@ -16,6 +16,7 @@ import {
   ChevronRight,
   ShieldCheck,
   Inbox,
+  ScanLine,
 } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 
@@ -77,6 +78,18 @@ const navGroups: { label: string; items: NavItem[] }[] = [
           'text-sky-400 drop-shadow-[0_0_8px_rgba(56,189,248,0.7)]',
         hoverClass:
           'hover:border-sky-400/50 hover:bg-sky-500/10 hover:shadow-[0_0_16px_rgba(56,189,248,0.2)] hover:text-sky-400',
+      },
+      {
+        name: 'AI Plate Detection',
+        href: '/detect',
+        icon: ScanLine,
+        color: '#22d3ee',
+        bgActive: 'bg-cyan-500/15',
+        borderActive: 'border-cyan-400/60',
+        glowShadow: 'shadow-[0_0_22px_rgba(34,211,238,0.35)]',
+        leftPillColor: 'bg-cyan-400 shadow-[0_0_10px_#22d3ee]',
+        iconColor: 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.7)]',
+        hoverClass: 'hover:border-cyan-400/50 hover:bg-cyan-500/10 hover:shadow-[0_0_16px_rgba(34,211,238,0.2)] hover:text-cyan-400',
       },
       {
         name: 'Traffic Analytics',

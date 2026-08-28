@@ -76,7 +76,7 @@ async function getVehicleProfile(plateNumber) {
   });
 
   // 7. Incidents
-  const incidents = await prisma.vehicleIncident.findMany({
+  const incidents = await prisma.incident.findMany({
     where: { vehicleId: vehicle.id },
     orderBy: { timestamp: 'desc' },
     include: {

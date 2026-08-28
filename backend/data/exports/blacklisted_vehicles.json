@@ -1,0 +1,83 @@
+[
+  {
+    "vehicle_id": "cmtbjled600044dirkwj0gvt5",
+    "plate": "UP78HI9549",
+    "last_seen_timestamp": "2026-08-28T08:13:36.309Z",
+    "current_checkpoint": {
+      "camera_id": "cmtbiv1xr00113girolxvk9uf",
+      "camera_name": "Allapur Junction"
+    }
+  },
+  {
+    "vehicle_id": "cmtbjled7001a4dirpdn7bg3o",
+    "plate": "UP65AB9921",
+    "last_seen_timestamp": "2026-08-28T17:06:14.455Z",
+    "current_checkpoint": {
+      "camera_id": "cmtbiv1xs001s3girp7rt099x",
+      "camera_name": "Old Yamuna Bridge North"
+    }
+  },
+  {
+    "vehicle_id": "cmtbjled7000x4dirjd2rzjnw",
+    "plate": "UP70EX7525",
+    "last_seen_timestamp": "2026-08-28T17:06:14.455Z",
+    "current_checkpoint": {
+      "camera_id": "cmtbiv1xr00153gir4c2iauzg",
+      "camera_name": "Minto Park Approach"
+    }
+  },
+  {
+    "vehicle_id": "cmtbjled700184diryby57uer",
+    "plate": "UP70DK8231",
+    "last_seen_timestamp": "2026-08-28T08:15:10.771Z",
+    "current_checkpoint": {
+      "camera_id": "cmtbiv1xr00153gir4c2iauzg",
+      "camera_name": "Minto Park Approach"
+    }
+  },
+  {
+    "vehicle_id": "cmtbjled8002j4dir1v44mvi6",
+    "plate": "UP36HM2338",
+    "last_seen_timestamp": "2026-08-28T17:02:22.075Z",
+    "current_checkpoint": {
+      "camera_id": "cmtbiv1xs001y3giramuu8j5u",
+      "camera_name": "Ghoorpur Toll Plaza"
+    }
+  },
+  {
+    "vehicle_id": "cmtbjled6000c4dirb6u39qc7",
+    "plate": "BR56FX4000",
+    "last_seen_timestamp": "2026-08-28T17:02:22.075Z",
+    "current_checkpoint": {
+      "camera_id": "cmtbiv1xs001n3gir0ob9hfkg",
+      "camera_name": "Jhalwa Chouraha"
+    }
+  },
+  {
+    "vehicle_id": "cmtbjled7001e4dirf8cl88w0",
+    "plate": "CG54QS6309",
+    "last_seen_timestamp": "2026-08-28T17:06:14.455Z",
+    "current_checkpoint": {
+      "camera_id": "cmtbiv1xr000u3girq4v8ozf4",
+      "camera_name": "Civil Lines Bus Stand"
+    }
+  },
+  {
+    "vehicle_id": "cmtbjled700194direk2860h3",
+    "plate": "UP17SY6516",
+    "last_seen_timestamp": "2026-08-28T17:06:14.455Z",
+    "current_checkpoint": {
+      "camera_id": "cmtbiv1xs00193girepe5swtw",
+      "camera_name": "Naini Chungi"
+    }
+  },
+  {
+    "vehicle_id": "cmtbjled6000l4dir0uwot28o",
+    "plate": "MP27NI4123",
+    "last_seen_timestamp": "2026-08-28T17:04:10.269Z",
+    "current_checkpoint": {
+      "camera_id": "cmtbiv1xs001c3gir0ba9bm4c",
+      "camera_name": "Teliarganj Crossing"
+    }
+  }
+]

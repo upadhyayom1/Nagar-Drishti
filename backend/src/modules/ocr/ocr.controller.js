@@ -2,6 +2,14 @@ const ocrService = require('./ocr.service');
 const { prisma } = require('../../lib/prisma');
 const { recordDetection } = require('../detection/detection.service');
 
+const getStatus = async (req, res) => {
+  const status = await ocrService.getStatus();
+  res.status(200).json({
+    success: true,
+    data: status,
+  });
+};
+
 const recognizePlates = async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
@@ -26,36 +34,59 @@ const recognizePlates = async (req, res) => {
 
     const results = [];
 
-for (const file of req.files) {
-  const result = await ocrService.recognizePlate(
-    file.buffer,
-    file.originalname,
-    file.mimetype
-  );
+    for (const [index, file] of req.files.entries()) {
+      try {
+        const result = await ocrService.recognizePlate(
+          file.buffer,
+          file.originalname,
+          file.mimetype
+        );
+        const plateNumber = String(result.plateNumber || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-  const plateNumber = String(result.plateNumber).toUpperCase().replace(/[^A-Z0-9]/g, '');
-  const vehicle = await prisma.vehicle.upsert({
-    where: { plateNumber },
-    update: { lastSeen: new Date(timestamp) },
-    create: { plateNumber, firstSeen: new Date(timestamp), lastSeen: new Date(timestamp) },
-  });
-  const recorded = await recordDetection({
-    vehicleId: vehicle.id,
-    cameraId: camera.id,
-    plateText: plateNumber,
-    timestamp: new Date(timestamp),
-    ocrConfidence: result.confidence,
-    source: 'AI',
-  });
-  results.push(recorded);
+        if (!plateNumber) {
+          results.push({ sourceFile: file.originalname, detected: false, confidence: 0 });
+          continue;
+        }
 
-  // Avoid Plate Recognizer rate limiting
-  await new Promise(resolve => setTimeout(resolve, 1100));
-}
+        const vehicle = await prisma.vehicle.upsert({
+          where: { plateNumber },
+          update: { lastSeen: new Date(timestamp) },
+          create: { plateNumber, firstSeen: new Date(timestamp), lastSeen: new Date(timestamp) },
+        });
+        const recorded = await recordDetection({
+          vehicleId: vehicle.id,
+          cameraId: camera.id,
+          plateText: plateNumber,
+          timestamp: new Date(timestamp),
+          ocrConfidence: result.confidence,
+          source: 'AI',
+        });
+        results.push({
+          sourceFile: file.originalname,
+          detected: true,
+          plateNumber,
+          confidence: Math.round(result.confidence * 1000) / 10,
+          detectionId: recorded.detection.id,
+          timestamp: recorded.detection.timestamp,
+          isBlacklisted: recorded.detection.isBlacklisted,
+        });
+      } catch (fileError) {
+        results.push({
+          sourceFile: file.originalname,
+          detected: false,
+          confidence: 0,
+          error: fileError.message || 'Recognition failed for this image',
+        });
+      }
+
+      if (index < req.files.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 1100));
+      }
+    }
 
     return res.status(200).json({
       success: true,
-      data: results,
+      data: { results },
     });
   } catch (error) {
     console.error('OCR Controller Error:', error);
@@ -68,5 +99,6 @@ for (const file of req.files) {
 };
 
 module.exports = {
+  getStatus,
   recognizePlates,
 };

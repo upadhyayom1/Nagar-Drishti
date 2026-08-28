@@ -8,12 +8,20 @@ import { Button } from '@/components/ui/Button';
 import { PageWrapper } from '@/components/layout/PageWrapper';
 import { useUIStore } from '@/store/uiStore';
 import { useRouter } from 'next/navigation';
+import { authService } from '@/services/authService';
+import { useAuthStore } from '@/store/authStore';
 
 export default function UserProfilePage() {
   const router = useRouter();
   const { theme, toggleTheme } = useUIStore();
+  const user = useAuthStore((state) => state.user);
+  const clearUser = useAuthStore((state) => state.logout);
+  const displayName = user?.name || user?.username || 'Operator';
+  const initials = displayName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await authService.logout().catch(() => undefined);
+    clearUser();
     router.push('/login');
   };
 
@@ -33,7 +41,7 @@ export default function UserProfilePage() {
             <div className="relative">
               <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#00f0ff] via-[#6366f1] to-[#ec4899] p-0.5 shadow-[0_0_24px_rgba(0,240,255,0.5)]">
                 <div className="w-full h-full rounded-2xl bg-[var(--bg-elevated)] flex items-center justify-center text-2xl font-bold font-display text-white">
-                  RK
+                  {initials}
                 </div>
               </div>
               <span className="absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full bg-emerald-400 border-2 border-[var(--bg-elevated)] shadow-[0_0_10px_#10b981]" />
@@ -41,11 +49,11 @@ export default function UserProfilePage() {
 
             <div>
               <div className="flex items-center gap-2.5 flex-wrap">
-                <h2 className="text-xl font-bold font-display text-[var(--text-primary)]">Rahul Krishnan</h2>
-                <Badge variant="cyan" size="md">LEVEL 4 CLEARANCE</Badge>
+                <h2 className="text-xl font-bold font-display text-[var(--text-primary)]">{displayName}</h2>
+                <Badge variant="cyan" size="md">{user?.role === 'ADMIN' ? 'ADMIN ACCESS' : 'USER ACCESS'}</Badge>
               </div>
               <p className="text-xs font-mono text-[var(--text-secondary)] mt-1">
-                Sector Security &amp; Dispatch Director · Command Zone 1
+                {user?.role === 'ADMIN' ? 'Municipal command center account' : 'Citizen reporting account'}
               </p>
               <div className="flex items-center gap-3 mt-2 text-[11px] font-mono text-emerald-400">
                 <span className="flex items-center gap-1"><CheckCircle2 size={12} /> Biometrics Verified</span>
