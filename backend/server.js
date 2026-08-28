@@ -10,7 +10,7 @@ const startServer = async () => {
     console.log('✅ Connected to database');
 
     const PORT = env.PORT || 3000;
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT} in ${env.NODE_ENV} mode`);
     });
   } catch (error) {
