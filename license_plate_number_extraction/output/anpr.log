@@ -1,0 +1,124 @@
+2026-08-27 17:05:23 [INFO] anpr.__main__: Using device: cuda
+2026-08-27 17:05:23 [INFO] anpr.src.pipeline.anpr_pipeline: Loading vehicle detector...
+2026-08-27 17:05:24 [INFO] anpr.src.detection.vehicle_detector: Loading vehicle detector 'yolov8n.pt' on device 'cuda'...
+2026-08-27 17:05:49 [INFO] anpr.src.pipeline.anpr_pipeline: Loading plate detector...
+2026-08-27 17:05:49 [INFO] anpr.src.detection.plate_detector: Loaded dedicated plate detector from 'models/plate/license_plate_yolov8.pt'.
+2026-08-27 17:05:49 [INFO] anpr.src.pipeline.anpr_pipeline: Loading OCR engine...
+2026-08-27 17:05:53 [INFO] anpr.src.ocr.ocr_engine: Loading EasyOCR (languages=['en'], gpu=True)...
+2026-08-27 17:05:57 [ERROR] anpr.src.pipeline.anpr_pipeline: Video source not found: traffic.mp4
+2026-08-27 17:05:57 [ERROR] anpr.__main__: Video source not found: traffic.mp4
+2026-08-27 17:06:15 [INFO] anpr.__main__: Using device: cuda
+2026-08-27 17:06:15 [INFO] anpr.src.pipeline.anpr_pipeline: Loading vehicle detector...
+2026-08-27 17:06:15 [INFO] anpr.src.detection.vehicle_detector: Loading vehicle detector 'yolov8n.pt' on device 'cuda'...
+2026-08-27 17:06:15 [INFO] anpr.src.pipeline.anpr_pipeline: Loading plate detector...
+2026-08-27 17:06:15 [INFO] anpr.src.detection.plate_detector: Loaded dedicated plate detector from 'models/plate/license_plate_yolov8.pt'.
+2026-08-27 17:06:15 [INFO] anpr.src.pipeline.anpr_pipeline: Loading OCR engine...
+2026-08-27 17:06:16 [INFO] anpr.src.ocr.ocr_engine: Loading EasyOCR (languages=['en'], gpu=True)...
+2026-08-27 17:06:20 [INFO] anpr.src.utils.video: Opened source 'input/traffic.mp4' | 720x1280 @ 29.0 fps | sampling stride=3 -> effective ~9.7 fps
+2026-08-27 17:06:20 [INFO] anpr.src.pipeline.anpr_pipeline: Warming up models...
+2026-08-27 17:06:21 [INFO] anpr.src.detection.vehicle_detector: Vehicle detector warm-up complete.
+2026-08-27 17:06:21 [INFO] anpr.src.pipeline.anpr_pipeline: Warm-up complete.
+2026-08-27 17:06:21 [INFO] anpr.src.pipeline.anpr_pipeline: Processing video...
+2026-08-27 17:06:26 [INFO] anpr.src.tracking.vehicle_tracker: Vehicle 1 (car) detected at frame 0
+2026-08-27 17:06:30 [INFO] anpr.src.tracking.vehicle_tracker: Vehicle 3 (motorcycle) detected at frame 138
+2026-08-27 17:06:30 [INFO] anpr.src.tracking.vehicle_tracker: Vehicle 4 (motorcycle) detected at frame 150
+2026-08-27 17:06:32 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 3 final plate: UNKNOWN (no usable plate observations)
+2026-08-27 17:06:32 [INFO] anpr.src.tracking.vehicle_tracker: Vehicle 5 (truck) detected at frame 207
+2026-08-27 17:06:32 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 4 final plate: UNKNOWN (no usable plate observations)
+2026-08-27 17:06:33 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 5 final plate: UNKNOWN (no legible OCR reading)
+2026-08-27 17:06:36 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 1 | frame 321 | OCR result: HP12P7537 (96.6%, variant=denoised)
+2026-08-27 17:06:36 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 1 | frame 324 | OCR result: HP12P7537 (74.4%, variant=sharpened)
+2026-08-27 17:06:37 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 1 | frame 330 | OCR result: HP12P7537 (97.2%, variant=sharpened)
+2026-08-27 17:06:37 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 1 final plate: HP12P7537 (91.8%, status=VERIFIED, frames=3)
+2026-08-27 17:06:37 [INFO] anpr.src.pipeline.anpr_pipeline: Processing complete. 124 frames processed in 16.0s (7.8 fps). 4 vehicle(s) reported.
+2026-08-27 17:06:37 [INFO] anpr.src.output.result_writer: Wrote JSON results to 'output/results.json' (4 vehicles).
+2026-08-27 17:06:37 [INFO] anpr.src.output.result_writer: Wrote CSV results to 'output/results.csv' (4 vehicles).
+2026-08-27 17:13:12 [INFO] anpr.__main__: Using device: cuda
+2026-08-27 17:13:12 [INFO] anpr.src.pipeline.anpr_pipeline: Loading vehicle detector...
+2026-08-27 17:13:12 [INFO] anpr.src.detection.vehicle_detector: Loading vehicle detector 'yolov8n.pt' on device 'cuda'...
+2026-08-27 17:13:12 [INFO] anpr.src.pipeline.anpr_pipeline: Loading plate detector...
+2026-08-27 17:13:12 [INFO] anpr.src.detection.plate_detector: Loaded dedicated plate detector from 'models/plate/license_plate_yolov8.pt'.
+2026-08-27 17:13:12 [INFO] anpr.src.pipeline.anpr_pipeline: Loading OCR engine...
+2026-08-27 17:13:13 [INFO] anpr.src.ocr.ocr_engine: Loading EasyOCR (languages=['en'], gpu=True)...
+2026-08-27 17:13:16 [INFO] anpr.src.utils.video: Opened source 'input/traffic.mp4' | 480x864 @ 29.7 fps | sampling stride=3 -> effective ~9.9 fps
+2026-08-27 17:13:16 [INFO] anpr.src.pipeline.anpr_pipeline: Warming up models...
+2026-08-27 17:13:17 [INFO] anpr.src.detection.vehicle_detector: Vehicle detector warm-up complete.
+2026-08-27 17:13:17 [INFO] anpr.src.pipeline.anpr_pipeline: Warm-up complete.
+2026-08-27 17:13:17 [INFO] anpr.src.pipeline.anpr_pipeline: Processing video...
+2026-08-27 17:13:17 [INFO] anpr.src.tracking.vehicle_tracker: Vehicle 1 (truck) detected at frame 0
+2026-08-27 17:13:17 [INFO] anpr.src.tracking.vehicle_tracker: Vehicle 2 (truck) detected at frame 0
+2026-08-27 17:13:17 [INFO] anpr.src.tracking.vehicle_tracker: Vehicle 3 (truck) detected at frame 6
+2026-08-27 17:13:18 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 1 | frame 27 | OCR result: JHCICR6597 (82.2%, variant=sharpened)
+2026-08-27 17:13:19 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 1 | frame 39 | OCR result: ICCR6592 (92.5%, variant=adaptive_thresh)
+2026-08-27 17:13:19 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 1 | frame 36 | OCR result: JHC4CR6597 (57.4%, variant=denoised)
+2026-08-27 17:13:19 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 1 | frame 33 | OCR result: JHCICR6592 (68.1%, variant=clahe)
+2026-08-27 17:13:19 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 1 | frame 9 | OCR result: JHOICR659Z (80.2%, variant=raw)
+2026-08-27 17:13:19 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 1 | frame 24 | OCR result: JHCICR6597 (78.5%, variant=clahe)
+2026-08-27 17:13:20 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 1 | frame 21 | OCR result: JHCACR6597 (58.9%, variant=denoised)
+2026-08-27 17:13:20 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 1 | frame 3 | OCR result: JHOICR6597 (83.9%, variant=clahe)
+2026-08-27 17:13:20 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 1 final plate: JHCICR6597 (64.7%, status=LIKELY, frames=8)
+2026-08-27 17:13:20 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 2 final plate: UNKNOWN (no usable plate observations)
+2026-08-27 17:13:20 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 3 | frame 6 | OCR result: JHO1CR6597 (58.1%, variant=denoised)
+2026-08-27 17:13:20 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 3 | frame 9 | OCR result: JHOICR6597 (62.0%, variant=denoised)
+2026-08-27 17:13:20 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 3 final plate: JHOICR6597 (55.2%, status=UNCERTAIN, frames=2)
+2026-08-27 17:13:20 [INFO] anpr.src.pipeline.anpr_pipeline: Processing complete. 18 frames processed in 3.4s (5.3 fps). 3 vehicle(s) reported.
+2026-08-27 17:13:20 [INFO] anpr.src.output.result_writer: Wrote JSON results to 'output/results.json' (3 vehicles).
+2026-08-27 17:13:20 [INFO] anpr.src.output.result_writer: Wrote CSV results to 'output/results.csv' (3 vehicles).
+2026-08-27 17:19:20 [INFO] anpr.__main__: Using device: cuda
+2026-08-27 17:19:20 [INFO] anpr.src.pipeline.anpr_pipeline: Loading vehicle detector...
+2026-08-27 17:19:20 [INFO] anpr.src.detection.vehicle_detector: Loading vehicle detector 'yolov8n.pt' on device 'cuda'...
+2026-08-27 17:19:20 [INFO] anpr.src.pipeline.anpr_pipeline: Loading plate detector...
+2026-08-27 17:19:20 [INFO] anpr.src.detection.plate_detector: Loaded dedicated plate detector from 'models/plate/license_plate_yolov8.pt'.
+2026-08-27 17:19:20 [INFO] anpr.src.pipeline.anpr_pipeline: Loading OCR engine...
+2026-08-27 17:19:22 [INFO] anpr.src.ocr.ocr_engine: Loading EasyOCR (languages=['en'], gpu=True)...
+2026-08-27 17:19:24 [INFO] anpr.src.utils.video: Opened source 'input\traffic.mp4' | 480x864 @ 30.0 fps | sampling stride=3 -> effective ~10.0 fps
+2026-08-27 17:19:24 [INFO] anpr.src.pipeline.anpr_pipeline: Warming up models...
+2026-08-27 17:19:25 [INFO] anpr.src.detection.vehicle_detector: Vehicle detector warm-up complete.
+2026-08-27 17:19:25 [INFO] anpr.src.pipeline.anpr_pipeline: Warm-up complete.
+2026-08-27 17:19:25 [INFO] anpr.src.pipeline.anpr_pipeline: Processing video...
+2026-08-27 17:19:25 [INFO] anpr.src.tracking.vehicle_tracker: Vehicle 1 (car) detected at frame 0
+2026-08-27 17:19:25 [INFO] anpr.src.tracking.vehicle_tracker: Vehicle 2 (car) detected at frame 0
+2026-08-27 17:19:26 [INFO] anpr.src.tracking.vehicle_tracker: Vehicle 3 (car) detected at frame 6
+2026-08-27 17:19:27 [INFO] anpr.src.tracking.vehicle_tracker: Vehicle 7 (car) detected at frame 39
+2026-08-27 17:19:27 [INFO] anpr.src.tracking.vehicle_tracker: Vehicle 8 (truck) detected at frame 45
+2026-08-27 17:19:27 [INFO] anpr.src.tracking.vehicle_tracker: Vehicle 10 (car) detected at frame 51
+2026-08-27 17:19:28 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 3 final plate: UNKNOWN (no legible OCR reading)
+2026-08-27 17:19:28 [INFO] anpr.src.tracking.vehicle_tracker: Vehicle 13 (truck) detected at frame 75
+2026-08-27 17:19:29 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 1 final plate: UNKNOWN (no usable plate observations)
+2026-08-27 17:19:29 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 7 final plate: UNKNOWN (no usable plate observations)
+2026-08-27 17:19:29 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 10 final plate: UNKNOWN (no usable plate observations)
+2026-08-27 17:19:30 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 2 | frame 105 | OCR result: V10640707 (65.5%, variant=denoised)
+2026-08-27 17:19:31 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 2 | frame 129 | OCR result: UP70G44707 (37.6%, variant=denoised)
+2026-08-27 17:19:31 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 2 final plate: V10640707 (48.5%, status=UNCERTAIN, frames=2)
+2026-08-27 17:19:31 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 8 final plate: UNKNOWN (no usable plate observations)
+2026-08-27 17:19:32 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 13 final plate: UNKNOWN (no legible OCR reading)
+2026-08-27 17:19:32 [INFO] anpr.src.pipeline.anpr_pipeline: Processing complete. 46 frames processed in 6.5s (7.1 fps). 7 vehicle(s) reported.
+2026-08-27 17:19:32 [INFO] anpr.src.output.result_writer: Wrote JSON results to 'output/results.json' (7 vehicles).
+2026-08-27 17:19:32 [INFO] anpr.src.output.result_writer: Wrote CSV results to 'output/results.csv' (7 vehicles).
+2026-08-27 17:21:49 [INFO] anpr.__main__: Using device: cuda
+2026-08-27 17:21:49 [INFO] anpr.src.pipeline.anpr_pipeline: Loading vehicle detector...
+2026-08-27 17:21:49 [INFO] anpr.src.detection.vehicle_detector: Loading vehicle detector 'yolov8n.pt' on device 'cuda'...
+2026-08-27 17:21:49 [INFO] anpr.src.pipeline.anpr_pipeline: Loading plate detector...
+2026-08-27 17:21:49 [INFO] anpr.src.detection.plate_detector: Loaded dedicated plate detector from 'models/plate/license_plate_yolov8.pt'.
+2026-08-27 17:21:49 [INFO] anpr.src.pipeline.anpr_pipeline: Loading OCR engine...
+2026-08-27 17:21:51 [INFO] anpr.src.ocr.ocr_engine: Loading EasyOCR (languages=['en'], gpu=True)...
+2026-08-27 17:21:54 [INFO] anpr.src.utils.video: Opened source 'input\traffic.mp4' | 480x864 @ 30.1 fps | sampling stride=3 -> effective ~10.0 fps
+2026-08-27 17:21:54 [INFO] anpr.src.pipeline.anpr_pipeline: Warming up models...
+2026-08-27 17:21:54 [INFO] anpr.src.detection.vehicle_detector: Vehicle detector warm-up complete.
+2026-08-27 17:21:54 [INFO] anpr.src.pipeline.anpr_pipeline: Warm-up complete.
+2026-08-27 17:21:54 [INFO] anpr.src.pipeline.anpr_pipeline: Processing video...
+2026-08-27 17:21:54 [INFO] anpr.src.tracking.vehicle_tracker: Vehicle 1 (car) detected at frame 0
+2026-08-27 17:21:54 [INFO] anpr.src.tracking.vehicle_tracker: Vehicle 2 (bus) detected at frame 0
+2026-08-27 17:21:56 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 1 | frame 39 | OCR result: UP32L04373 (98.1%, variant=clahe)
+2026-08-27 17:21:56 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 1 | frame 27 | OCR result: UP32L04373 (98.0%, variant=sharpened)
+2026-08-27 17:21:56 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 1 | frame 21 | OCR result: UP32L04373 (80.5%, variant=clahe)
+2026-08-27 17:21:56 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 1 | frame 0 | OCR result: UP32LOL373 (69.6%, variant=sharpened)
+2026-08-27 17:21:57 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 1 | frame 3 | OCR result: FUP32L04373 (59.5%, variant=adaptive_thresh)
+2026-08-27 17:21:57 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 1 | frame 12 | OCR result: FFUP32L0437 (58.0%, variant=adaptive_thresh)
+2026-08-27 17:21:57 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 1 | frame 6 | OCR result: UP32L04373 (94.0%, variant=clahe)
+2026-08-27 17:21:57 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 1 | frame 24 | OCR result: UP32L604373 (73.9%, variant=clahe)
+2026-08-27 17:21:57 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 1 final plate: UP32L04373 (66.0%, status=LIKELY, frames=8)
+2026-08-27 17:21:57 [INFO] anpr.src.pipeline.anpr_pipeline: Vehicle 2 final plate: UNKNOWN (no usable plate observations)
+2026-08-27 17:21:57 [INFO] anpr.src.pipeline.anpr_pipeline: Processing complete. 15 frames processed in 2.8s (5.4 fps). 2 vehicle(s) reported.
+2026-08-27 17:21:57 [INFO] anpr.src.output.result_writer: Wrote JSON results to 'output/results.json' (2 vehicles).
+2026-08-27 17:21:57 [INFO] anpr.src.output.result_writer: Wrote CSV results to 'output/results.csv' (2 vehicles).

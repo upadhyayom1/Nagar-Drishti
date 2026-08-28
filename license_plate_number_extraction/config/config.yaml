@@ -1,0 +1,119 @@
+# =============================================================================
+# ANPR SYSTEM CONFIGURATION
+# =============================================================================
+
+device: "auto"              # "auto" | "cuda" | "cpu"
+
+# -----------------------------------------------------------------------------
+# Video ingestion / sampling
+# -----------------------------------------------------------------------------
+video:
+  frame_skip: 2              # process every Nth frame (1 = every frame)
+  target_fps: 10             # if source FPS > target_fps, extra frames are skipped
+  resize_width: 1280         # 0 disables resizing; height is scaled proportionally
+  max_lost_frames: 45        # frames a track may be missing before it is finalized
+
+# -----------------------------------------------------------------------------
+# Models
+# -----------------------------------------------------------------------------
+models:
+  vehicle_detector: "yolov8n.pt"                          # auto-downloaded by ultralytics on first run
+  plate_detector: "models/plate/license_plate_yolov8.pt"  # see README for download instructions
+  vehicle_classes: [2, 3, 5, 7]      # COCO ids: 2=car, 3=motorcycle, 5=bus, 7=truck
+  vehicle_class_names:
+    2: "car"
+    3: "motorcycle"
+    5: "bus"
+    7: "truck"
+
+# -----------------------------------------------------------------------------
+# Detection thresholds
+# -----------------------------------------------------------------------------
+detection:
+  vehicle_confidence: 0.40
+  plate_confidence: 0.35
+  iou_threshold: 0.45
+
+# -----------------------------------------------------------------------------
+# Tracking
+# -----------------------------------------------------------------------------
+tracking:
+  tracker_config: "bytetrack.yaml"   # ultralytics built-in tracker config (bytetrack.yaml | botsort.yaml)
+  plate_iou_match_threshold: 0.15    # min IoU to associate a plate box with a vehicle box across frames
+
+# -----------------------------------------------------------------------------
+# Plate quality / best-frame selection
+# -----------------------------------------------------------------------------
+quality:
+  min_plate_width: 55
+  min_plate_height: 16
+  min_sharpness: 25.0          # Laplacian-variance threshold below which a crop is rejected outright
+  max_observations_per_vehicle: 40   # cap stored observations to bound memory
+  top_k_for_ocr: 8             # only the K best-quality observations are sent to OCR
+
+# -----------------------------------------------------------------------------
+# Preprocessing
+# -----------------------------------------------------------------------------
+preprocessing:
+  target_height: 64            # crops are upscaled/downscaled to this height before OCR
+  variants: ["raw", "clahe", "adaptive_thresh", "sharpened", "denoised"]
+
+# -----------------------------------------------------------------------------
+# OCR
+# -----------------------------------------------------------------------------
+ocr:
+  languages: ["en"]
+  min_confidence: 0.35         # per-reading confidence floor; below this a reading is discarded
+  allowlist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+  min_text_length: 4
+  max_text_length: 13
+
+# -----------------------------------------------------------------------------
+# Multi-frame fusion
+# -----------------------------------------------------------------------------
+fusion:
+  min_supporting_frames: 1     # minimum readings required to produce a non-UNKNOWN result
+  char_confusions:             # visually-similar character pairs considered during voting only
+    "0": "O"
+    "O": "0"
+    "1": "I"
+    "I": "1"
+    "2": "Z"
+    "Z": "2"
+    "5": "S"
+    "S": "5"
+    "8": "B"
+    "B": "8"
+    "6": "G"
+    "G": "6"
+
+# -----------------------------------------------------------------------------
+# Final confidence scoring / status thresholds
+# -----------------------------------------------------------------------------
+confidence:
+  weights:
+    ocr: 0.40
+    format_validity: 0.20
+    char_agreement: 0.20
+    supporting_frames: 0.10
+    detector_confidence: 0.10
+  verified_threshold: 0.85
+  likely_threshold: 0.60
+  uncertain_threshold: 0.35     # below this -> UNKNOWN
+
+# -----------------------------------------------------------------------------
+# Output
+# -----------------------------------------------------------------------------
+output:
+  json_path: "output/results.json"
+  csv_path: "output/results.csv"
+  annotated_video_path: "output/annotated.mp4"
+  save_annotated_video: true
+
+# -----------------------------------------------------------------------------
+# Logging
+# -----------------------------------------------------------------------------
+logging:
+  level: "INFO"
+  log_file: "output/anpr.log"
+  console: true
