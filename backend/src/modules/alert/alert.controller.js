@@ -14,11 +14,37 @@ exports.getAlerts = async (req, res) => {
     }
     const alerts = await prisma.alert.findMany({
       where,
-      take: Math.min(Math.max(Number(limit) || 100, 1), 100),
+      take: 200,
       orderBy: { createdAt: 'desc' },
-      include: { vehicle: { select: { plateNumber: true } }, camera: { select: { id: true, name: true, cameraCode: true, latitude: true, longitude: true, zone: { select: { name: true } } } } },
+      include: {
+        vehicle: { select: { plateNumber: true } },
+        camera: { select: { id: true, name: true, cameraCode: true, latitude: true, longitude: true, zone: { select: { name: true } } } }
+      },
     });
-    res.status(200).json(alerts.map((alert) => ({
+
+    // Deduplicate: Keep only the most recent alert per camera for CONGESTION, and per vehicle for BLACKLIST
+    const seenKeys = new Set();
+    const deduplicatedAlerts = [];
+
+    for (const alert of alerts) {
+      let key;
+      if (alert.type === 'CONGESTION') {
+        key = `CONGESTION_${alert.cameraId}`;
+      } else if (alert.type === 'BLACKLIST_MATCH') {
+        key = `BLACKLIST_${alert.vehicleId || alert.vehicle?.plateNumber}`;
+      } else {
+        key = `${alert.type}_${alert.id}`;
+      }
+
+      if (!seenKeys.has(key)) {
+        seenKeys.add(key);
+        deduplicatedAlerts.push(alert);
+      }
+    }
+
+    const limitedAlerts = deduplicatedAlerts.slice(0, Math.min(Math.max(Number(limit) || 100, 1), 100));
+
+    res.status(200).json(limitedAlerts.map((alert) => ({
       id: alert.id,
       type: alert.type === 'BLACKLIST_MATCH' ? 'BLACKLIST_VEHICLE' : alert.type === 'CONGESTION' ? 'TRAFFIC_SURGE' : alert.type,
       severity: alert.severity.toLowerCase(),
