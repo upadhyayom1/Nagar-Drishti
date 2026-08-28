@@ -4,6 +4,7 @@ const blacklistController = require('./blacklist.controller');
 const router = express.Router();
 
 router.get('/', blacklistController.getBlacklistedVehicles);
+router.get('/intelligence', blacklistController.getBlacklistIntelligence);
 router.post('/', blacklistController.addBlacklistedVehicle);
 router.patch('/:id/deactivate', blacklistController.deactivateBlacklistedVehicle);
 router.delete('/:id', blacklistController.deactivateBlacklistedVehicle);

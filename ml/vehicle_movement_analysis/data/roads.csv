@@ -1,43 +1,20 @@
-<<<<<<< HEAD
 id,roadCode,name,speedLimit,geometry,createdAt,updatedAt
-"cmt91fl4l0009igir7hrw8p17","PRY-RD-MG","Mahatma Gandhi Marg",40,"{""type"":""LineString"",""coordinates"":[[81.8321,25.4509],[81.8407,25.4501],[81.8468,25.4516],[81.8534,25.4542],[81.8565,25.4655]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
-"cmt91fl4m000aigiry0g2mnn4","PRY-RD-STATION","Civil Lines Station Approach",30,"{""type"":""LineString"",""coordinates"":[[81.8468,25.4516],[81.8382,25.4468],[81.8265,25.443],[81.8299,25.4376]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
-"cmt91fl4m000bigir09q0301r","PRY-RD-KATRA","Katra Road and University Corridor",30,"{""type"":""LineString"",""coordinates"":[[81.8565,25.4655],[81.8644,25.4586],[81.8716,25.4624],[81.8707,25.447]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
-"cmt91fl4m000cigirfs0xd7ms","PRY-RD-NORTH","Katra–Teliarganj–Phaphamau Corridor",50,"{""type"":""LineString"",""coordinates"":[[81.8565,25.4655],[81.8654,25.4874],[81.882,25.5403]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
-"cmt91fl4m000digirgcfjn65z","PRY-RD-DARAGANJ","Allapur–Bairhana–Daraganj Road",30,"{""type"":""LineString"",""coordinates"":[[81.8707,25.447],[81.8778,25.4408],[81.8862,25.431]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
-"cmt91fl4m000eigirbfvw3s2h","PRY-RD-SANGAM","Sangam and Parade Approach",20,"{""type"":""LineString"",""coordinates"":[[81.8862,25.431],[81.8822,25.4165]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
-"cmt91fl4m000figir4r0jddol","PRY-RD-MINTO","Minto Road and Bridge Approach",30,"{""type"":""LineString"",""coordinates"":[[81.8468,25.4516],[81.85,25.4271],[81.8598,25.4253]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
-"cmt91fl4m000gigiriu3t2elv","PRY-RD-YAMUNA","New Yamuna Bridge",50,"{""type"":""LineString"",""coordinates"":[[81.8598,25.4253],[81.8624,25.4192],[81.865,25.412],[81.8692,25.4025]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
-"cmt91fl4m000higirg0w6qycv","PRY-RD-MIRZAPUR","Mirzapur Road, Naini",40,"{""type"":""LineString"",""coordinates"":[[81.8692,25.4025],[81.877,25.3943],[81.888,25.3867]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
-"cmt91fl4m000iigirvnmaxg6x","PRY-RD-SHASTRI","Shastri Bridge",40,"{""type"":""LineString"",""coordinates"":[[81.8707,25.447],[81.895,25.4365],[81.904,25.4378],[81.913,25.4388]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
-"cmt91fl4m000jigir42w3rol5","PRY-RD-JHUNSI","Jhunsi Road",40,"{""type"":""LineString"",""coordinates"":[[81.913,25.4388],[81.925,25.436],[81.936,25.4345]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
-"cmt91fl4m000kigirg2797t0t","PRY-RD-MELA","Sangam–New Yamuna Link",20,"{""type"":""LineString"",""coordinates"":[[81.8822,25.4165],[81.85,25.4271],[81.8598,25.4253]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
-"cmt91fl4m000ligirodchyapn","PRY-RD-AIRPORT","Bamrauli Airport Road",60,"{""type"":""LineString"",""coordinates"":[[81.8265,25.443],[81.8023,25.4421],[81.745,25.439],[81.735,25.44]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
-"cmt91fl4m000migirykh11eug","PRY-RD-JHALWA","Jhalwa IT Corridor",40,"{""type"":""LineString"",""coordinates"":[[81.8023,25.4421],[81.81,25.42],[81.785,25.432],[81.77,25.43]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
-"cmt91fl4m000nigirhu4oirfm","PRY-RD-OLD_CITY","Chowk - Meerapur Road",30,"{""type"":""LineString"",""coordinates"":[[81.83,25.445],[81.835,25.44],[81.835,25.43],[81.8299,25.4376]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
-"cmt91fl4m000oigircvsygg5a","PRY-RD-INDUSTRIAL","Naini Industrial Highway",50,"{""type"":""LineString"",""coordinates"":[[81.8692,25.4025],[81.86,25.39],[81.865,25.385],[81.85,25.37],[81.84,25.365]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
-"cmt91fl4m000pigirwp6ea57f","PRY-RD-OLD_YAMUNA","Old Yamuna Bridge",40,"{""type"":""LineString"",""coordinates"":[[81.835,25.43],[81.85,25.423],[81.855,25.41],[81.86,25.39]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
-"cmt91fl4m000qigirk3gdsmpv","PRY-RD-ALLENKGANJ","Allen Ganj & Govindpur",30,"{""type"":""LineString"",""coordinates"":[[81.8565,25.4655],[81.86,25.468],[81.87,25.48],[81.8654,25.4874]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
-"cmt91fl4m000rigirmhz964in","PRY-RD-HIGHWAY_SOUTH","Rewa Highway",70,"{""type"":""LineString"",""coordinates"":[[81.84,25.365],[81.82,25.35]]}",2026-08-25T19:08:20.278Z,2026-08-25T19:08:20.278Z
-=======
-id,roadCode,name,speedLimit
-cmtb9ww1y00099wiruzret5fa,PRY-RD-MG,Mahatma Gandhi Marg,40
-cmtb9ww1y000a9wire4uqokm2,PRY-RD-STATION,Civil Lines Station Approach,30
-cmtb9ww1y000b9wirokpek47r,PRY-RD-KATRA,Katra Road and University Corridor,30
-cmtb9ww1y000c9wirbbdw3ntr,PRY-RD-NORTH,Katra–Teliarganj–Phaphamau Corridor,50
-cmtb9ww1y000d9wirw66w0fsh,PRY-RD-DARAGANJ,Allapur–Bairhana–Daraganj Road,30
-cmtb9ww1y000e9wiruoebc9qp,PRY-RD-SANGAM,Sangam and Parade Approach,20
-cmtb9ww1y000f9wirh4a0f6u8,PRY-RD-MINTO,Minto Road and Bridge Approach,30
-cmtb9ww1y000g9wir7ep5oluu,PRY-RD-YAMUNA,New Yamuna Bridge,50
-cmtb9ww1y000h9wirtxj4y2i9,PRY-RD-MIRZAPUR,"Mirzapur Road, Naini",40
-cmtb9ww1y000i9wirifxfv1im,PRY-RD-SHASTRI,Shastri Bridge,40
-cmtb9ww1y000j9wiro7p3mnhk,PRY-RD-JHUNSI,Jhunsi Road,40
-cmtb9ww1y000k9wirgl55m6at,PRY-RD-MELA,Sangam–New Yamuna Link,20
-cmtb9ww1y000l9wir5p6rprg3,PRY-RD-AIRPORT,Bamrauli Airport Road,60
-cmtb9ww1y000m9wir7e7lvykz,PRY-RD-JHALWA,Jhalwa IT Corridor,40
-cmtb9ww1y000n9wirkkxygdwl,PRY-RD-OLD_CITY,Chowk - Meerapur Road,30
-cmtb9ww1y000o9wirtdjmz6cr,PRY-RD-INDUSTRIAL,Naini Industrial Highway,50
-cmtb9ww1y000p9wirlqdj2a6r,PRY-RD-OLD_YAMUNA,Old Yamuna Bridge,40
-cmtb9ww1y000q9wirupe5nlp9,PRY-RD-ALLENKGANJ,Allen Ganj & Govindpur,30
-cmtb9ww1y000r9wironj9crqs,PRY-RD-HIGHWAY_SOUTH,Rewa Highway,70
->>>>>>> origin/main
+cmtbiv0kb00093girlgxg2g1h,PRY-RD-MG,Mahatma Gandhi Marg,40,"{""type"":""LineString"",""coordinates"":[[81.8321,25.4509],[81.8407,25.4501],[81.8468,25.4516],[81.8534,25.4542],[81.8565,25.4655]]}",2026-08-27T12:51:45.947Z,2026-08-27T12:51:45.947Z
+cmtbiv0kb000a3gire84wdv80,PRY-RD-STATION,Civil Lines Station Approach,30,"{""type"":""LineString"",""coordinates"":[[81.8468,25.4516],[81.8382,25.4468],[81.8265,25.443],[81.8299,25.4376]]}",2026-08-27T12:51:45.947Z,2026-08-27T12:51:45.947Z
+cmtbiv0kb000b3girmm2e62p9,PRY-RD-KATRA,Katra Road and University Corridor,30,"{""type"":""LineString"",""coordinates"":[[81.8565,25.4655],[81.8644,25.4586],[81.8716,25.4624],[81.8707,25.447]]}",2026-08-27T12:51:45.947Z,2026-08-27T12:51:45.947Z
+cmtbiv0kb000c3gir2r9cqayf,PRY-RD-NORTH,Katra–Teliarganj–Phaphamau Corridor,50,"{""type"":""LineString"",""coordinates"":[[81.8565,25.4655],[81.8654,25.4874],[81.882,25.5403]]}",2026-08-27T12:51:45.947Z,2026-08-27T12:51:45.947Z
+cmtbiv0kb000d3girne3ifg8f,PRY-RD-DARAGANJ,Allapur–Bairhana–Daraganj Road,30,"{""type"":""LineString"",""coordinates"":[[81.8707,25.447],[81.8778,25.4408],[81.8862,25.431]]}",2026-08-27T12:51:45.947Z,2026-08-27T12:51:45.947Z
+cmtbiv0kb000e3girhp56w2e9,PRY-RD-SANGAM,Sangam and Parade Approach,20,"{""type"":""LineString"",""coordinates"":[[81.8862,25.431],[81.8822,25.4165]]}",2026-08-27T12:51:45.947Z,2026-08-27T12:51:45.947Z
+cmtbiv0kb000f3girshzt7nfh,PRY-RD-MINTO,Minto Road and Bridge Approach,30,"{""type"":""LineString"",""coordinates"":[[81.8468,25.4516],[81.85,25.4271],[81.8598,25.4253]]}",2026-08-27T12:51:45.947Z,2026-08-27T12:51:45.947Z
+cmtbiv0kb000g3gir26vs9pfs,PRY-RD-YAMUNA,New Yamuna Bridge,50,"{""type"":""LineString"",""coordinates"":[[81.8598,25.4253],[81.8624,25.4192],[81.865,25.412],[81.8692,25.4025]]}",2026-08-27T12:51:45.947Z,2026-08-27T12:51:45.947Z
+cmtbiv0kb000h3giray0wjyen,PRY-RD-MIRZAPUR,"Mirzapur Road, Naini",40,"{""type"":""LineString"",""coordinates"":[[81.8692,25.4025],[81.877,25.3943],[81.888,25.3867]]}",2026-08-27T12:51:45.947Z,2026-08-27T12:51:45.947Z
+cmtbiv0kc000i3girj5z6k9as,PRY-RD-SHASTRI,Shastri Bridge,40,"{""type"":""LineString"",""coordinates"":[[81.8707,25.447],[81.895,25.4365],[81.904,25.4378],[81.913,25.4388]]}",2026-08-27T12:51:45.947Z,2026-08-27T12:51:45.947Z
+cmtbiv0kc000j3girt1t3xodl,PRY-RD-JHUNSI,Jhunsi Road,40,"{""type"":""LineString"",""coordinates"":[[81.913,25.4388],[81.925,25.436],[81.936,25.4345]]}",2026-08-27T12:51:45.947Z,2026-08-27T12:51:45.947Z
+cmtbiv0kc000k3gir7q8y43rk,PRY-RD-MELA,Sangam–New Yamuna Link,20,"{""type"":""LineString"",""coordinates"":[[81.8822,25.4165],[81.85,25.4271],[81.8598,25.4253]]}",2026-08-27T12:51:45.947Z,2026-08-27T12:51:45.947Z
+cmtbiv0kc000l3girwggdclhj,PRY-RD-AIRPORT,Bamrauli Airport Road,60,"{""type"":""LineString"",""coordinates"":[[81.8265,25.443],[81.8023,25.4421],[81.745,25.439],[81.735,25.44]]}",2026-08-27T12:51:45.947Z,2026-08-27T12:51:45.947Z
+cmtbiv0kc000m3girc8sqfd0v,PRY-RD-JHALWA,Jhalwa IT Corridor,40,"{""type"":""LineString"",""coordinates"":[[81.8023,25.4421],[81.81,25.42],[81.785,25.432],[81.77,25.43]]}",2026-08-27T12:51:45.947Z,2026-08-27T12:51:45.947Z
+cmtbiv0kc000n3gir01z67wul,PRY-RD-OLD_CITY,Chowk - Meerapur Road,30,"{""type"":""LineString"",""coordinates"":[[81.83,25.445],[81.835,25.44],[81.835,25.43],[81.8299,25.4376]]}",2026-08-27T12:51:45.947Z,2026-08-27T12:51:45.947Z
+cmtbiv0kc000o3gir6fvvl6kn,PRY-RD-INDUSTRIAL,Naini Industrial Highway,50,"{""type"":""LineString"",""coordinates"":[[81.8692,25.4025],[81.86,25.39],[81.865,25.385],[81.85,25.37],[81.84,25.365]]}",2026-08-27T12:51:45.947Z,2026-08-27T12:51:45.947Z
+cmtbiv0kc000p3girnhwyr0gq,PRY-RD-OLD_YAMUNA,Old Yamuna Bridge,40,"{""type"":""LineString"",""coordinates"":[[81.835,25.43],[81.85,25.423],[81.855,25.41],[81.86,25.39]]}",2026-08-27T12:51:45.947Z,2026-08-27T12:51:45.947Z
+cmtbiv0kc000q3gircewtsyzb,PRY-RD-ALLENKGANJ,Allen Ganj & Govindpur,30,"{""type"":""LineString"",""coordinates"":[[81.8565,25.4655],[81.86,25.468],[81.87,25.48],[81.8654,25.4874]]}",2026-08-27T12:51:45.947Z,2026-08-27T12:51:45.947Z
+cmtbiv0kc000r3gir4rdi7kcd,PRY-RD-HIGHWAY_SOUTH,Rewa Highway,70,"{""type"":""LineString"",""coordinates"":[[81.84,25.365],[81.82,25.35]]}",2026-08-27T12:51:45.947Z,2026-08-27T12:51:45.947Z

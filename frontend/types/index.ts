@@ -121,6 +121,48 @@ export interface BlacklistedVehicle {
   createdAt: string;
 }
 
+export interface NextCameraPrediction {
+  cameraCode: string;
+  cameraName: string;
+  zone?: string;
+  road?: string;
+  probability: number;
+  etaMinutes?: number;
+  confidence?: 'HIGH' | 'MODERATE' | 'LOW';
+  alternativeCameras?: Array<{ cameraCode: string; cameraName: string; probability: number }>;
+}
+
+export interface BlacklistIntelligenceVehicle {
+  id: string;
+  plateNumber: string;
+  reason: string;
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  status: 'ACTIVE' | 'INACTIVE';
+  flaggedAt: string;
+  vehicleIntelligence: {
+    vehicleType: string;
+    color: string;
+    firstSeen: string;
+    lastSeen: string;
+    totalDetections: number;
+    camerasVisited: number;
+    averageSpeed: number;
+  };
+  lastSighting: {
+    cameraId: string;
+    cameraCode: string;
+    cameraName: string;
+    zone: string;
+    road: string;
+    latitude: number;
+    longitude: number;
+    timestamp: string;
+    speed: number;
+    direction: string;
+  } | null;
+  nextProbableCamera: NextCameraPrediction | null;
+}
+
 export interface NetworkCorridor {
   origin: { id: string; name: string; code: string };
   destination: { id: string; name: string; code: string };
