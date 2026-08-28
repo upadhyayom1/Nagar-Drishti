@@ -1,4 +1,4 @@
-import type { Vehicle, Detection, VehicleJourney } from '@/types';
+import type { Vehicle, Detection, VehicleJourney, VehicleMovementIntelligence } from '@/types';
 import { apiClient, unwrapApiResponse } from './apiClient';
 
 export const vehicleService = {
@@ -30,5 +30,9 @@ export const vehicleService = {
 
   async getRecentVehicles(limit: number = 5): Promise<Vehicle[]> {
     return unwrapApiResponse(await apiClient.get<Vehicle[]>(`/vehicles/recent?limit=${limit}`));
+  },
+
+  async getVehicleIntelligence(plate: string): Promise<VehicleMovementIntelligence | undefined> {
+    return unwrapApiResponse(await apiClient.get<VehicleMovementIntelligence>(`/ml/analyze/${encodeURIComponent(plate)}`));
   },
 };

@@ -204,3 +204,25 @@ export interface CitizenSubmission {
   status: 'PENDING' | 'REVIEWED' | 'DISPATCHED' | 'DISMISSED';
   vehiclePlate?: string;
 }
+
+export interface VehicleMovementIntelligence {
+  summary: {
+    vehicle_id: string;
+    plate: string;
+    vehicle_type: string;
+    total_detections: number;
+    avg_segment_speed_kmh: number;
+    max_segment_speed_kmh: number;
+    total_dwell_hours: number;
+    anomalous_events_detected: number;
+    frequent_hotspots: number;
+    dwell_threshold_used_mins: number;
+  };
+  recent_route: Array<{
+    timestamp: string;
+    camera_id: string;
+    latitude: number;
+    longitude: number;
+    derived_speed_kmh: number;
+  }>;
+}

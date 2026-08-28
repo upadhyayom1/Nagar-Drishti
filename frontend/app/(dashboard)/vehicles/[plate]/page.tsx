@@ -4,7 +4,7 @@ import { use } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Eye, Clock, Route, Camera } from 'lucide-react';
+import { ArrowLeft, Eye, Clock, Route, Camera, BrainCircuit } from 'lucide-react';
 import { GlassCard }   from '@/components/ui/GlassCard';
 import { Badge }       from '@/components/ui/Badge';
 import { Button }      from '@/components/ui/Button';
@@ -21,6 +21,11 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
   const { data: vehicle }        = useQuery({ queryKey: ['vehicle', decodedPlate],           queryFn: () => vehicleService.getVehicleByPlate(decodedPlate) });
   const { data: detections = [] }= useQuery({ queryKey: ['vehicleDetections', decodedPlate], queryFn: () => vehicleService.getVehicleDetections(decodedPlate) });
   const { data: journey }        = useQuery({ queryKey: ['vehicleJourney', decodedPlate],    queryFn: () => vehicleService.getVehicleJourney(decodedPlate) });
+  const { data: intelligence, refetch: fetchIntelligence, isFetching: isAnalyzing } = useQuery({ 
+    queryKey: ['vehicleIntelligence', decodedPlate], 
+    queryFn: () => vehicleService.getVehicleIntelligence(decodedPlate),
+    enabled: false
+  });
 
   if (!vehicle) return (
     <PageWrapper className="flex items-center justify-center min-h-[450px]">
@@ -149,6 +154,54 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
               </div>
             </GlassCard>
           )}
+
+          <GlassCard padding="md">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-xs font-display font-bold uppercase tracking-wider text-slate-300">
+                AI Behavior Analysis
+              </p>
+              {intelligence && (
+                <Badge variant={intelligence.summary.anomalous_events_detected > 0 ? 'danger' : 'success'} size="sm">
+                  {intelligence.summary.anomalous_events_detected > 0 ? 'Anomalies Detected' : 'Normal'}
+                </Badge>
+              )}
+            </div>
+
+            {!intelligence && (
+              <div className="flex flex-col items-center justify-center py-6 text-center space-y-3">
+                <BrainCircuit className="w-8 h-8 text-cyan-400/50" />
+                <p className="text-xs text-slate-400 font-mono">
+                  Run deep learning analysis to detect anomalous behavior, frequent hotspots, and calculate precise dwell times.
+                </p>
+                <Button 
+                  variant="primary" 
+                  size="sm" 
+                  onClick={() => fetchIntelligence()} 
+                  disabled={isAnalyzing}
+                >
+                  {isAnalyzing ? 'Analyzing Trajectory...' : 'Run AI Analysis'}
+                </Button>
+              </div>
+            )}
+
+            {intelligence && (
+              <div className="space-y-3">
+                {[
+                  { label: 'Anomalous Events', value: intelligence.summary.anomalous_events_detected.toString() },
+                  { label: 'Frequent Hotspots', value: intelligence.summary.frequent_hotspots.toString() },
+                  { label: 'Max Segment Speed', value: `${intelligence.summary.max_segment_speed_kmh} km/h` },
+                  { label: 'Total Dwell Time', value: `${intelligence.summary.total_dwell_hours} hrs` },
+                ].map((row) => (
+                  <div key={row.label} className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400 font-medium">{row.label}</span>
+                    <span className={`font-mono font-bold ${row.label === 'Anomalous Events' && parseInt(row.value) > 0 ? 'text-red-400' : 'text-white'}`}>
+                      {row.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </GlassCard>
 
           <GlassCard padding="md">
             <p className="text-xs font-display font-bold uppercase tracking-wider text-slate-400 mb-3">
