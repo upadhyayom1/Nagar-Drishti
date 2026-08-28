@@ -1,0 +1,3 @@
+vehicle_id,vehicle_type,plate_number,status,confidence,frames_used,first_frame,last_frame,reason,plate_format,state_code
+1,car,UP32L04373,LIKELY,0.6598,8,0,39,,,
+2,bus,,UNKNOWN,0.0,0,0,0,No plate candidates of sufficient quality were detected.,,

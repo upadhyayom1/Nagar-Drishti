@@ -1,136 +1,233 @@
 'use client';
 
-import { useRef, useMemo, useState } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Sphere, Line } from '@react-three/drei';
+import { useRef, useMemo } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { Line, Sphere, PointMaterial } from '@react-three/drei';
 import * as THREE from 'three';
+import { useUIStore } from '@/store/uiStore';
 
-const CAMERA_COUNT = 50;
-const CONNECTION_DISTANCE = 5.2;
-
-const COLOR_CYAN   = '#00e5ff';
-const COLOR_AZURE  = '#38bdf8';
-const COLOR_COBALT = '#6366f1';
-const COLOR_VOID   = '#030712';
-type LineSegment = [THREE.Vector3, THREE.Vector3];
-
-function deterministicValue(index: number, offset: number): number {
-  const value = Math.sin(index * 12.9898 + offset * 78.233) * 43758.5453;
-  return value - Math.floor(value);
-}
-
-function NetworkNode() {
+// ── 1. Connected Sensor Network Constellation (City Optical Nodes) ──
+function SensorConstellation({ isDark }: { isDark: boolean }) {
   const groupRef = useRef<THREE.Group>(null);
-  const { mouse } = useThree();
 
-  // Generate 3D coordinates for camera nodes
-  const nodes = useMemo(() => {
-    const points: THREE.Vector3[] = [];
-    for (let i = 0; i < CAMERA_COUNT; i += 1) {
-      points.push(
-        new THREE.Vector3(
-          (deterministicValue(i, 1) - 0.5) * 18,
-          (deterministicValue(i, 2) - 0.5) * 18,
-          (deterministicValue(i, 3) - 0.5) * 12
-        )
-      );
-    }
-    return points;
-  }, []);
+  const nodes = useMemo(() => [
+    { pos: new THREE.Vector3(-6, 1.5, -4), color: '#00f0ff' },
+    { pos: new THREE.Vector3(-2, 3.2, -7), color: '#00E6B0' },
+    { pos: new THREE.Vector3(3.5, 2.0, -5), color: '#8b5cf6' },
+    { pos: new THREE.Vector3(7, 3.8, -8), color: '#ec4899' },
+    { pos: new THREE.Vector3(-4.5, -1.8, -3), color: '#00E6B0' },
+    { pos: new THREE.Vector3(1.2, -0.5, -2), color: '#00f0ff' },
+    { pos: new THREE.Vector3(5.8, -1.5, -4), color: '#f43f5e' },
+    { pos: new THREE.Vector3(-1.0, 0.8, -1), color: '#00f0ff' },
+  ], []);
 
-  // Compute optical neural connection vectors
-  const lines = useMemo(() => {
-    const segments: LineSegment[] = [];
-    for (let i = 0; i < CAMERA_COUNT; i += 1) {
-      for (let j = i + 1; j < CAMERA_COUNT; j++) {
-        const distance = nodes[i].distanceTo(nodes[j]);
-        if (distance < CONNECTION_DISTANCE) {
-          segments.push([nodes[i], nodes[j]]);
-        }
-      }
-    }
-    return segments;
-  }, [nodes]);
+  const connections = useMemo(() => [
+    [0, 1], [1, 2], [2, 3], [0, 4], [4, 5], [5, 6], [2, 7], [7, 5], [0, 7], [3, 6], [1, 7],
+  ], []);
 
-  // Active Cyan Laser Pulses
-  const [pulses, setPulses] = useState<{ line: LineSegment; progress: number; speed: number; id: number }[]>([]);
-  const pulseId = useRef(0);
-
-  useFrame((state, delta) => {
-    if (!groupRef.current) return;
-    
-    // Smooth continuous orbital drift
-    groupRef.current.rotation.y += delta * 0.05;
-    groupRef.current.rotation.x += delta * 0.02;
-
-    // Mouse parallax tilt
-    const targetX = (mouse.x * Math.PI) / 28;
-    const targetY = (mouse.y * Math.PI) / 28;
-    
-    groupRef.current.rotation.x += 0.04 * (targetY - groupRef.current.rotation.x);
-    groupRef.current.rotation.y += 0.04 * (targetX - groupRef.current.rotation.y);
-
-    // Spawn pulses
-    if (Math.random() < 0.02 && pulses.length < 6 && lines.length > 0) {
-      const randomLine = lines[Math.floor(Math.random() * lines.length)];
-      setPulses(p => [...p, { line: randomLine, progress: 0, speed: 0.5 + Math.random() * 0.5, id: pulseId.current++ }]);
-    }
-
-    // Update pulses
-    if (pulses.length > 0) {
-      setPulses(p => p.map(pulse => ({ ...pulse, progress: pulse.progress + delta * pulse.speed }))
-                     .filter(pulse => pulse.progress < 1));
+  useFrame(({ clock }) => {
+    if (groupRef.current) {
+      const t = clock.getElapsedTime();
+      groupRef.current.rotation.y = Math.sin(t * 0.08) * 0.1;
+      groupRef.current.rotation.x = Math.cos(t * 0.06) * 0.05;
     }
   });
 
   return (
     <group ref={groupRef}>
-      {/* 3D Neural Nodes in Electric Cyan & Azure */}
-      {nodes.map((pos, i) => (
-        <Sphere key={`node-${i}`} position={pos} args={[i % 4 === 0 ? 0.06 : 0.04, 8, 8]}>
-          <meshBasicMaterial 
-            color={i % 3 === 0 ? COLOR_CYAN : i % 2 === 0 ? COLOR_AZURE : COLOR_COBALT} 
-            transparent 
-            opacity={0.75} 
-          />
-        </Sphere>
-      ))}
-
-      {/* Optical Synapse Connections */}
-      {lines.map((line, i) => (
-        <Line
-          key={`line-${i}`}
-          points={line}
-          color={COLOR_AZURE}
-          lineWidth={0.6}
-          transparent
-          opacity={0.16}
-        />
-      ))}
-
-      {/* Traveling Laser Pulses */}
-      {pulses.map(pulse => {
-        const start = pulse.line[0];
-        const end = pulse.line[1];
-        const pos = new THREE.Vector3().lerpVectors(start, end, pulse.progress);
+      {connections.map(([fromIdx, toIdx], i) => {
+        const from = nodes[fromIdx].pos;
+        const to = nodes[toIdx].pos;
         return (
-          <Sphere key={`pulse-${pulse.id}`} position={pos} args={[0.08, 8, 8]}>
-            <meshBasicMaterial color="#ffffff" transparent opacity={1 - Math.abs(pulse.progress - 0.5) * 2} />
-          </Sphere>
+          <Line
+            key={`conn-${i}`}
+            points={[from, to]}
+            color={isDark ? '#00f0ff' : '#0284c7'}
+            lineWidth={1}
+            transparent
+            opacity={isDark ? 0.16 : 0.22}
+          />
         );
       })}
+
+      {nodes.map((node, i) => (
+        <group key={`node-${i}`} position={node.pos}>
+          <Sphere args={[0.12, 12, 12]}>
+            <meshBasicMaterial color={node.color} transparent opacity={isDark ? 0.7 : 0.8} />
+          </Sphere>
+          <Sphere args={[0.26, 12, 12]}>
+            <meshBasicMaterial color={node.color} transparent opacity={isDark ? 0.12 : 0.18} />
+          </Sphere>
+        </group>
+      ))}
     </group>
   );
 }
 
-export default function HeroScene() {
+// ── 2. High-Speed Vehicle Trajectory Stream Ribbons ──
+function VehicleTrajectories({ isDark }: { isDark: boolean }) {
+  const curves = useMemo(() => {
+    const rawPaths = [
+      [
+        new THREE.Vector3(-12, -2, -6),
+        new THREE.Vector3(-6, 1.5, -4),
+        new THREE.Vector3(-1.0, 0.8, -1),
+        new THREE.Vector3(3.5, 2.0, -5),
+        new THREE.Vector3(12, 1, -8),
+      ],
+      [
+        new THREE.Vector3(-10, 4, -8),
+        new THREE.Vector3(-2, 3.2, -7),
+        new THREE.Vector3(1.2, -0.5, -2),
+        new THREE.Vector3(5.8, -1.5, -4),
+        new THREE.Vector3(11, -3, -6),
+      ],
+      [
+        new THREE.Vector3(-8, -4, -5),
+        new THREE.Vector3(-4.5, -1.8, -3),
+        new THREE.Vector3(-1.0, 0.8, -1),
+        new THREE.Vector3(7, 3.8, -8),
+        new THREE.Vector3(10, 5, -10),
+      ],
+    ];
+
+    return rawPaths.map((p) => new THREE.CatmullRomCurve3(p, false, 'catmullrom', 0.5));
+  }, []);
+
+  const photonCount = 30;
+  const photonsRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+
+  const photonData = useMemo(() => {
+    return Array.from({ length: photonCount }, (_, i) => ({
+      curveIndex: i % curves.length,
+      progress: Math.random(),
+      speed: 0.0012 + Math.random() * 0.0016,
+      color: i % 3 === 0 ? new THREE.Color('#00f0ff') : i % 3 === 1 ? new THREE.Color('#00E6B0') : new THREE.Color('#8b5cf6'),
+    }));
+  }, [curves.length]);
+
+  useFrame(() => {
+    if (!photonsRef.current) return;
+    photonData.forEach((p, i) => {
+      p.progress = (p.progress + p.speed) % 1;
+      const point = curves[p.curveIndex].getPointAt(p.progress);
+      dummy.position.copy(point);
+      dummy.scale.set(0.12, 0.12, 0.12);
+      dummy.updateMatrix();
+      photonsRef.current?.setMatrixAt(i, dummy.matrix);
+      photonsRef.current?.setColorAt(i, p.color);
+    });
+    photonsRef.current.instanceMatrix.needsUpdate = true;
+    if (photonsRef.current.instanceColor) photonsRef.current.instanceColor.needsUpdate = true;
+  });
+
   return (
-    <div className="absolute inset-0 z-0 bg-[#030712]">
-      <Canvas camera={{ position: [0, 0, 14], fov: 55 }}>
-        <fog attach="fog" args={[COLOR_VOID, 10, 24]} />
-        <NetworkNode />
+    <group>
+      {curves.map((c, i) => {
+        const points = c.getPoints(50);
+        return (
+          <Line
+            key={`curve-${i}`}
+            points={points}
+            color={i === 0 ? '#00f0ff' : i === 1 ? '#8b5cf6' : '#ec4899'}
+            lineWidth={1}
+            transparent
+            opacity={isDark ? 0.2 : 0.28}
+          />
+        );
+      })}
+
+      <instancedMesh ref={photonsRef} args={[undefined, undefined, photonCount]}>
+        <sphereGeometry args={[1, 10, 10]} />
+        <meshBasicMaterial transparent opacity={0.7} />
+      </instancedMesh>
+    </group>
+  );
+}
+
+// ── 3. Undulating Digital Topography Grid ──
+function DigitalCityTopography({ isDark }: { isDark: boolean }) {
+  const pointsRef = useRef<THREE.Points>(null);
+  const gridSize = 35;
+  const count = gridSize * gridSize;
+
+  const [positions, initialY] = useMemo(() => {
+    const pos = new Float32Array(count * 3);
+    const initY = new Float32Array(count);
+    let index = 0;
+    for (let i = 0; i < gridSize; i++) {
+      for (let j = 0; j < gridSize; j++) {
+        const x = (i - gridSize / 2) * 1.1;
+        const z = (j - gridSize / 2) * 1.1;
+        const y = -3.5 + Math.sin(x * 0.25) * Math.cos(z * 0.25) * 0.5;
+        pos[index * 3] = x;
+        pos[index * 3 + 1] = y;
+        pos[index * 3 + 2] = z;
+        initY[index] = y;
+        index++;
+      }
+    }
+    return [pos, initY];
+  }, [count]);
+
+  useFrame(({ clock }) => {
+    if (!pointsRef.current) return;
+    const t = clock.getElapsedTime() * 0.8;
+    const posAttr = pointsRef.current.geometry.attributes.position;
+    for (let i = 0; i < count; i++) {
+      const x = posAttr.getX(i);
+      const z = posAttr.getZ(i);
+      posAttr.setY(i, initialY[i] + Math.sin(x * 0.3 + t) * Math.cos(z * 0.3 + t) * 0.25);
+    }
+    posAttr.needsUpdate = true;
+  });
+
+  return (
+    <points ref={pointsRef}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          args={[positions, 3]}
+        />
+      </bufferGeometry>
+      <PointMaterial
+        color={isDark ? '#00f0ff' : '#0284c7'}
+        size={isDark ? 0.045 : 0.055}
+        sizeAttenuation
+        transparent
+        opacity={isDark ? 0.2 : 0.28}
+      />
+    </points>
+  );
+}
+
+// ── 4. Interactive Camera Mouse Parallax Controller ──
+function CameraParallax() {
+  useFrame(({ camera, pointer }) => {
+    camera.position.x = THREE.MathUtils.lerp(camera.position.x, pointer.x * 1.5, 0.03);
+    camera.position.y = THREE.MathUtils.lerp(camera.position.y, 1.2 + pointer.y * 0.8, 0.03);
+    camera.lookAt(0, 0, -4);
+  });
+  return null;
+}
+
+export default function HeroScene() {
+  const theme = useUIStore((s) => s.theme);
+  const isDark = theme !== 'light';
+
+  return (
+    <div className="w-full h-full min-h-screen">
+      <Canvas
+        camera={{ position: [0, 1.2, 8.5], fov: 48 }}
+        dpr={[1, 1.25]}
+        gl={{ antialias: true, alpha: true }}
+      >
+        <CameraParallax />
+        <SensorConstellation isDark={isDark} />
+        <VehicleTrajectories isDark={isDark} />
+        <DigitalCityTopography isDark={isDark} />
       </Canvas>
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#030712]/60 to-[#030712] pointer-events-none" />
     </div>
   );
 }

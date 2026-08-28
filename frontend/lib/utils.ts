@@ -21,6 +21,18 @@ export function formatDateTime(dateString: string): string {
   return `${formatDate(dateString)} ${formatTime(dateString)}`;
 }
 
+export function formatRelativeTime(dateString: string): string {
+  const diffMs = Date.now() - new Date(dateString).getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  if (diffSec < 45) return 'just now';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin} min ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDays = Math.floor(diffHr / 24);
+  return `${diffDays}d ago`;
+}
+
 // ── Numeric Formatting ────────────────────────────────────────────────────────
 
 export function formatNumber(num: number): string {
