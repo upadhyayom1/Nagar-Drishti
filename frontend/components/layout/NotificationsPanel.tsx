@@ -1,28 +1,28 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { X, Bell, Shield, TrendingUp, AlertTriangle, WifiOff, Car, ExternalLink, Maximize2, Minimize2 } from 'lucide-react';
+import { X, Bell, Shield, TrendingUp, AlertTriangle, WifiOff, Car, ExternalLink } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { alertService } from '@/services/alertService';
 import { Badge } from '@/components/ui/Badge';
-import { formatTime } from '@/lib/utils';
+import { formatTime, formatRelativeTime } from '@/lib/utils';
 import type { Alert } from '@/types';
 
-function renderAlertIcon(type: string, className: string) {
+function getAlertIcon(type: string) {
   switch (type) {
-    case 'BLACKLIST_VEHICLE': return <Shield size={14} className={className} />;
-    case 'ROUTE_ANOMALY':     return <TrendingUp size={14} className={className} />;
-    case 'TRAFFIC_SURGE':     return <AlertTriangle size={14} className={className} />;
-    case 'CAMERA_OFFLINE':    return <WifiOff size={14} className={className} />;
-    default:                  return <Bell size={14} className={className} />;
+    case 'BLACKLIST_VEHICLE': return Shield;
+    case 'ROUTE_ANOMALY':     return TrendingUp;
+    case 'TRAFFIC_SURGE':     return AlertTriangle;
+    case 'CAMERA_OFFLINE':    return WifiOff;
+    default:                  return Bell;
   }
 }
 
-function severityVariant(s: string): 'danger' | 'warning' | 'info' | 'default' {
-  if (s === 'critical') return 'danger';
-  if (s === 'high')     return 'warning';
+function severityVariant(s: string): 'critical' | 'warn' | 'info' | 'default' {
+  if (s === 'critical') return 'critical';
+  if (s === 'high')     return 'warn';
   if (s === 'medium')   return 'info';
   return 'default';
 }
@@ -30,13 +30,11 @@ function severityVariant(s: string): 'danger' | 'warning' | 'info' | 'default' {
 export function NotificationsPanel() {
   const { notificationsOpen, setNotificationsOpen } = useUIStore();
   const panelRef = useRef<HTMLDivElement>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
 
   const { data: alerts = [] } = useQuery({
     queryKey: ['recentAlerts'],
-    queryFn: () => alertService.getRecentAlerts(100),
+    queryFn: () => alertService.getRecentAlerts(8),
     enabled: notificationsOpen,
-    refetchInterval: 5_000,
   });
 
   // Close on outside click
@@ -68,99 +66,88 @@ export function NotificationsPanel() {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
+        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity"
         onClick={() => setNotificationsOpen(false)}
       />
 
       {/* Slide-in Panel */}
       <div
         ref={panelRef}
-        className={`fixed top-0 right-0 z-50 h-[100dvh] max-w-full flex flex-col animate-slide-in-right transition-[width] duration-300 ${isExpanded ? 'w-full sm:w-[760px]' : 'w-full sm:w-[420px]'}`}
-        style={{
-          background: 'rgba(10, 14, 30, 0.97)',
-          backdropFilter: 'blur(32px) saturate(180%)',
-          borderLeft: '1px solid rgba(255,255,255,0.12)',
-          boxShadow: '-10px 0 40px rgba(0,0,0,0.8), -2px 0 10px rgba(99,102,241,0.1)',
-        }}
+        className="fixed top-4 right-4 z-50 w-[380px] max-w-[calc(100vw-2rem)] max-h-[calc(100dvh-2rem)] flex flex-col glass-panel-elevated shadow-[0_24px_64px_rgba(0,0,0,0.8)] animate-in fade-in slide-in-from-right-5 duration-200"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--glass-border)] shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-rose-500/15 border border-rose-500/30">
-              <Bell size={15} className="text-rose-400" />
+            <div className="p-2 rounded-xl bg-[var(--status-critical)]/15 border border-[var(--status-critical)]/30">
+              <Bell size={15} className="text-[var(--status-critical)]" />
             </div>
             <div>
               <p className="font-display font-bold text-sm text-white">Sentinel Alerts</p>
-              <p className="text-[10px] font-mono text-slate-400">
+              <p className="text-[10px] font-mono text-[var(--text-secondary)]">
                 {criticalCount > 0 ? (
-                  <span className="text-rose-400 font-bold">{criticalCount} Critical · </span>
+                  <span className="text-[var(--status-critical)] font-bold">{criticalCount} Critical · </span>
                 ) : null}
                 {alerts.length} Active
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setIsExpanded((expanded) => !expanded)}
-              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.07] transition-all"
-              aria-label={isExpanded ? 'Restore Sentinel feed sidebar' : 'Expand Sentinel feed'}
-              title={isExpanded ? 'Restore sidebar width' : 'Expand Sentinel feed'}
-            >
-              {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-            </button>
-            <button
-              onClick={() => setNotificationsOpen(false)}
-              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.07] transition-all"
-              aria-label="Close Sentinel feed"
-            >
-              <X size={16} />
-            </button>
-          </div>
+          <button
+            onClick={() => setNotificationsOpen(false)}
+            aria-label="Close Notifications"
+            className="p-1.5 rounded-xl text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.06] transition-all"
+          >
+            <X size={16} />
+          </button>
         </div>
 
         {/* Alerts List */}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 space-y-2">
+        <div className="overflow-y-auto flex-1 p-3 space-y-2">
           {alerts.map((alert: Alert) => {
+            const Icon = getAlertIcon(alert.type);
             const isCritical = alert.severity === 'critical';
             const isHigh = alert.severity === 'high';
-            const iconClassName = isCritical ? 'text-rose-400' : isHigh ? 'text-amber-400' : 'text-cyan-400';
 
             return (
               <div
                 key={alert.id}
-                className={`p-3.5 rounded-2xl border transition-all ${
+                className={`p-3 rounded-xl border transition-all ${
                   isCritical
-                    ? 'bg-rose-500/10 border-rose-500/30 shadow-[0_0_20px_rgba(244,63,94,0.12)]'
+                    ? 'bg-[var(--status-critical)]/10 border-[var(--status-critical)]/30 shadow-[0_0_16px_rgba(255,77,79,0.12)]'
                     : isHigh
-                    ? 'bg-amber-500/10 border-amber-500/25'
-                    : 'bg-white/[0.04] border-white/10'
+                    ? 'bg-[var(--status-warn)]/10 border-[var(--status-warn)]/25'
+                    : 'bg-white/[0.03] border-[var(--glass-border)]'
                 }`}
               >
                 <div className="flex items-start gap-3">
                   <div className={`p-2 rounded-xl shrink-0 ${
-                    isCritical ? 'bg-rose-500/20 text-rose-400' :
-                    isHigh ? 'bg-amber-500/20 text-amber-400' :
-                    'bg-cyan-500/20 text-cyan-400'
+                    isCritical ? 'bg-[var(--status-critical)]/20 text-[var(--status-critical)]' :
+                    isHigh ? 'bg-[var(--status-warn)]/20 text-[var(--status-warn)]' :
+                    'bg-[var(--signal-cyan)]/20 text-[var(--signal-cyan)]'
                   }`}>
-                    {renderAlertIcon(alert.type, iconClassName)}
+                    <Icon size={14} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 mb-0.5">
                       <p className="text-xs font-display font-bold text-white truncate">{alert.title}</p>
                       <Badge variant={severityVariant(alert.severity)} size="sm">{alert.severity}</Badge>
                     </div>
-                    <p className="text-[11px] text-slate-400 leading-snug font-body">{alert.description}</p>
+                    <p className="text-[11px] text-[var(--text-secondary)] leading-snug line-clamp-2 font-body">{alert.description}</p>
                     <div className="flex items-center justify-between mt-2">
                       {alert.vehiclePlate && (
                         <Link
                           href={`/vehicles/${alert.vehiclePlate}`}
                           onClick={() => setNotificationsOpen(false)}
-                          className="flex items-center gap-1 text-[10px] font-data font-bold text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 px-2 py-0.5 rounded-lg hover:bg-cyan-500/20 transition-colors"
+                          className="flex items-center gap-1 text-[10px] font-mono font-bold text-[var(--brand-teal)] bg-[var(--brand-teal)]/10 border border-[var(--brand-teal)]/30 px-2 py-0.5 rounded-md hover:bg-[var(--brand-teal)]/20 transition-colors"
                         >
                           <Car size={11} /> {alert.vehiclePlate}
                         </Link>
                       )}
-                      <span className="text-[10px] font-data text-slate-500 ml-auto">{formatTime(alert.timestamp)}</span>
+                      <span 
+                        title={formatTime(alert.timestamp)} 
+                        className="text-[10px] font-mono text-[var(--text-tertiary)] ml-auto cursor-help"
+                      >
+                        {formatRelativeTime(alert.timestamp)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -170,11 +157,11 @@ export function NotificationsPanel() {
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3.5 border-t border-white/10 shrink-0">
+        <div className="px-5 py-3.5 border-t border-[var(--glass-border)] shrink-0">
           <Link
             href="/alerts"
             onClick={() => setNotificationsOpen(false)}
-            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-500/20 via-cyan-500/20 to-pink-500/20 border border-white/15 text-xs font-display font-bold text-white hover:from-indigo-500/30 hover:via-cyan-500/30 hover:to-pink-500/30 transition-all"
+            className="flex items-center justify-center gap-2 w-full py-2 rounded-xl bg-[var(--brand-teal)]/10 border border-[var(--brand-teal)]/30 text-xs font-display font-bold text-[var(--brand-teal)] hover:bg-[var(--brand-teal)]/20 transition-all shadow-[0_0_12px_rgba(31,217,168,0.15)]"
           >
             <ExternalLink size={13} />
             View All Sentinel Alerts
