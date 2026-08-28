@@ -31,21 +31,20 @@ async function getTrafficSnapshot(windowInput = {}, cameraId) {
   const window = parseTrafficWindow({ from, to });
   const where = { timestamp: { gte: window.from, lte: window.to }, ...(cameraId ? { cameraId } : {}) };
   
-  const [cameras, windowCounts, windowUniqueVehicles, totalDetectionCounts] = await Promise.all([
+  const [cameras, windowCounts] = await Promise.all([
     prisma.camera.findMany({
       where: cameraId ? { id: cameraId } : undefined,
       include: { zone: { select: { name: true } }, road: { select: { name: true } } },
       orderBy: { cameraCode: 'asc' },
     }),
-    prisma.detection.groupBy({ by: ['cameraId'], where, _count: { _all: true } }),
-    prisma.detection.findMany({ where, distinct: ['cameraId', 'vehicleId'], select: { cameraId: true, vehicleId: true } }),
-    prisma.detection.groupBy({ by: ['cameraId'], _count: { _all: true } }),
+    prisma.detection.groupBy({
+      by: ['cameraId'],
+      where: { timestamp: { gte: window.from }, ...(cameraId ? { cameraId } : {}) },
+      _count: { _all: true },
+    }),
   ]);
   
   const countByCamera = new Map(windowCounts.map((item) => [item.cameraId, item._count._all]));
-  const totalCountByCamera = new Map(totalDetectionCounts.map((item) => [item.cameraId, item._count._all]));
-  const uniqueByCamera = new Map();
-  windowUniqueVehicles.forEach(({ cameraId: id }) => uniqueByCamera.set(id, (uniqueByCamera.get(id) || 0) + 1));
 
   // Check live simulation engine if active
   let liveEngineVehiclesByCam = new Map();
@@ -65,20 +64,16 @@ async function getTrafficSnapshot(windowInput = {}, cameraId) {
     durationMinutes: window.durationMinutes,
     cameras: cameras.map((camera) => {
       const windowDetectionCount = countByCamera.get(camera.id) || 0;
-      const windowVehicleCount = uniqueByCamera.get(camera.id) || 0;
       const liveVehicles = liveEngineVehiclesByCam.get(camera.id) || 0;
-      const totalDetections = totalCountByCamera.get(camera.id) || 0;
-
-      // Vehicles detected: prioritize live in-range vehicles if simulation is running, else window unique vehicles
-      const vehiclesDetected = liveVehicles > 0 ? liveVehicles : windowVehicleCount > 0 ? windowVehicleCount : Math.min(totalDetections, 12);
-      const detectionCount = totalDetections > 0 ? totalDetections : windowDetectionCount;
+      const vehiclesDetected = liveVehicles > 0 ? liveVehicles : Math.min(windowDetectionCount, 12);
+      const detectionCount = windowDetectionCount;
 
       return {
         ...camera,
         vehicleCount: vehiclesDetected,
         vehiclesDetected,
         detectionCount,
-        trafficLevel: getTrafficLevel({ detectionCount: windowDetectionCount || detectionCount, vehicleCount: vehiclesDetected, durationMinutes: window.durationMinutes }),
+        trafficLevel: getTrafficLevel({ detectionCount: windowDetectionCount, vehicleCount: vehiclesDetected, durationMinutes: window.durationMinutes }),
         zone: camera.zone?.name || 'Prayagraj Zone',
         road: camera.road?.name || 'Main Corridor',
       };

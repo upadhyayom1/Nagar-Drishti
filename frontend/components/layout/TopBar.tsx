@@ -9,11 +9,13 @@ import { useUIStore } from '@/store/uiStore';
 import { alertService } from '@/services/alertService';
 import { analyticsService } from '@/services/analyticsService';
 import { UserProfileModal } from '@/components/profile/UserProfileModal';
+import { useAuthStore } from '@/store/authStore';
 
 const pageTitles: Record<string, string> = {
   '/dashboard':   'Command Center',
   '/cameras':     'Live Optical Grid',
   '/vehicles':    'Vehicle Intelligence',
+  '/detect':      'AI Plate Detection',
   '/analytics':   'Traffic Analytics',
   '/network':     'Movement Network',
   '/alerts':      'Sentinel Alerts',
@@ -39,9 +41,12 @@ export function TopBar() {
   } = useUIStore();
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const user = useAuthStore((state) => state.user);
+  const displayName = user?.name || user?.username || 'Operator';
+  const initials = displayName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase();
 
-  const { data: alertCount = 0 } = useQuery({ queryKey: ['activeAlertCount'], queryFn: alertService.getActiveAlertCount });
-  const { data: systemHealth } = useQuery({ queryKey: ['systemHealth'], queryFn: analyticsService.getSystemHealth });
+  const { data: alertCount = 0 } = useQuery({ queryKey: ['activeAlertCount'], queryFn: alertService.getActiveAlertCount, refetchInterval: 5_000 });
+  const { data: systemHealth } = useQuery({ queryKey: ['systemHealth'], queryFn: analyticsService.getSystemHealth, refetchInterval: 15_000 });
 
   // Initialize theme from localStorage or system preference on mount
   useEffect(() => {
@@ -85,7 +90,7 @@ export function TopBar() {
             </h1>
             <p className="text-[10px] font-mono uppercase tracking-wider flex items-center gap-1.5 font-medium mt-0.5 text-[var(--text-secondary)] truncate">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse shrink-0" />
-              <span className="text-cyan-400 font-semibold truncate">{systemHealth?.summary.online ?? 10} Camera Nodes Online</span>
+              <span className="text-cyan-400 font-semibold truncate">{systemHealth?.summary.online ?? 0} Camera Nodes Online</span>
               <span className="hidden sm:inline text-[var(--text-tertiary)]">·</span>
               <span className="hidden sm:inline truncate">Prayagraj Sector</span>
             </p>
@@ -134,11 +139,11 @@ export function TopBar() {
             className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/[0.03] hover:bg-white/[0.07] border border-[var(--glass-border)] hover:border-cyan-400/40 transition-all cursor-pointer group"
           >
             <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#00f0ff] via-[#6366f1] to-[#ec4899] flex items-center justify-center text-[10px] font-bold text-white shadow-[0_0_12px_rgba(0,240,255,0.4)] group-hover:scale-105 transition-transform">
-              RK
+              {initials}
             </div>
             <div className="text-[10px] leading-tight font-mono text-left hidden lg:block">
-              <span className="text-[var(--text-primary)] font-semibold block group-hover:text-cyan-400 transition-colors">Rahul Krishnan</span>
-              <span className="text-[var(--text-tertiary)] block text-[9px]">Sector Operator · On Shift</span>
+              <span className="text-[var(--text-primary)] font-semibold block group-hover:text-cyan-400 transition-colors">{displayName}</span>
+              <span className="text-[var(--text-tertiary)] block text-[9px]">{user?.role === 'ADMIN' ? 'Municipal Administrator' : 'Authenticated User'}</span>
             </div>
           </button>
 

@@ -6,9 +6,9 @@ import { useAuthStore } from '@/store/authStore';
 import { authService } from '@/services/authService';
 import { Loader2 } from 'lucide-react';
 
-export function AuthGuard({ children }: { children: React.ReactNode }) {
+export function AuthGuard({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: UserRole[] }) {
   const router = useRouter();
-  const { isInitialized, isAuthenticated, setUser, setInitialized } = useAuthStore();
+  const { user, isInitialized, isAuthenticated, setUser, setInitialized } = useAuthStore();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -34,9 +34,12 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     if (isInitialized && !isAuthenticated) {
       router.push('/login');
     }
-  }, [isInitialized, isAuthenticated, router]);
+    if (isInitialized && user && allowedRoles && !allowedRoles.includes(user.role)) {
+      router.push(user.role === 'ADMIN' ? '/dashboard' : '/report');
+    }
+  }, [allowedRoles, isInitialized, isAuthenticated, router, user]);
 
-  if (!isInitialized || (!isAuthenticated && isInitialized)) {
+  if (!isInitialized || !isAuthenticated || (allowedRoles && user && !allowedRoles.includes(user.role))) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#050711] text-white">
         <div className="flex flex-col items-center gap-4">
@@ -53,3 +56,5 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   return <>{children}</>;
 }
+
+type UserRole = 'ADMIN' | 'USER';

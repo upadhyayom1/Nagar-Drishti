@@ -39,43 +39,52 @@ async function predictNextCamera(vehicleId, lastCameraId, history = []) {
  */
 async function getBlacklistIntelligence(filters = {}) {
   const query = {};
-  if (filters.status) query.status = filters.status;
+  if (filters.status) {
+    query.status = filters.status;
+  } else {
+    query.status = 'ACTIVE';
+  }
 
   const blacklisted = await prisma.blacklistedVehicle.findMany({
     where: query,
     orderBy: { createdAt: 'desc' },
+    take: 20,
   });
+
+  if (blacklisted.length === 0) return [];
+
+  const plates = blacklisted.map((b) => normalizePlateNumber(b.plateNumber));
+  const vehicles = await prisma.vehicle.findMany({
+    where: { plateNumber: { in: plates } },
+    include: {
+      detections: {
+        orderBy: { timestamp: 'desc' },
+        take: 5,
+        include: {
+          camera: {
+            select: {
+              id: true,
+              name: true,
+              cameraCode: true,
+              latitude: true,
+              longitude: true,
+              zone: { select: { name: true } },
+              road: { select: { name: true } },
+            },
+          },
+        },
+      },
+      _count: { select: { detections: true } },
+    },
+  });
+
+  const vehicleByPlate = new Map(vehicles.map((v) => [v.plateNumber, v]));
 
   const enrichedList = await Promise.all(
     blacklisted.map(async (record) => {
       const normalizedPlate = normalizePlateNumber(record.plateNumber);
-
-      // Find vehicle record
-      const vehicle = await prisma.vehicle.findUnique({
-        where: { plateNumber: normalizedPlate },
-      });
-
-      // Find latest detection and history
-      const detections = vehicle
-        ? await prisma.detection.findMany({
-            where: { vehicleId: vehicle.id },
-            orderBy: { timestamp: 'desc' },
-            take: 50,
-            include: {
-              camera: {
-                select: {
-                  id: true,
-                  name: true,
-                  cameraCode: true,
-                  latitude: true,
-                  longitude: true,
-                  zone: { select: { name: true } },
-                  road: { select: { name: true } },
-                },
-              },
-            },
-          })
-        : [];
+      const vehicle = vehicleByPlate.get(normalizedPlate);
+      const detections = vehicle?.detections || [];
 
       // Last sighting details
       let lastSighting = null;
@@ -95,7 +104,6 @@ async function getBlacklistIntelligence(filters = {}) {
         };
       }
 
-      // Unique cameras visited
       const uniqueCameras = new Set(detections.map((d) => d.cameraId));
 
       // Calculate next probable camera location via ML hook
@@ -115,12 +123,13 @@ async function getBlacklistIntelligence(filters = {}) {
           color: vehicle?.color || 'Unknown',
           firstSeen: vehicle?.firstSeen || record.createdAt,
           lastSeen: vehicle?.lastSeen || lastSighting?.timestamp || record.createdAt,
-          totalDetections: detections.length,
-          camerasVisited: uniqueCameras.size,
+          totalDetections: vehicle?._count?.detections || detections.length,
+          camerasVisited: uniqueCameras.size || (lastSighting ? 1 : 0),
           averageSpeed: vehicle?.speed || 38,
+          currentRoad: lastSighting?.road || 'Prayagraj Main Corridor',
         },
         lastSighting,
-        nextProbableCamera, // Currently NULL until ML service is integrated
+        nextProbableCamera,
       };
     })
   );

@@ -2,6 +2,15 @@ const { z } = require('zod');
 const authService = require('./auth.service');
 const { env } = require('../../config/env');
 
+const serializeUser = (user) => ({
+  id: user.id,
+  username: user.username,
+  email: user.email,
+  name: user.name,
+  phone: user.phone,
+  role: user.role,
+});
+
 const loginSchema = z.object({
   username: z.string().min(1, 'Username is required'),
   password: z.string().min(1, 'Password is required'),
@@ -23,12 +32,7 @@ const login = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Login successful',
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-      },
+      user: serializeUser(user),
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -74,12 +78,7 @@ const register = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Registration successful',
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-      },
+      user: serializeUser(user),
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -93,4 +92,15 @@ const register = async (req, res) => {
   }
 };
 
-module.exports = { login, logout, register };
+const me = async (req, res) => {
+  try {
+    const user = await authService.getUserById(req.user.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    res.status(200).json({ success: true, user: serializeUser(user) });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+module.exports = { login, logout, register, me };

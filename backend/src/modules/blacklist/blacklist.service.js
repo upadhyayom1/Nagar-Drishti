@@ -33,7 +33,14 @@ async function addBlacklistedVehicle(data) {
       status: 'ACTIVE',
     },
   });
-  await prisma.vehicle.updateMany({ where: { plateNumber: normalizedPlate }, data: { status: 'BLACKLISTED' } });
+  await prisma.vehicle.upsert({
+    where: { plateNumber: normalizedPlate },
+    update: { status: 'BLACKLISTED' },
+    create: {
+      plateNumber: normalizedPlate,
+      status: 'BLACKLISTED',
+    },
+  });
   return record;
 }
 

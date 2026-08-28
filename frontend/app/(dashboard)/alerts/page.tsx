@@ -128,12 +128,19 @@ function AlertCard({
 
 export default function AlertsPage() {
   const queryClient = useQueryClient();
-  const { data: alerts = [], refetch } = useQuery({ queryKey: ['alerts'], queryFn: alertService.getAlerts });
+  const { data: alerts = [], refetch, isFetching } = useQuery({
+    queryKey: ['alerts'],
+    queryFn: alertService.getAlerts,
+    refetchInterval: 5_000,
+  });
   const { alertSeverityFilter, setAlertSeverityFilter } = useFilterStore();
 
   const acknowledgeMutation = useMutation({
     mutationFn: (id: string) => alertService.acknowledgeAlert(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alerts'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['alerts'] });
+      queryClient.invalidateQueries({ queryKey: ['activeAlertCount'] });
+    },
   });
 
   const filtered = alertSeverityFilter === 'all'
@@ -176,8 +183,8 @@ export default function AlertsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="secondary" size="sm" onClick={() => refetch()}>
-            <RefreshCw size={13} /> Sync Grid
+          <Button variant="secondary" size="sm" onClick={() => refetch()} disabled={isFetching}>
+            <RefreshCw size={13} className={isFetching ? 'animate-spin' : ''} /> Sync Grid
           </Button>
           <Button variant="primary" size="sm" onClick={handleExportCSV}>
             <Download size={13} /> Export Threat Log
