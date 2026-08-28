@@ -31,5 +31,11 @@ app.mount("/anpr", anpr_app)
 def health_check():
     return {"status": "ok", "service": "unified-api-gateway"}
 
+@app.on_event("startup")
+def startup_event():
+    import app as ml_module
+    ml_module.startup_event()
+    print("Triggered ML service initialization.")
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8001)
