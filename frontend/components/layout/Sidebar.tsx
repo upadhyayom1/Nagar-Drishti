@@ -10,6 +10,7 @@ import {
   BarChart3,
   Network,
   Bell,
+  Shield,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -31,8 +32,9 @@ const navGroups = [
   {
     label: 'Operations & Sentinel',
     items: [
-      { name: 'Sentinel Alerts',   href: '/alerts', icon: Bell, gradient: 'from-rose-500/25 via-orange-500/15 to-transparent', activeColor: 'text-rose-300' },
-      { name: 'System Diagnostics', href: '/system', icon: Settings, gradient: 'from-amber-500/25 via-yellow-500/15 to-transparent', activeColor: 'text-amber-300' },
+      { name: 'Sentinel Alerts',     href: '/alerts',    icon: Bell,    gradient: 'from-rose-500/25 via-orange-500/15 to-transparent', activeColor: 'text-rose-300' },
+      { name: 'Threat Watchlist',    href: '/blacklist', icon: Shield,  gradient: 'from-crimson-500/30 via-rose-500/20 to-transparent', activeColor: 'text-rose-400' },
+      { name: 'System Diagnostics',  href: '/system',    icon: Settings, gradient: 'from-amber-500/25 via-yellow-500/15 to-transparent', activeColor: 'text-amber-300' },
     ],
   },
 ];

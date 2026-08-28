@@ -1,23 +1,10 @@
-<<<<<<< HEAD
 id,zoneCode,name,createdAt,updatedAt
-"cmt91ffhu0000igir161ble4m","PRY-CENTRAL","Civil Lines and Railway Core",2026-08-25T19:08:12.978Z,2026-08-25T19:08:12.978Z
-"cmt91ffhx0001igir14x37akj","PRY-KATRA","Katra, University and Allapur",2026-08-25T19:08:12.978Z,2026-08-25T19:08:12.978Z
-"cmt91ffhx0002igir0l5kqrc4","PRY-SANGAM","Sangam and Daraganj",2026-08-25T19:08:12.978Z,2026-08-25T19:08:12.978Z
-"cmt91ffhx0003igirs5mr7cau","PRY-NAINI","Naini and Yamuna Crossing",2026-08-25T19:08:12.978Z,2026-08-25T19:08:12.978Z
-"cmt91ffhx0004igirfy1jca52","PRY-NORTH","Teliarganj and Phaphamau",2026-08-25T19:08:12.978Z,2026-08-25T19:08:12.978Z
-"cmt91ffhx0005igir0d0cfqix","PRY-JHUNSI","Shastri Bridge and Jhunsi",2026-08-25T19:08:12.978Z,2026-08-25T19:08:12.978Z
-"cmt91ffhx0006igirivg8tg8s","PRY-WEST","Subedarganj, Jhalwa, Bamrauli",2026-08-25T19:08:12.978Z,2026-08-25T19:08:12.978Z
-"cmt91ffhx0007igirkmlpsunk","PRY-SOUTH","Dandi, Ghoorpur, Industrial",2026-08-25T19:08:12.978Z,2026-08-25T19:08:12.978Z
-"cmt91ffhx0008igir6gn1yi8k","PRY-OLD_CITY","Chowk, Meerapur, Rambagh",2026-08-25T19:08:12.978Z,2026-08-25T19:08:12.978Z
-=======
-id,zoneCode,name
-cmtb9wv2j00009wirn0c87iii,PRY-CENTRAL,Civil Lines and Railway Core
-cmtb9wv2k00019wirb33f5oto,PRY-KATRA,"Katra, University and Allapur"
-cmtb9wv2k00029wirniqv5v89,PRY-SANGAM,Sangam and Daraganj
-cmtb9wv2k00039wirf3j465zy,PRY-NAINI,Naini and Yamuna Crossing
-cmtb9wv2k00049wirf556zki4,PRY-NORTH,Teliarganj and Phaphamau
-cmtb9wv2k00059wirfuds26h9,PRY-JHUNSI,Shastri Bridge and Jhunsi
-cmtb9wv2k00069wirl11fuv0a,PRY-WEST,"Subedarganj, Jhalwa, Bamrauli"
-cmtb9wv2k00079wirthf468j8,PRY-SOUTH,"Dandi, Ghoorpur, Industrial"
-cmtb9wv2k00089wirbjhw9kfq,PRY-OLD_CITY,"Chowk, Meerapur, Rambagh"
->>>>>>> origin/main
+cmtbiuze400003girkbkc65s3,PRY-CENTRAL,Civil Lines and Railway Core,2026-08-27T12:51:44.428Z,2026-08-27T12:51:44.428Z
+cmtbiuze600013girmeldkyia,PRY-KATRA,"Katra, University and Allapur",2026-08-27T12:51:44.428Z,2026-08-27T12:51:44.428Z
+cmtbiuze600023girqimspnvl,PRY-SANGAM,Sangam and Daraganj,2026-08-27T12:51:44.428Z,2026-08-27T12:51:44.428Z
+cmtbiuze600033girvcvm8d3z,PRY-NAINI,Naini and Yamuna Crossing,2026-08-27T12:51:44.428Z,2026-08-27T12:51:44.428Z
+cmtbiuze600043girmxeb5wtt,PRY-NORTH,Teliarganj and Phaphamau,2026-08-27T12:51:44.428Z,2026-08-27T12:51:44.428Z
+cmtbiuze600053girr76axjpt,PRY-JHUNSI,Shastri Bridge and Jhunsi,2026-08-27T12:51:44.428Z,2026-08-27T12:51:44.428Z
+cmtbiuze600063girihe22541,PRY-WEST,"Subedarganj, Jhalwa, Bamrauli",2026-08-27T12:51:44.428Z,2026-08-27T12:51:44.428Z
+cmtbiuze600073girtzoqqx1u,PRY-SOUTH,"Dandi, Ghoorpur, Industrial",2026-08-27T12:51:44.428Z,2026-08-27T12:51:44.428Z
+cmtbiuze600083girp0e55dto,PRY-OLD_CITY,"Chowk, Meerapur, Rambagh",2026-08-27T12:51:44.428Z,2026-08-27T12:51:44.428Z
