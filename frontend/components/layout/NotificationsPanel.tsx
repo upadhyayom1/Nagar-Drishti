@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
-import { X, Bell, Shield, TrendingUp, AlertTriangle, WifiOff, Car, ExternalLink } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { X, Bell, Shield, TrendingUp, AlertTriangle, WifiOff, Car, ExternalLink, CheckCheck } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { alertService } from '@/services/alertService';
 import { Badge } from '@/components/ui/Badge';
@@ -38,6 +38,16 @@ export function NotificationsPanel() {
     refetchInterval: notificationsOpen ? 5_000 : false,
   });
   const alerts = notificationSummary?.items ?? [];
+  const queryClient = useQueryClient();
+
+  const { mutate: markAllAsRead, isPending: isMarking } = useMutation({
+    mutationFn: () => alertService.acknowledgeAll(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notificationSummary'] });
+      queryClient.invalidateQueries({ queryKey: ['systemHealth'] });
+      queryClient.invalidateQueries({ queryKey: ['trafficStats'] });
+    },
+  });
 
   // Close on outside click
   useEffect(() => {
@@ -93,13 +103,24 @@ export function NotificationsPanel() {
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setNotificationsOpen(false)}
-            aria-label="Close Notifications"
-            className="p-1.5 rounded-xl text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.06] transition-all"
-          >
-            <X size={16} />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => markAllAsRead()}
+              disabled={isMarking || alerts.length === 0}
+              aria-label="Mark all as read"
+              title="Mark all as read"
+              className="p-1.5 rounded-xl text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.06] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <CheckCheck size={16} />
+            </button>
+            <button
+              onClick={() => setNotificationsOpen(false)}
+              aria-label="Close Notifications"
+              className="p-1.5 rounded-xl text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.06] transition-all"
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
 
         {/* Alerts List */}

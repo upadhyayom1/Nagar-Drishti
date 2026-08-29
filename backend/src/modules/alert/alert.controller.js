@@ -109,3 +109,17 @@ exports.updateAlertStatus = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+exports.acknowledgeAllAlerts = async (req, res) => {
+  try {
+    const result = await prisma.alert.updateMany({
+      where: { status: 'ACTIVE' },
+      data: { status: 'ACKNOWLEDGED' }
+    });
+    res.status(200).json({ success: true, message: `Acknowledged ${result.count} alerts` });
+  } catch (error) {
+    console.error('Error acknowledging all alerts:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+

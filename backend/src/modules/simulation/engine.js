@@ -60,6 +60,7 @@ class SimulationEngine {
     this.graph = new Map(); // Node -> Array of Edges
     this.nodesList = []; // Helper for picking random nodes
     this.lastHealthCheck = new Date(this.time);
+    this.routeCache = new Map();
   }
 
   async init() {
@@ -189,6 +190,11 @@ class SimulationEngine {
   }
   
   calculateRoute(startNode, endNode, recentNodes = []) {
+      const cacheKey = `${startNode}->${endNode}`;
+      if (recentNodes.length === 0 && this.routeCache.has(cacheKey)) {
+          return [...this.routeCache.get(cacheKey)];
+      }
+
       // Basic Dijkstra with penalty for recent nodes
       const dist = new Map();
       const prev = new Map();
@@ -245,6 +251,11 @@ class SimulationEngine {
           curr = step.node;
       }
       
+      if (recentNodes.length === 0 && route.length > 0) {
+          this.routeCache.set(cacheKey, [...route]);
+          if (this.routeCache.size > 5000) this.routeCache.delete(this.routeCache.keys().next().value);
+      }
+      
       return route;
   }
 
@@ -296,8 +307,9 @@ class SimulationEngine {
     const realDeltaSec = (now - this.lastTickTime) / 1000;
     this.lastTickTime = now;
 
-    const simDeltaSec = realDeltaSec * this.speed;
-    this.time = new Date(this.time.getTime() + simDeltaSec * 1000);
+    // Enforce true real-time sync, ignoring artificial speed multipliers
+    const simDeltaSec = realDeltaSec;
+    this.time = new Date(now);
 
     const liveDetections = [];
 
@@ -393,6 +405,25 @@ class SimulationEngine {
     if (liveDetections.length > 0) {
       this.recentDetections = [...liveDetections.reverse(), ...this.recentDetections].slice(0, 100);
       this.generatedDetectionCount += liveDetections.length;
+      
+      // Asynchronously persist realistic real-time detections to the database
+      prisma.detection.createMany({
+        data: liveDetections.map(d => ({
+          vehicleId: d.vehicleId,
+          cameraId: d.cameraId,
+          plateText: d.plateText,
+          timestamp: d.timestamp,
+          ocrConfidence: d.ocrConfidence,
+          vehicleConfidence: d.vehicleConfidence,
+          lane: d.lane,
+          direction: d.direction,
+          latitude: d.latitude,
+          longitude: d.longitude,
+          source: d.source,
+          speed: d.speed
+        })),
+        skipDuplicates: true
+      }).catch(err => console.error('Failed to persist simulated detections:', err));
     }
 
     this.liveCameraCounts = new Map();

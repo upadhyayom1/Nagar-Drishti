@@ -12,7 +12,6 @@ import { analyticsService } from '@/services/analyticsService';
 import { alertService }     from '@/services/alertService';
 import { formatTime, formatRelativeTime, cn } from '@/lib/utils';
 import { useFilterStore }   from '@/store/filterStore';
-import { CongestionForecastWidget } from '@/components/dashboard/CongestionForecastWidget';
 import type { Alert } from '@/types';
 
 // Dynamic import for Leaflet map with zero SSR issues
@@ -181,11 +180,11 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Right Hand Side Column for Feed and Forecast */}
+        {/* Right Hand Side Column for Feed */}
         <div className="lg:col-span-1 flex flex-col gap-4 h-[575px]">
           
           {/* Real-Time Sentinel Feed */}
-          <GlassCard padding="sm" glow="rose" accent="rose" className="flex-1 flex flex-col min-h-[300px]">
+          <GlassCard padding="sm" glow="rose" accent="rose" className="flex-1 flex flex-col h-full">
             <div className="flex items-center justify-between mb-3.5 pb-3 border-b border-[var(--glass-border)]">
               <h3 className="text-xs font-display font-bold text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-2">
                 <Radio size={13} className="text-rose-500 dark:text-rose-400 animate-pulse" />
@@ -235,11 +234,6 @@ export default function DashboardPage() {
               ))}
             </div>
           </GlassCard>
-
-          {/* AI Traffic Congestion Forecast */}
-          <div className="h-[250px] shrink-0">
-            <CongestionForecastWidget />
-          </div>
         </div>
       </div>
     </PageWrapper>

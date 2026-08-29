@@ -35,4 +35,8 @@ export const alertService = {
   async acknowledgeAlert(id: string): Promise<void> {
     await apiClient.patch(`/alerts/${encodeURIComponent(id)}`, { status: 'ACKNOWLEDGED' });
   },
+
+  async acknowledgeAll(): Promise<void> {
+    await apiClient.patch('/alerts/acknowledge-all', {});
+  },
 };
