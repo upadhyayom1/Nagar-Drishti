@@ -41,7 +41,7 @@ export default function AnalyticsPage() {
     return { from: from.toISOString(), to: to.toISOString() };
   }, [timeRange]);
 
-  const { data: stats, refetch, isFetching } = useQuery({ queryKey: ['trafficStats', analyticsWindow], queryFn: () => analyticsService.getTrafficStats(analyticsWindow) });
+  const { data: stats, refetch, isFetching, isLoading: statsLoading } = useQuery({ queryKey: ['trafficStats', analyticsWindow], queryFn: () => analyticsService.getTrafficStats(analyticsWindow) });
   const { data: hourlyData = [] }   = useQuery({ queryKey: ['hourlyTraffic', analyticsWindow],  queryFn: () => analyticsService.getHourlyTraffic(analyticsWindow) });
   const { data: cameraTraffic = [] } = useQuery({ queryKey: ['cameraTraffic', analyticsWindow],  queryFn: () => analyticsService.getCameraTraffic(analyticsWindow) });
   const { data: busiestRoads = [] }  = useQuery({ queryKey: ['busiestRoads', analyticsWindow],  queryFn: () => analyticsService.getBusiestRoads(analyticsWindow) });
@@ -121,10 +121,10 @@ export default function AnalyticsPage() {
 
       {/* Multi-Chromatic KPI Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label={`Total Volume (${timeRange})`} value={stats?.totalVehiclesToday?.toLocaleString('en-IN') ?? 2847} icon={Car} colorTheme="violet" />
-        <StatCard label="Network Velocity"   value={stats ? `${stats.avgSpeed} km/h` : '38.5 km/h'} icon={Gauge} colorTheme="cyan" />
-        <StatCard label="Congestion Index"  value={stats?.congestionIndex ?? 42} icon={TrendingUp} subtitle="/ 100 max density" colorTheme="amber" />
-        <StatCard label="Incident Anomalies" value={stats?.incidentsToday ?? 3} icon={AlertTriangle} colorTheme="rose" />
+        <StatCard label={`Total Volume (${timeRange})`} value={stats?.totalVehiclesToday?.toLocaleString('en-IN') ?? '—'} isLoading={statsLoading} icon={Car} colorTheme="violet" />
+        <StatCard label="Network Velocity" value={stats?.avgSpeed ? `${stats.avgSpeed} km/h` : '—'} isLoading={statsLoading} icon={Gauge} colorTheme="cyan" />
+        <StatCard label="Congestion Index" value={stats?.congestionIndex ?? '—'} isLoading={statsLoading} icon={TrendingUp} subtitle="/ 100 max density" colorTheme="amber" />
+        <StatCard label="Incident Anomalies" value={stats?.incidentsToday ?? '—'} isLoading={statsLoading} icon={AlertTriangle} colorTheme="rose" />
       </div>
 
       {/* Charts Row */}

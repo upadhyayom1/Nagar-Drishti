@@ -128,7 +128,6 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
               <Popup>
                 <div className="p-3 min-w-[190px] font-body">
                   <p className="font-bold text-xs text-white font-display">{wp.cameraName}</p>
-                  <p className="text-[10px] text-[var(--accent-cyan)] font-mono mt-0.5">{wp.cameraId}</p>
                   <div className="text-[10px] text-[var(--text-secondary)] mt-2 space-y-0.5 font-mono">
                     <p>Time: <span className="text-white font-semibold">{formatTime(wp.timestamp)}</span></p>
                     <p>Speed: <span className="text-[var(--accent-cyan)] font-semibold">{wp.speed} km/h</span></p>
@@ -271,8 +270,7 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
                     <span className="text-[9px] font-mono text-[var(--text-secondary)]">{formatTime(wp.timestamp)}</span>
                   </div>
                   <div className="flex items-center justify-between text-[10px] font-mono">
-                    <span className="text-[var(--accent-cyan)]">{wp.cameraId}</span>
-                    <span className="text-[var(--text-secondary)]">{wp.speed} km/h</span>
+                    <span className="text-[var(--text-secondary)]">Speed: {wp.speed} km/h</span>
                   </div>
                 </div>
               );

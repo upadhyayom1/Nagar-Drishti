@@ -1,8 +1,5 @@
 const turf = require('@turf/turf');
 const { prisma } = require('../../lib/prisma');
-const { recordDetection } = require('../detection/detection.service');
-const { evaluateCongestionAlert } = require('../traffic/traffic.service');
-const { pruneStorage } = require('../system/storage.service');
 
 const VEHICLE_SPEED_RANGES = {
   AUTO: [22, 34],
@@ -43,7 +40,7 @@ function sampleVehicles(vehicles, maximumVehicles) {
 class SimulationEngine {
   constructor() {
     this.running = false;
-    this.speed = 2;
+    this.speed = 1;
     this.time = new Date();
     this.vehicles = [];
     this.cameras = [];
@@ -54,9 +51,11 @@ class SimulationEngine {
     this.tickRateMs = 1000;
     this.detectionRadiusMeters = 150;
     this.maximumVehicles = Math.min(Math.max(Number(process.env.SIMULATION_VEHICLE_COUNT) || 250, 25), 1000);
-    this.persistenceBatchSize = 25;
-    this.persistedDetectionCount = 0;
+    this.generatedDetectionCount = 0;
     this.lastPersistenceError = null;
+    this.liveCameraCounts = new Map();
+    this.liveAlerts = [];
+    this.nextEventId = 1;
     
     this.graph = new Map(); // Node -> Array of Edges
     this.nodesList = []; // Helper for picking random nodes
@@ -252,8 +251,7 @@ class SimulationEngine {
   start() {
     if (this.running) return;
     if (!this.vehicles.length || !this.cameras.length || !this.nodesList.length) {
-      console.warn('Simulation is not ready. Skipping simulation start. Backend will run in read-only mode.');
-      return;
+      throw new Error('Simulation is not ready: roads, cameras, and vehicle profiles are required.');
     }
     this.running = true;
     this.lastTickTime = Date.now();
@@ -282,8 +280,10 @@ class SimulationEngine {
     this.time = new Date();
     this.lastHealthCheck = new Date(this.time);
     this.recentDetections = [];
-    this.persistedDetectionCount = 0;
+    this.generatedDetectionCount = 0;
     this.lastPersistenceError = null;
+    this.liveCameraCounts.clear();
+    this.liveAlerts = [];
     await this.init(); 
   }
 
@@ -299,8 +299,7 @@ class SimulationEngine {
     const simDeltaSec = realDeltaSec * this.speed;
     this.time = new Date(this.time.getTime() + simDeltaSec * 1000);
 
-    const detectionsToSave = [];
-    const transitionsToSave = [];
+    const liveDetections = [];
 
     // Move vehicles
     for (let v of this.vehicles) {
@@ -323,30 +322,35 @@ class SimulationEngine {
                     v.coords = v.currentNode.split(',').map(Number);
                 }
             }
-            continue;
+            // Recalculate the route and keep the current tick's movement instead
+            // of pausing a vehicle for a full tick at every destination.
         }
 
-        const edge = v.currentRoute[v.routeIndex];
         const speedMs = v.speed * (1000 / 3600);
-        const distanceMoved = speedMs * simDeltaSec;
-        v.distanceTravelled += distanceMoved;
-        
-        v.currentRoadId = edge.roadId;
+        let remainingDistance = speedMs * simDeltaSec;
 
-        if (v.distanceTravelled >= edge.distance) {
-            // Reached node
+        // A vehicle can cross more than one short road segment in a tick. Carry
+        // the remaining distance forward so simulated time and position agree.
+        while (remainingDistance > 0 && v.currentRoute && v.routeIndex < v.currentRoute.length) {
+          const edge = v.currentRoute[v.routeIndex];
+          v.currentRoadId = edge.roadId;
+          const remainingOnEdge = Math.max(0, edge.distance - v.distanceTravelled);
+
+          if (remainingDistance >= remainingOnEdge) {
+            remainingDistance -= remainingOnEdge;
             v.currentNode = edge.target;
             v.recentNodes.push(v.currentNode);
             if (v.recentNodes.length > 5) v.recentNodes.shift();
-            
             v.routeIndex++;
-            v.distanceTravelled = 0; // Carry over distance dropped for simplicity
+            v.distanceTravelled = 0;
             v.coords = edge.geometry[edge.geometry.length - 1];
-        } else {
-            // Move along edge geometry
-            const line = turf.lineString(edge.geometry);
-            const point = turf.along(line, v.distanceTravelled, { units: 'meters' });
-            v.coords = point.geometry.coordinates;
+            continue;
+          }
+
+          v.distanceTravelled += remainingDistance;
+          const line = turf.lineString(edge.geometry);
+          v.coords = turf.along(line, v.distanceTravelled, { units: 'meters' }).geometry.coordinates;
+          remainingDistance = 0;
         }
 
         // Check proximity to cameras
@@ -360,6 +364,7 @@ class SimulationEngine {
                     v.activeCameras.add(cam.id);
                     
                     const detection = {
+                        id: `simulation-${this.nextEventId++}`,
                         vehicleId: v.id,
                         cameraId: cam.id,
                         plateText: v.plateNumber,
@@ -373,33 +378,7 @@ class SimulationEngine {
                         latitude: v.coords[1],
                         longitude: v.coords[0]
                     };
-                    detectionsToSave.push({ data: detection, vehicle: v, cameraId: cam.id });
-
-                    // Generate Camera Transition
-                    if (v.lastCameraId && v.lastCameraId !== cam.id) {
-                        const travelTimeSeconds = Math.round((this.time.getTime() - v.lastCameraTimestamp.getTime()) / 1000);
-                        const lastCam = this.cameras.find(c => c.id === v.lastCameraId);
-                        let distanceMeters = null;
-                        let averageSpeed = null;
-                        if (lastCam) {
-                            distanceMeters = calculateDistanceMeters(lastCam.longitude, lastCam.latitude, cam.longitude, cam.latitude);
-                            if (travelTimeSeconds > 0) {
-                                averageSpeed = (distanceMeters / travelTimeSeconds) * 3.6; // km/h
-                            }
-                        }
-
-                        if (travelTimeSeconds > 0 && distanceMeters > 0) {
-                            transitionsToSave.push({
-                                sourceCameraId: v.lastCameraId,
-                                destinationCameraId: cam.id,
-                                vehicleId: v.id,
-                                timestamp: new Date(this.time),
-                                travelTimeSeconds,
-                                distanceMeters,
-                                averageSpeed
-                            });
-                        }
-                    }
+                    liveDetections.push(detection);
                     v.lastCameraId = cam.id;
                     v.lastCameraTimestamp = new Date(this.time);
                 }
@@ -411,72 +390,44 @@ class SimulationEngine {
         }
     }
 
-    if (detectionsToSave.length > 0) {
-      const results = [];
-      for (let index = 0; index < detectionsToSave.length; index += this.persistenceBatchSize) {
-        const batch = detectionsToSave.slice(index, index + this.persistenceBatchSize);
-        const batchResults = await Promise.allSettled(batch.map(({ data }) => recordDetection(data, { evaluateCongestion: false })));
-        results.push(...batchResults);
-      }
-      const persisted = [];
-      let hasPersistenceFailure = false;
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          persisted.push(result.value.detection);
-          return;
-        }
-        const failedDetection = detectionsToSave[index];
-        failedDetection.vehicle.activeCameras.delete(failedDetection.cameraId);
-        hasPersistenceFailure = true;
-        this.lastPersistenceError = result.reason instanceof Error ? result.reason.message : 'Unable to save simulation detection';
-        console.error('Failed to save simulation detection:', result.reason);
-      });
-      if (persisted.length > 0) {
-        this.recentDetections = [...persisted.reverse(), ...this.recentDetections].slice(0, 100);
-        this.persistedDetectionCount += persisted.length;
-        if (!hasPersistenceFailure) this.lastPersistenceError = null;
-        const affectedCameraIds = [...new Set(persisted.map((detection) => detection.cameraId))];
-        const congestionResults = await Promise.allSettled(
-          affectedCameraIds.map((cameraId) => evaluateCongestionAlert(cameraId, this.time)),
-        );
-        congestionResults.forEach((result) => {
-          if (result.status === 'rejected') console.error('Failed to evaluate simulation congestion:', result.reason);
-        });
-      }
+    if (liveDetections.length > 0) {
+      this.recentDetections = [...liveDetections.reverse(), ...this.recentDetections].slice(0, 100);
+      this.generatedDetectionCount += liveDetections.length;
     }
 
-    if (transitionsToSave.length > 0) {
-      try {
-        await prisma.cameraTransition.createMany({ data: transitionsToSave });
-      } catch (err) {
-        console.error('Failed to save camera transitions:', err);
+    this.liveCameraCounts = new Map();
+    for (const vehicle of this.vehicles) {
+      for (const cameraId of vehicle.activeCameras) {
+        this.liveCameraCounts.set(cameraId, (this.liveCameraCounts.get(cameraId) || 0) + 1);
       }
     }
+    this.liveAlerts = this.cameras.flatMap((camera) => {
+      const vehicleCount = this.liveCameraCounts.get(camera.id) || 0;
+      if (vehicleCount < 6) return [];
+      return [{
+        id: `simulation-congestion-${camera.id}`,
+        type: 'TRAFFIC_SURGE',
+        severity: vehicleCount >= 12 ? 'critical' : 'high',
+        title: 'Simulation Traffic Congestion',
+        description: `${vehicleCount} simulated vehicles are currently within ${camera.name || camera.cameraCode}.`,
+        cameraId: camera.id,
+        cameraCode: camera.cameraCode,
+        cameraName: camera.name || camera.cameraCode,
+        location: camera.name || camera.cameraCode,
+        timestamp: new Date(this.time),
+        isRead: false,
+        isResolved: false,
+        isSimulation: true,
+      }];
+    });
+  }
 
-    // Health Checks (Every 60 simulation seconds)
-    if (this.time.getTime() - this.lastHealthCheck.getTime() >= 60000) {
-        this.lastHealthCheck = new Date(this.time);
-        if (this.cameras.length > 0) {
-            const healthRecords = this.cameras.map(cam => ({
-                cameraId: cam.id,
-                status: cam.status,
-                recordedAt: new Date(this.time),
-                responseMs: cam.status === 'ONLINE' ? Math.floor(Math.random() * 100) + 20 : null,
-                errorMessage: cam.status === 'ONLINE' ? null : 'Connection timeout'
-            }));
-            try {
-                await prisma.cameraHealth.createMany({ data: healthRecords });
-            } catch (err) {
-                console.error('Failed to save camera health:', err);
-            }
-        }
-    }
+  getLiveCameraCounts() {
+    return new Map(this.liveCameraCounts);
+  }
 
-    // Storage Quota Guard (Every 15 simulation minutes)
-    if (!this.lastStoragePrune || (this.time.getTime() - this.lastStoragePrune.getTime() >= 15 * 60 * 1000)) {
-      this.lastStoragePrune = new Date(this.time);
-      pruneStorage().catch(err => console.error('Background storage prune error:', err.message));
-    }
+  getLiveAlerts() {
+    return [...this.liveAlerts];
   }
 
   getState() {
@@ -488,7 +439,7 @@ class SimulationEngine {
         vehicles: this.vehicles.length,
         cameras: this.cameras.length,
         recentDetections: this.recentDetections.length,
-        persistedDetections: this.persistedDetectionCount,
+        generatedDetections: this.generatedDetectionCount,
       },
       lastPersistenceError: this.lastPersistenceError,
       vehicles: this.vehicles.map(v => ({

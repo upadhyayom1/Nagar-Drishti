@@ -1,48 +1,46 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/Badge';
 import { trafficService, TrafficForecast } from '@/services/trafficService';
 import { AlertTriangle, Clock, TrendingUp, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/Button';
 
 export function CongestionForecastWidget() {
-  const [forecast, setForecast] = useState<TrafficForecast | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [durationInput, setDurationInput] = useState('30');
+  const [unit, setUnit] = useState<'minutes' | 'hours'>('minutes');
+  const [horizonMinutes, setHorizonMinutes] = useState(30);
+  const { data: forecast, isLoading, isFetching, isError } = useQuery<TrafficForecast>({
+    queryKey: ['trafficForecast', horizonMinutes],
+    queryFn: () => trafficService.getForecast(horizonMinutes),
+    refetchInterval: 60_000,
+  });
 
-  useEffect(() => {
-    const fetchForecast = async () => {
-      try {
-        const data = await trafficService.getForecast(30); // 30 mins horizon
-        setForecast(data);
-      } catch (error) {
-        console.error('Failed to load forecast', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const applyDuration = () => {
+    const value = Number(durationInput);
+    if (!Number.isInteger(value) || value < 1) return;
+    const minutes = unit === 'hours' ? value * 60 : value;
+    if (minutes <= 24 * 60) setHorizonMinutes(minutes);
+  };
 
-    fetchForecast();
-    const interval = setInterval(fetchForecast, 60000); // refresh every minute
-    return () => clearInterval(interval);
-  }, []);
+  const displayHorizon = horizonMinutes >= 60 && horizonMinutes % 60 === 0
+    ? `${horizonMinutes / 60} hr${horizonMinutes === 60 ? '' : 's'}`
+    : `${horizonMinutes} min`;
 
-  if (loading) {
-    return (
-      <GlassCard padding="md" className="h-full flex items-center justify-center animate-pulse">
-        <Activity className="text-cyan-500 animate-spin" />
-      </GlassCard>
-    );
+  if (!forecast && isLoading) {
+    return <GlassCard padding="md" className="h-full flex items-center justify-center animate-pulse"><Activity className="text-cyan-500 animate-spin" /></GlassCard>;
   }
 
-  if (!forecast) return null;
+  if (!forecast || isError) return <GlassCard padding="md" className="h-full flex items-center justify-center text-xs text-[var(--text-secondary)]">Forecast is temporarily unavailable.</GlassCard>;
 
   const hasBottlenecks = forecast.bottlenecks_count > 0;
 
   return (
-    <GlassCard 
-      padding="md" 
+    <GlassCard
+      padding="md"
       glow={hasBottlenecks ? 'critical' : 'cyan'}
       className={`h-full flex flex-col space-y-4 ${hasBottlenecks ? 'border-rose-500/50' : 'border-cyan-500/30'}`}
     >
@@ -55,8 +53,32 @@ export function CongestionForecastWidget() {
         </div>
         <Badge variant={hasBottlenecks ? 'danger' : 'info'} size="sm" className="flex items-center gap-1">
           <Clock size={12} />
-          +{forecast.horizon_minutes} Mins
+          +{displayHorizon}
         </Badge>
+      </div>
+
+      <div className="flex items-end gap-2">
+        <label className="flex-1 text-[9px] font-mono uppercase tracking-wider text-[var(--text-tertiary)]">
+          Forecast horizon
+          <input
+            type="number"
+            min="1"
+            max={unit === 'hours' ? 24 : 1440}
+            value={durationInput}
+            onChange={(event) => setDurationInput(event.target.value)}
+            className="mt-1 h-8 w-full rounded-lg border border-[var(--glass-border)] bg-black/20 px-2 text-xs text-white outline-none focus:border-cyan-400"
+          />
+        </label>
+        <select
+          value={unit}
+          onChange={(event) => setUnit(event.target.value as 'minutes' | 'hours')}
+          className="h-8 rounded-lg border border-[var(--glass-border)] bg-black/20 px-2 text-xs text-white outline-none focus:border-cyan-400"
+          aria-label="Forecast duration unit"
+        >
+          <option value="minutes">Minutes</option>
+          <option value="hours">Hours</option>
+        </select>
+        <Button variant="secondary" size="sm" onClick={applyDuration} disabled={isFetching} className="h-8 text-[10px]">Apply</Button>
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-2">
@@ -91,7 +113,7 @@ export function CongestionForecastWidget() {
                   .filter(d => d.congestion_risk === 'HIGH')
                   .sort((a, b) => b.predicted_vehicle_count - a.predicted_vehicle_count)
                   .map((detail, idx) => (
-                    <motion.div 
+                    <motion.div
                       key={`high-${idx}`}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -113,7 +135,7 @@ export function CongestionForecastWidget() {
                         </p>
                       </div>
                     </motion.div>
-                ))}
+                  ))}
               </div>
             )}
 
@@ -127,7 +149,7 @@ export function CongestionForecastWidget() {
                   .filter(d => d.congestion_risk !== 'HIGH')
                   .sort((a, b) => b.predicted_vehicle_count - a.predicted_vehicle_count)
                   .map((detail, idx) => (
-                    <motion.div 
+                    <motion.div
                       key={`nom-${idx}`}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -149,7 +171,7 @@ export function CongestionForecastWidget() {
                         </p>
                       </div>
                     </motion.div>
-                ))}
+                  ))}
               </div>
             )}
           </>

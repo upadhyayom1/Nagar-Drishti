@@ -18,7 +18,7 @@ exports.getOverview = async (req, res) => {
   try {
     const window = getAnalyticsWindow(req.query);
     if (!window) return res.status(400).json({ success: false, message: 'Invalid analytics date range' });
-    const [totalDetectionsCount, uniqueVehicles, activeCameras, activeAlerts, incidentsToday] = await Promise.all([
+    const [totalDetectionsCount, uniqueVehicles, activeCameras, activeAlerts, incidentsToday, observedSpeeds] = await Promise.all([
       prisma.detection.count({ where: { timestamp: { gte: window.from, lte: window.to } } }),
       prisma.detection.findMany({
         where: { timestamp: { gte: window.from, lte: window.to } },
@@ -29,11 +29,16 @@ exports.getOverview = async (req, res) => {
       prisma.camera.count({ where: { status: 'ONLINE' } }),
       prisma.alert.count({ where: { status: 'ACTIVE' } }),
       prisma.incident.count({ where: { timestamp: { gte: window.from, lte: window.to } } }),
+      prisma.detection.findMany({
+        where: { timestamp: { gte: window.from, lte: window.to } },
+        select: { vehicle: { select: { speed: true } } },
+      }),
     ]);
+    const speeds = observedSpeeds.map((detection) => detection.vehicle?.speed).filter((speed) => Number.isFinite(speed) && speed > 0);
 
     const overview = {
       totalVehiclesToday: uniqueVehicles.length || totalDetectionsCount,
-      avgSpeed: 42,
+      avgSpeed: speeds.length ? Math.round((speeds.reduce((sum, speed) => sum + speed, 0) / speeds.length) * 10) / 10 : null,
       activeCameras,
       activeAlerts,
       congestionIndex: activeCameras ? Math.round((totalDetectionsCount / activeCameras) * 10) : 0,
@@ -53,15 +58,22 @@ exports.getHourly = async (req, res) => {
     if (!window) return res.status(400).json({ success: false, message: 'Invalid analytics date range' });
     const detections = await prisma.detection.findMany({
       where: { timestamp: { gte: window.from, lte: window.to } },
-      select: { timestamp: true },
-      take: 5000,
+      select: { timestamp: true, vehicle: { select: { speed: true } } },
     });
-    const buckets = Array.from({ length: 24 }, (_, hour) => ({ hour: `${String(hour).padStart(2, '0')}:00`, vehicles: 0, avgSpeed: 38 + Math.floor(Math.random() * 12) }));
+    const buckets = Array.from({ length: 24 }, (_, hour) => ({ hour: `${String(hour).padStart(2, '0')}:00`, vehicles: 0, totalSpeed: 0, speedSamples: 0 }));
     detections.forEach((d) => {
       const h = d.timestamp.getHours();
-      if (buckets[h]) buckets[h].vehicles += 1;
+      if (!buckets[h]) return;
+      buckets[h].vehicles += 1;
+      if (Number.isFinite(d.vehicle?.speed) && d.vehicle.speed > 0) {
+        buckets[h].totalSpeed += d.vehicle.speed;
+        buckets[h].speedSamples += 1;
+      }
     });
-    res.status(200).json(buckets);
+    res.status(200).json(buckets.map(({ totalSpeed, speedSamples, ...bucket }) => ({
+      ...bucket,
+      avgSpeed: speedSamples ? Math.round((totalSpeed / speedSamples) * 10) / 10 : null,
+    })));
   } catch (error) {
     console.error('Error fetching hourly analytics:', error);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -72,20 +84,33 @@ exports.getCameras = async (req, res) => {
   try {
     const window = getAnalyticsWindow(req.query);
     if (!window) return res.status(400).json({ success: false, message: 'Invalid analytics date range' });
-    const [cameras, detectionCounts] = await Promise.all([
+    const [cameras, detections] = await Promise.all([
       prisma.camera.findMany(),
-      prisma.detection.groupBy({ by: ['cameraId'], where: { timestamp: { gte: window.from, lte: window.to } }, _count: { _all: true } }),
+      prisma.detection.findMany({
+        where: { timestamp: { gte: window.from, lte: window.to } },
+        select: { cameraId: true, vehicleId: true, vehicle: { select: { speed: true } } },
+      }),
     ]);
-    const countByCamera = new Map(detectionCounts.map((item) => [item.cameraId, item._count._all]));
+    const cameraMetrics = new Map();
+    for (const detection of detections) {
+      const metric = cameraMetrics.get(detection.cameraId) || { detections: 0, vehicles: new Set(), totalSpeed: 0, speedSamples: 0 };
+      metric.detections += 1;
+      metric.vehicles.add(detection.vehicleId);
+      if (Number.isFinite(detection.vehicle?.speed) && detection.vehicle.speed > 0) {
+        metric.totalSpeed += detection.vehicle.speed;
+        metric.speedSamples += 1;
+      }
+      cameraMetrics.set(detection.cameraId, metric);
+    }
     const mapped = cameras.map(c => {
-      const count = countByCamera.get(c.id) || 0;
+      const metric = cameraMetrics.get(c.id) || { detections: 0, vehicles: new Set(), totalSpeed: 0, speedSamples: 0 };
       return {
         cameraId: c.id,
         cameraName: c.name || c.cameraCode || c.id,
-        vehicleCount: Math.round(count * 0.75),
-        detectionCount: count,
-        avgSpeed: 42,
-        congestionLevel: count > 100 ? 'high' : count > 30 ? 'moderate' : 'low'
+        vehicleCount: metric.vehicles.size,
+        detectionCount: metric.detections,
+        avgSpeed: metric.speedSamples ? Math.round((metric.totalSpeed / metric.speedSamples) * 10) / 10 : null,
+        congestionLevel: metric.detections > 100 ? 'high' : metric.detections > 30 ? 'moderate' : 'low'
       };
     });
 

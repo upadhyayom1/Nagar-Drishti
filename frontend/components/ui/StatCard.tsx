@@ -13,6 +13,7 @@ export interface StatCardProps {
   subtitle?: string;
   accentColor?: string;
   colorTheme?: StatCardColorTheme;
+  isLoading?: boolean;
   className?: string;
 }
 
@@ -134,6 +135,7 @@ export function StatCard({
   subtitle,
   accentColor,
   colorTheme = 'cyan',
+  isLoading = false,
   className,
 }: StatCardProps) {
   let themeKey: StatCardColorTheme = colorTheme;
@@ -163,12 +165,16 @@ export function StatCard({
           </p>
 
           {/* Primary Metric Numeral */}
-          <div className="text-2xl sm:text-3xl font-bold font-data tabular-nums text-[var(--text-primary)] tracking-tight leading-none mt-1 transition-colors duration-150 truncate flex items-baseline gap-1.5">
-            <span>{value}</span>
-          </div>
+          {isLoading ? (
+            <div className="h-8 w-24 bg-white/10 rounded-md animate-pulse mt-1" />
+          ) : (
+            <div className="text-2xl sm:text-3xl font-bold font-data tabular-nums text-[var(--text-primary)] tracking-tight leading-none mt-1 transition-colors duration-150 truncate flex items-baseline gap-1.5">
+              <span>{value}</span>
+            </div>
+          )}
 
           {/* Real-time Trends */}
-          {trend && (
+          {trend && !isLoading && (
             <div className="flex items-center gap-2 mt-2.5">
               <span className={cn(
                 'inline-flex items-center gap-1 text-[11px] font-data tabular-nums font-semibold px-2 py-0.5 rounded-md border',
@@ -181,7 +187,11 @@ export function StatCard({
           )}
 
           {subtitle && (
-            <p className="text-xs text-[var(--text-secondary)] font-body mt-2 font-normal leading-relaxed truncate">{subtitle}</p>
+            isLoading ? (
+              <div className="h-3 w-32 bg-white/10 rounded mt-2 animate-pulse" />
+            ) : (
+              <p className="text-xs text-[var(--text-secondary)] font-body mt-2 font-normal leading-relaxed truncate">{subtitle}</p>
+            )
           )}
         </div>
 

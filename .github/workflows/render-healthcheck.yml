@@ -1,0 +1,19 @@
+name: Render health check
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    env:
+      # The public root is a safe default for this service. A repository secret
+      # can override it later, for example with a dedicated /api/health URL.
+      RENDER_HEALTHCHECK_URL: ${{ secrets.RENDER_HEALTHCHECK_URL || 'https://nagar-drishti-iv7o.onrender.com/' }}
+    steps:
+      - name: Ping deployed API health endpoint
+        run: curl --fail --silent --show-error --location --max-time 30 --retry 2 "$RENDER_HEALTHCHECK_URL"

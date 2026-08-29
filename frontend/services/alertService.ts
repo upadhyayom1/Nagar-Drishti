@@ -1,6 +1,11 @@
 import type { Alert, AlertSeverity, AlertType } from '@/types';
 import { apiClient, unwrapApiResponse } from './apiClient';
 
+export interface NotificationSummary {
+  items: Alert[];
+  total: number;
+}
+
 export const alertService = {
   async getAlerts(): Promise<Alert[]> {
     return unwrapApiResponse(await apiClient.get<Alert[]>('/alerts'));
@@ -17,6 +22,10 @@ export const alertService = {
   async getActiveAlertCount(): Promise<number> {
     const response = await apiClient.get<number>('/alerts/active/count');
     return unwrapApiResponse(response);
+  },
+
+  async getNotificationSummary(limit: number = 8): Promise<NotificationSummary> {
+    return unwrapApiResponse(await apiClient.get<NotificationSummary>(`/alerts/notifications?limit=${limit}`));
   },
 
   async getRecentAlerts(limit: number = 5): Promise<Alert[]> {

@@ -1,11 +1,19 @@
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
+
 const { PrismaClient } = require('@prisma/client');
-const { PrismaPg } = require('@prisma/adapter-pg');
-const { Pool } = require('pg');
+const { PrismaNeon } = require('@prisma/adapter-neon');
+const { Pool, neonConfig } = require('@neondatabase/serverless');
 const { env } = require('../config/env');
 
 const connectionString = env.DATABASE_URL;
-const pool = new Pool({ connectionString });
-const adapter = new PrismaPg(pool);
+
+// Ensure WebSocket is used if available (Polyfill for node if needed)
+const ws = require('ws');
+neonConfig.webSocketConstructor = ws;
+
+console.log("CREATING POOL WITH:", connectionString); const pool = new Pool({ connectionString });
+const adapter = new PrismaNeon(pool);
 
 const prisma = global.prisma || new PrismaClient({
   adapter,

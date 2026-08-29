@@ -25,10 +25,10 @@ export default function MovementNetworkPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Observed Corridors" value={summary?.corridorCount ?? 6} icon={Route} colorTheme="cyan" />
-        <StatCard label="Avg Transit Time" value={formatDuration(summary?.averageTravelSeconds ?? 340)} icon={Activity} colorTheme="violet" />
-        <StatCard label="Peak Corridor Volume" value={summary?.peakVolume ?? 142} subtitle={peak ? `${peak.origin.code} → ${peak.destination.code}` : 'Civil Lines → Sangam'} icon={Zap} colorTheme="amber" />
-        <StatCard label="Recorded Flow" value={totalFlow || 842} subtitle="Stored transitions" icon={TrendingUp} colorTheme="emerald" />
+        <StatCard label="Observed Corridors" value={(summary?.corridorCount ?? 0)} isLoading={isLoading} icon={Route} colorTheme="cyan" />
+        <StatCard label="Avg Transit Time" value={formatDuration(summary?.averageTravelSeconds ?? 0)} isLoading={isLoading} icon={Activity} colorTheme="violet" />
+        <StatCard label="Peak Corridor Volume" value={(summary?.peakVolume ?? 0)} subtitle={(peak ? `${peak.origin.code} → ${peak.destination.code}` : 'No active corridors')} isLoading={isLoading} icon={Zap} colorTheme="amber" />
+        <StatCard label="Recorded Flow" value={(totalFlow || 0)} subtitle="Stored transitions" isLoading={isLoading} icon={TrendingUp} colorTheme="emerald" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

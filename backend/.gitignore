@@ -3,9 +3,8 @@ node_modules/
 dist/
 .env
 .DS_Store
-.env.example
+!.env.example
 /src/generated/prisma
 data
 ocr/test_images/
 ocr/uploads/
-

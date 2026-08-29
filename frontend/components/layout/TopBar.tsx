@@ -45,7 +45,11 @@ export function TopBar() {
   const displayName = user?.name || user?.username || 'Operator';
   const initials = displayName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase();
 
-  const { data: alertCount = 0 } = useQuery({ queryKey: ['activeAlertCount'], queryFn: alertService.getActiveAlertCount, refetchInterval: 5_000 });
+  const { data: notificationSummary } = useQuery({
+    queryKey: ['notificationSummary'],
+    queryFn: () => alertService.getNotificationSummary(8),
+    refetchInterval: 5_000,
+  });
   const { data: systemHealth } = useQuery({ queryKey: ['systemHealth'], queryFn: analyticsService.getSystemHealth, refetchInterval: 15_000 });
 
   // Initialize theme from localStorage or system preference on mount
@@ -154,9 +158,9 @@ export function TopBar() {
             aria-label="Sentinel Alerts"
           >
             <Bell size={16} />
-            {alertCount > 0 && (
+            {(notificationSummary?.total ?? 0) > 0 && (
               <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-rose-500/25 text-rose-400 border border-rose-500/40 text-[9px] font-mono font-bold flex items-center justify-center shadow-[0_0_10px_rgba(244,63,94,0.4)]">
-                {alertCount}
+                {(notificationSummary?.total ?? 0) > 99 ? '99+' : notificationSummary?.total}
               </span>
             )}
           </button>

@@ -31,7 +31,7 @@ async function getTrafficSnapshot(windowInput = {}, cameraId) {
   const window = parseTrafficWindow({ from, to });
   const where = { timestamp: { gte: window.from, lte: window.to }, ...(cameraId ? { cameraId } : {}) };
   
-  const [cameras, windowCounts] = await Promise.all([
+  const [cameras, windowCounts, vehicleCameraPairs] = await Promise.all([
     prisma.camera.findMany({
       where: cameraId ? { id: cameraId } : undefined,
       include: { zone: { select: { name: true } }, road: { select: { name: true } } },
@@ -39,24 +39,26 @@ async function getTrafficSnapshot(windowInput = {}, cameraId) {
     }),
     prisma.detection.groupBy({
       by: ['cameraId'],
-      where: { timestamp: { gte: window.from }, ...(cameraId ? { cameraId } : {}) },
+      where,
+      _count: { _all: true },
+    }),
+    prisma.detection.groupBy({
+      by: ['cameraId', 'vehicleId'],
+      where,
       _count: { _all: true },
     }),
   ]);
   
   const countByCamera = new Map(windowCounts.map((item) => [item.cameraId, item._count._all]));
+  const uniqueVehiclesByCamera = new Map();
+  for (const item of vehicleCameraPairs) {
+    uniqueVehiclesByCamera.set(item.cameraId, (uniqueVehiclesByCamera.get(item.cameraId) || 0) + 1);
+  }
 
   // Check live simulation engine if active
-  let liveEngineVehiclesByCam = new Map();
-  if (global.simulationEngine && global.simulationEngine.running && Array.isArray(global.simulationEngine.vehicles)) {
-    for (const v of global.simulationEngine.vehicles) {
-      if (v.activeCameras && v.activeCameras.size > 0) {
-        for (const camId of v.activeCameras) {
-          liveEngineVehiclesByCam.set(camId, (liveEngineVehiclesByCam.get(camId) || 0) + 1);
-        }
-      }
-    }
-  }
+  const liveEngineVehiclesByCam = global.simulationEngine?.running
+    ? global.simulationEngine.getLiveCameraCounts()
+    : new Map();
 
   return {
     from: window.from,
@@ -65,7 +67,7 @@ async function getTrafficSnapshot(windowInput = {}, cameraId) {
     cameras: cameras.map((camera) => {
       const windowDetectionCount = countByCamera.get(camera.id) || 0;
       const liveVehicles = liveEngineVehiclesByCam.get(camera.id) || 0;
-      const vehiclesDetected = liveVehicles > 0 ? liveVehicles : Math.min(windowDetectionCount, 12);
+      const vehiclesDetected = liveVehicles > 0 ? liveVehicles : (uniqueVehiclesByCamera.get(camera.id) || 0);
       const detectionCount = windowDetectionCount;
 
       return {
@@ -74,8 +76,8 @@ async function getTrafficSnapshot(windowInput = {}, cameraId) {
         vehiclesDetected,
         detectionCount,
         trafficLevel: getTrafficLevel({ detectionCount: windowDetectionCount, vehicleCount: vehiclesDetected, durationMinutes: window.durationMinutes }),
-        zone: camera.zone?.name || 'Prayagraj Zone',
-        road: camera.road?.name || 'Main Corridor',
+        zone: camera.zone?.name || null,
+        road: camera.road?.name || null,
       };
     }),
   };
@@ -96,7 +98,7 @@ async function evaluateCongestionAlert(cameraId, timestamp = new Date()) {
   if (existingActiveAlert) {
     return prisma.alert.update({
       where: { id: existingActiveAlert.id },
-      data: { severity, message, createdAt: new Date(timestamp) },
+      data: { severity, message },
     });
   }
   return prisma.alert.create({

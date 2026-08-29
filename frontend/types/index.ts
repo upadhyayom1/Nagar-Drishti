@@ -84,11 +84,12 @@ export interface Alert {
   timestamp: string;
   isRead: boolean;
   isResolved: boolean;
+  isSimulation?: boolean;
 }
 
 export interface TrafficStats {
   totalVehiclesToday: number;
-  avgSpeed: number;
+  avgSpeed: number | null;
   activeCameras: number;
   activeAlerts: number;
   congestionIndex: number;
@@ -98,14 +99,14 @@ export interface TrafficStats {
 export interface HourlyTraffic {
   hour: string;
   vehicles: number;
-  avgSpeed: number;
+  avgSpeed: number | null;
 }
 
 export interface CameraTraffic {
   cameraId: string;
   cameraName: string;
   vehicleCount: number;
-  avgSpeed: number;
+  avgSpeed: number | null;
   congestionLevel: TrafficLevel;
 }
 

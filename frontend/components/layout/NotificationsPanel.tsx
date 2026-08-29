@@ -31,11 +31,13 @@ export function NotificationsPanel() {
   const { notificationsOpen, setNotificationsOpen } = useUIStore();
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const { data: alerts = [] } = useQuery({
-    queryKey: ['recentAlerts'],
-    queryFn: () => alertService.getRecentAlerts(8),
+  const { data: notificationSummary, isLoading } = useQuery({
+    queryKey: ['notificationSummary'],
+    queryFn: () => alertService.getNotificationSummary(8),
     enabled: notificationsOpen,
+    refetchInterval: notificationsOpen ? 5_000 : false,
   });
+  const alerts = notificationSummary?.items ?? [];
 
   // Close on outside click
   useEffect(() => {
@@ -87,7 +89,7 @@ export function NotificationsPanel() {
                 {criticalCount > 0 ? (
                   <span className="text-[var(--status-critical)] font-bold">{criticalCount} Critical · </span>
                 ) : null}
-                {alerts.length} Active
+                {isLoading ? 'Synchronizing…' : `${notificationSummary?.total ?? 0} Active`}
               </p>
             </div>
           </div>
@@ -102,6 +104,9 @@ export function NotificationsPanel() {
 
         {/* Alerts List */}
         <div className="overflow-y-auto flex-1 p-3 space-y-2">
+          {!isLoading && alerts.length === 0 && (
+            <p className="px-3 py-8 text-center text-xs font-mono text-[var(--text-secondary)]">No active alerts.</p>
+          )}
           {alerts.map((alert: Alert) => {
             const Icon = getAlertIcon(alert.type);
             const isCritical = alert.severity === 'critical';

@@ -14,18 +14,34 @@ const vehicleRoutes = require('./modules/vehicle/vehicle.routes');
 const simulationRoutes = require('./modules/simulation/simulation.routes');
 const detectionRoutes = require('./modules/detection/detection.routes');
 const trafficRoutes = require('./modules/traffic/traffic.routes');
+const usersRoutes = require('./modules/users/users.routes');
+const tripsRoutes = require('./modules/trips/trips.routes');
+const mlRoutes = require('./modules/ml/ml.routes');
+const mapRoutes = require('./modules/map/map.routes');
+const incidentsRoutes = require('./modules/incidents/incidents.routes');
+const complaintsRoutes = require('./modules/complaints/complaints.routes');
+const adminRoutes = require('./modules/admin/admin.routes');
+const blacklistRoutes = require('./modules/blacklist/blacklist.routes');
+const analyticsRoutes = require('./modules/analytics/analytics.routes');
+const alertRoutes = require('./modules/alert/alert.routes');
+const { env } = require('./config/env');
 const app = express();
 
+const allowedOrigins = env.CORS_ORIGINS.split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:5173',
-    'https://nagardrishti.vercel.app'
-  ],
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Origin is not allowed by CORS'));
+  },
   credentials: true
 }));
 
@@ -42,33 +58,35 @@ app.use('/api/simulation', simulationRoutes);
 app.use('/api/detections', detectionRoutes);
 app.use('/api/ocr', ocrRoutes);
 app.use('/api/traffic', trafficRoutes);
-
-
-
-const blacklistRoutes = require('./modules/blacklist/blacklist.routes');
 app.use('/api/blacklist', blacklistRoutes);
-
-const analyticsRoutes = require('./modules/analytics/analytics.routes');
 app.use('/api/analytics', analyticsRoutes);
-
-const alertRoutes = require('./modules/alert/alert.routes');
 app.use('/api/alerts', alertRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/trips', tripsRoutes);
+app.use('/api/ml', mlRoutes);
+app.use('/api/map', mapRoutes);
+app.use('/api/incidents', incidentsRoutes);
+app.use('/api/complaints', complaintsRoutes);
+app.use('/api/admin', adminRoutes);
 
-
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ success: true, status: 'ok' });
+});
 
 // Global Error Handler
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ success: false, message: 'Internal Server Error' });
+  const isCorsError = err.message === 'Origin is not allowed by CORS';
+  if (!isCorsError) {
+    console.error(err.stack);
+  }
+  res.status(isCorsError ? 403 : 500).json({
+    success: false,
+    message: isCorsError ? err.message : 'Internal Server Error',
+  });
 });
 
-// Initialize simulation engine
-const engine = require('./modules/simulation/engine');
-engine.init().then(() => {
-  console.log('Simulation engine initialized with DB data.');
-}).catch(err => {
-  console.error('Failed to init simulation engine:', err);
+app.use('/api', (req, res) => {
+  res.status(404).json({ success: false, message: 'API route not found' });
 });
 
 module.exports = app;
-

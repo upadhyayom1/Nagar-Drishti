@@ -3,7 +3,9 @@ const { env } = require('../config/env');
 
 const authenticate = (req, res, next) => {
   try {
-    const token = req.cookies.token;
+    const authorization = req.get('authorization');
+    const bearerToken = authorization?.startsWith('Bearer ') ? authorization.slice(7) : null;
+    const token = req.cookies?.token || bearerToken;
 
     if (!token) {
       return res.status(401).json({ success: false, message: 'Unauthorized: No token provided' });

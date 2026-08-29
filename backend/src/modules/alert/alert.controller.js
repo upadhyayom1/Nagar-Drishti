@@ -1,15 +1,12 @@
 const { prisma } = require('../../lib/prisma');
 
-exports.getAlerts = async (req, res) => {
-  try {
-    const { severity, type, limit } = req.query;
-    
+async function getDeduplicatedActiveAlerts({ severity, type } = {}) {
     const where = { status: 'ACTIVE' };
     if (severity && severity !== 'all') where.severity = String(severity).toUpperCase();
     if (type && type !== 'all') {
       const typeMap = { BLACKLIST_VEHICLE: 'BLACKLIST_MATCH', TRAFFIC_SURGE: 'CONGESTION', ROUTE_ANOMALY: 'ROUTE_ANOMALY' };
       const mappedType = typeMap[String(type).toUpperCase()];
-      if (!mappedType) return res.status(200).json([]);
+      if (!mappedType) return [];
       where.type = mappedType;
     }
     const alerts = await prisma.alert.findMany({
@@ -42,9 +39,7 @@ exports.getAlerts = async (req, res) => {
       }
     }
 
-    const limitedAlerts = deduplicatedAlerts.slice(0, Math.min(Math.max(Number(limit) || 100, 1), 100));
-
-    res.status(200).json(limitedAlerts.map((alert) => ({
+    return deduplicatedAlerts.map((alert) => ({
       id: alert.id,
       type: alert.type === 'BLACKLIST_MATCH' ? 'BLACKLIST_VEHICLE' : alert.type === 'CONGESTION' ? 'TRAFFIC_SURGE' : alert.type,
       severity: alert.severity.toLowerCase(),
@@ -58,7 +53,14 @@ exports.getAlerts = async (req, res) => {
       timestamp: alert.createdAt,
       isRead: alert.status !== 'ACTIVE',
       isResolved: alert.status === 'RESOLVED',
-    })));
+    }));
+}
+
+exports.getAlerts = async (req, res) => {
+  try {
+    const { severity, type, limit } = req.query;
+    const alerts = await getDeduplicatedActiveAlerts({ severity, type });
+    res.status(200).json(alerts.slice(0, Math.min(Math.max(Number(limit) || 100, 1), 100)));
   } catch (error) {
     console.error('Error fetching alerts:', error);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -67,9 +69,24 @@ exports.getAlerts = async (req, res) => {
 
 exports.getActiveAlertCount = async (req, res) => {
   try {
-    const count = await prisma.alert.count({ where: { status: 'ACTIVE' } });
-    res.status(200).json(count);
+    const alerts = await getDeduplicatedActiveAlerts();
+    const simulationAlerts = global.simulationEngine?.running ? global.simulationEngine.getLiveAlerts() : [];
+    res.status(200).json(alerts.length + simulationAlerts.length);
   } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+exports.getNotificationSummary = async (req, res) => {
+  try {
+    const databaseAlerts = await getDeduplicatedActiveAlerts();
+    const simulationAlerts = global.simulationEngine?.running ? global.simulationEngine.getLiveAlerts() : [];
+    const alerts = [...simulationAlerts, ...databaseAlerts]
+      .sort((left, right) => new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime());
+    const limit = Math.min(Math.max(Number(req.query.limit) || 8, 1), 100);
+    res.status(200).json({ success: true, data: { items: alerts.slice(0, limit), total: alerts.length } });
+  } catch (error) {
+    console.error('Error fetching notification summary:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };

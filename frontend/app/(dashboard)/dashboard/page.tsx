@@ -62,15 +62,21 @@ export default function DashboardPage() {
     refetchInterval: 5_000,
   });
 
-  const { data: stats } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['trafficStats'],
     queryFn: () => analyticsService.getTrafficStats(),
     refetchInterval: 5_000,
   });
 
-  const { data: alerts = [] } = useQuery({
-    queryKey: ['recentAlerts'],
-    queryFn: () => alertService.getRecentAlerts(5),
+  const { data: notificationSummary, isLoading: notificationsLoading } = useQuery({
+    queryKey: ['notificationSummary'],
+    queryFn: () => alertService.getNotificationSummary(5),
+    refetchInterval: 5_000,
+  });
+  const alerts = notificationSummary?.items ?? [];
+  const { data: systemHealth, isLoading: healthLoading } = useQuery({
+    queryKey: ['systemHealth'],
+    queryFn: analyticsService.getSystemHealth,
     refetchInterval: 5_000,
   });
 
@@ -87,25 +93,29 @@ export default function DashboardPage() {
         <StatCard
           label="Active Optical Nodes"
           value={stats?.activeCameras ?? 0}
+          isLoading={statsLoading}
           icon={CameraIcon}
           colorTheme="emerald"
         />
         <StatCard
           label="Vehicles Tracked Today"
           value={stats?.totalVehiclesToday?.toLocaleString('en-IN') ?? 0}
+          isLoading={statsLoading}
           icon={Car}
           colorTheme="cyan"
         />
         <StatCard
           label="Average City Velocity"
-          value={stats ? `${stats.avgSpeed} km/h` : '38.5 km/h'}
+          value={stats?.avgSpeed ? `${stats.avgSpeed} km/h` : '—'}
+          isLoading={statsLoading}
           icon={Gauge}
           subtitle="Transit velocity curve"
           colorTheme="violet"
         />
         <StatCard
           label="Active Sentinel Flags"
-          value={stats?.activeAlerts ?? 0}
+          value={notificationSummary?.total ?? 0}
+          isLoading={notificationsLoading}
           icon={AlertTriangle}
           subtitle="Real-time threat queue"
           colorTheme="rose"
@@ -123,15 +133,15 @@ export default function DashboardPage() {
           <div className="flex items-center gap-4 text-xs font-mono">
             <span className="flex items-center gap-1.5 text-emerald-500 dark:text-emerald-400 font-semibold">
               <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]" />
-              10 Nodes Online (100%)
+              {healthLoading ? 'Synchronizing nodes…' : `${systemHealth?.summary.online ?? 0}/${systemHealth?.summary.total ?? 0} Nodes Online`}
             </span>
             <span className="flex items-center gap-1.5 text-cyan-500 dark:text-cyan-400 font-semibold">
               <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#00f0ff]" />
-              98.6% Frame Sync
+              Live telemetry synchronized
             </span>
             <span className="flex items-center gap-1.5 text-rose-500 dark:text-rose-400 font-semibold">
               <span className="w-2 h-2 rounded-full bg-rose-400 shadow-[0_0_8px_#f43f5e]" />
-              4 Threat Flags
+              {healthLoading ? 'Loading alerts…' : `${systemHealth?.summary.activeAlerts ?? 0} Threat Flags`}
             </span>
           </div>
         </div>

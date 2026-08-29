@@ -28,8 +28,7 @@ export const ocrService = {
     formData.append('cameraId', cameraId);
     formData.append('captureTime', captureTime);
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-    const response = await axios.post<{ success: boolean; data: { results: PlateRecognitionResult[] } }>(`${API_URL}/ocr`, formData, {
+    const response = await axios.post<{ success: boolean; data: { results: PlateRecognitionResult[] } }>('/api/ocr', formData, {
       withCredentials: true,
     });
 

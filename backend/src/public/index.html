@@ -167,7 +167,7 @@
                     document.getElementById('sim-time').innerText = new Date(state.simulationTime).toLocaleTimeString();
                     document.getElementById('stat-vehicles').innerText = state.stats.vehicles;
                     document.getElementById('stat-cameras').innerText = state.stats.cameras;
-                    document.getElementById('stat-detections').innerText = state.stats.persistedDetections;
+                    document.getElementById('stat-detections').innerText = state.stats.generatedDetections;
                     document.getElementById('stat-status').innerText = state.running ? 'RUNNING' : 'PAUSED';
                     document.getElementById('stat-status').style.color = state.running ? '#10b981' : '#60a5fa';
                     document.getElementById('stat-speed').innerText = state.speed + 'x';

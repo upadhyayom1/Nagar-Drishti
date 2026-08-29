@@ -196,13 +196,13 @@ function LoginFormContent() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)] font-semibold flex items-center justify-between">
-                <span>{role === 'admin' ? 'Operator Identifier' : 'Citizen Email / Phone'}</span>
+                <span>{role === 'admin' ? 'Operator Identifier' : 'Username, Email, or Phone'}</span>
                 <span className="text-[10px] text-cyan-400 font-normal">Backend-verified account</span>
               </label>
               <Input
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder={role === 'admin' ? 'e.g. operator.krishnan' : 'e.g. citizen@urbanpulse.gov'}
+                placeholder={role === 'admin' ? 'e.g. operator.krishnan' : 'e.g. citizen.user'}
                 className="h-10 text-xs font-mono"
               />
             </div>

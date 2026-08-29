@@ -38,9 +38,13 @@ const { prisma } = require('../../lib/prisma');
 const getForecast = async (req, res) => {
   try {
     const { horizon_mins, capacity_threshold } = req.query;
+    const horizonMinutes = horizon_mins === undefined ? undefined : Number(horizon_mins);
+    if (horizonMinutes !== undefined && (!Number.isInteger(horizonMinutes) || horizonMinutes < 1 || horizonMinutes > 24 * 60)) {
+      return res.status(400).json({ success: false, message: 'horizon_mins must be a whole number between 1 and 1440' });
+    }
     
     const mlUrl = new URL(`${env.ML_SERVICE_URL}/api/forecast/congestion`);
-    if (horizon_mins) mlUrl.searchParams.append('horizon_mins', horizon_mins);
+    if (horizonMinutes !== undefined) mlUrl.searchParams.append('horizon_mins', String(horizonMinutes));
     if (capacity_threshold) mlUrl.searchParams.append('capacity_threshold', capacity_threshold);
 
     const response = await axios.get(mlUrl.toString());
