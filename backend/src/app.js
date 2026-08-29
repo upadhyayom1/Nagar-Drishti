@@ -5,15 +5,8 @@ const path = require('path');
 const authRoutes = require('./modules/auth/auth.routes');
 
 const ocrRoutes = require('./modules/ocr/ocr.routes');
-const mlRoutes = require('./modules/ml/ml.routes');
 
-const usersRoutes = require('./modules/users/users.routes');
-const complaintsRoutes = require('./modules/complaints/complaints.routes');
-const incidentsRoutes = require('./modules/incidents/incidents.routes');
-const trafficRoutes = require('./modules/traffic/traffic.routes');
-const tripsRoutes = require('./modules/trips/trips.routes');
-const mapRoutes = require('./modules/map/map.routes');
-const adminRoutes = require('./modules/admin/admin.routes');
+
 const devRoutes = require('./modules/dev/dev.routes');
 const roadRoutes = require('./modules/road/road.routes');
 const cameraRoutes = require('./modules/camera/camera.routes');
@@ -25,21 +18,13 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://localhost:5173',
-  process.env.FRONTEND_URL,
-].filter(Boolean);
-
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl, or server-to-server)
-    if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
-      return callback(null, true);
-    }
-    return callback(null, true); // Permissive in deployment to prevent CORS block
-  },
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:5173',
+    'https://nagardrishti.vercel.app'
+  ],
   credentials: true
 }));
 
@@ -48,13 +33,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/users', usersRoutes);
-app.use('/api/complaints', complaintsRoutes);
-app.use('/api/incidents', incidentsRoutes);
-app.use('/api/traffic', trafficRoutes);
-app.use('/api/trips', tripsRoutes);
-app.use('/api/map', mapRoutes);
-app.use('/api/admin', adminRoutes);
 app.use('/api/dev', devRoutes);
 app.use('/api/roads', roadRoutes);
 app.use('/api/cameras', cameraRoutes);
@@ -62,7 +40,6 @@ app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/simulation', simulationRoutes);
 app.use('/api/detections', detectionRoutes);
 app.use('/api/ocr', ocrRoutes);
-app.use('/api/ml', mlRoutes);
 
 
 
@@ -87,10 +64,9 @@ app.use((err, req, res, next) => {
 const engine = require('./modules/simulation/engine');
 engine.init().then(() => {
   console.log('Simulation engine initialized with DB data.');
-  engine.start();
-  console.log('Simulation engine started automatically.');
 }).catch(err => {
   console.error('Failed to init simulation engine:', err);
 });
 
 module.exports = app;
+
