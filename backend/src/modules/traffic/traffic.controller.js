@@ -33,6 +33,8 @@ const getTrafficSummary = async (req, res) => {
   }
 };
 
+const { prisma } = require('../../lib/prisma');
+
 const getForecast = async (req, res) => {
   try {
     const { horizon_mins, capacity_threshold } = req.query;
@@ -42,10 +44,24 @@ const getForecast = async (req, res) => {
     if (capacity_threshold) mlUrl.searchParams.append('capacity_threshold', capacity_threshold);
 
     const response = await axios.get(mlUrl.toString());
+    const data = response.data;
+
+    // Map camera_id to camera_name
+    if (data && data.forecast_details) {
+      const cameras = await prisma.camera.findMany({ select: { id: true, name: true, cameraCode: true } });
+      const cameraMap = new Map(cameras.map(c => [c.id, c.name || c.cameraCode]));
+      
+      data.forecast_details = data.forecast_details.map(detail => {
+        return {
+          ...detail,
+          camera_id: cameraMap.get(detail.camera_id) || detail.camera_id
+        };
+      });
+    }
 
     return res.status(200).json({
       success: true,
-      data: response.data,
+      data: data,
     });
   } catch (error) {
     console.error('Traffic Forecast Controller Error:', error.message);
