@@ -32,7 +32,7 @@ export const ocrService = {
     const response = await axios.post<{ success: boolean; data: { results: PlateRecognitionResult[] } }>(`${API_URL}/ocr`, formData, {
       withCredentials: true,
     });
-    
+
     return response.data.data.results;
   },
 };
