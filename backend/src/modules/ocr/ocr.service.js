@@ -1,12 +1,24 @@
 const FormData = require('form-data');
 const axios = require('axios');
 const sharp = require('sharp');
-const { GoogleGenAI } = require('@google/genai');
+
+const PLATE_API_URL =
+  'https://api.platerecognizer.com/v1/plate-reader/';
+
+const MAX_PR_SIZE = 2.5 * 1024 * 1024;
+
+const REQUEST_DELAY = 1100;
 
 
-// --------------------------------------------------
-// Normalize plate text
-// --------------------------------------------------
+// ==================================================
+// UTILITIES
+// ==================================================
+
+const sleep = (ms) =>
+  new Promise((resolve) =>
+    setTimeout(resolve, ms)
+  );
+
 
 const normalizePlate = (plate) => {
   if (!plate) return '';
@@ -17,9 +29,9 @@ const normalizePlate = (plate) => {
 };
 
 
-// --------------------------------------------------
-// OCR confusion helpers
-// --------------------------------------------------
+// ==================================================
+// OCR CHARACTER CORRECTIONS
+// ==================================================
 
 const toDigit = (char) => {
   const map = {
@@ -52,35 +64,93 @@ const toLetter = (char) => {
 };
 
 
-// --------------------------------------------------
-// Indian plate validation
-// --------------------------------------------------
+// ==================================================
+// INDIAN STATE CODES
+// ==================================================
+
+const INDIAN_STATE_CODES = new Set([
+  'AN',
+  'AP',
+  'AR',
+  'AS',
+  'BR',
+  'CG',
+  'CH',
+  'DD',
+  'DL',
+  'DN',
+  'GA',
+  'GJ',
+  'HP',
+  'HR',
+  'JH',
+  'JK',
+  'KA',
+  'KL',
+  'LA',
+  'LD',
+  'MH',
+  'ML',
+  'MN',
+  'MP',
+  'MZ',
+  'NL',
+  'OD',
+  'OR',
+  'PB',
+  'PY',
+  'RJ',
+  'SK',
+  'TN',
+  'TR',
+  'TS',
+  'UK',
+  'UA',
+  'UP',
+  'WB',
+]);
+
+
+// ==================================================
+// INDIAN PLATE VALIDATION
+// ==================================================
 
 const isValidIndianPlate = (plate) => {
   if (!plate) return false;
 
-  // Examples:
-  // UP80BB9347
-  // DL8CAF5031
-  // HR26DK8337
-  const normalPlateRegex =
-    /^[A-Z]{2}[0-9]{1,2}[A-Z]{1,3}[0-9]{4}$/;
 
-  // Bharat Series:
-  // 22BH1234AA
-  const bharatSeriesRegex =
-    /^[0-9]{2}BH[0-9]{4}[A-Z]{2}$/;
+  // Normal plate
+  // UP32AB1234
+  // MH43D3193
 
-  return (
-    normalPlateRegex.test(plate) ||
-    bharatSeriesRegex.test(plate)
+  const normalMatch = plate.match(
+    /^([A-Z]{2})([0-9]{1,2})([A-Z]{1,3})([0-9]{4})$/
   );
+
+  if (normalMatch) {
+    return INDIAN_STATE_CODES.has(
+      normalMatch[1]
+    );
+  }
+
+
+  // Bharat Series
+  //
+  // 22BH7071A
+  // 22BH7071RS
+  //
+  // I and O are excluded from suffix.
+
+  const bharatRegex =
+    /^[0-9]{2}BH[0-9]{4}[A-HJ-NP-Z]{1,2}$/;
+
+  return bharatRegex.test(plate);
 };
 
 
-// --------------------------------------------------
-// Correct Indian plate according to expected format
-// --------------------------------------------------
+// ==================================================
+// CORRECT ACCORDING TO INDIAN STRUCTURE
+// ==================================================
 
 const correctIndianPlate = (rawPlate) => {
   const plate = normalizePlate(rawPlate);
@@ -89,54 +159,77 @@ const correctIndianPlate = (rawPlate) => {
     return '';
   }
 
+
   if (isValidIndianPlate(plate)) {
     return plate;
   }
 
 
-  // ------------------------------------------
-  // Bharat Series
+  // ------------------------------------------------
+  // BH SERIES
   //
-  // 22BH1234AA
-  // ------------------------------------------
+  // 22 BH 7071 RS
+  // ------------------------------------------------
 
-  if (plate.length === 10) {
+  if (
+    plate.length === 9 ||
+    plate.length === 10
+  ) {
+
     let candidate = '';
 
+    // Year
     candidate += toDigit(plate[0]);
     candidate += toDigit(plate[1]);
 
+
+    // BH
     candidate += toLetter(plate[2]);
     candidate += toLetter(plate[3]);
 
+
+    // 4-digit random number
     for (let i = 4; i < 8; i++) {
-      candidate += toDigit(plate[i]);
+      candidate += toDigit(
+        plate[i]
+      );
     }
 
-    candidate += toLetter(plate[8]);
-    candidate += toLetter(plate[9]);
 
-    if (isValidIndianPlate(candidate)) {
+    // 1 or 2 suffix letters
+    for (
+      let i = 8;
+      i < plate.length;
+      i++
+    ) {
+      candidate += toLetter(
+        plate[i]
+      );
+    }
+
+
+    if (
+      isValidIndianPlate(candidate)
+    ) {
       return candidate;
     }
   }
 
 
-  // ------------------------------------------
-  // Normal Indian registration
-  //
-  // UP32AB1234
-  //
-  // UP    -> letters
-  // 32    -> digits
-  // AB    -> letters
-  // 1234  -> digits
-  // ------------------------------------------
+  // ------------------------------------------------
+  // NORMAL INDIAN PLATE
+  // ------------------------------------------------
 
-  for (const districtLength of [2, 1]) {
+  for (
+    const districtLength of [2, 1]
+  ) {
 
     const seriesLength =
-      plate.length - 2 - districtLength - 4;
+      plate.length -
+      2 -
+      districtLength -
+      4;
+
 
     if (
       seriesLength < 1 ||
@@ -145,99 +238,91 @@ const correctIndianPlate = (rawPlate) => {
       continue;
     }
 
+
     let candidate = '';
 
-    // State
-    candidate += toLetter(plate[0]);
-    candidate += toLetter(plate[1]);
 
-    // District
-    const districtStart = 2;
+    // State letters
+    candidate += toLetter(
+      plate[0]
+    );
+
+    candidate += toLetter(
+      plate[1]
+    );
+
+
+    // District digits
     const districtEnd =
-      districtStart + districtLength;
+      2 + districtLength;
 
     for (
-      let i = districtStart;
+      let i = 2;
       i < districtEnd;
       i++
     ) {
-      candidate += toDigit(plate[i]);
+      candidate += toDigit(
+        plate[i]
+      );
     }
 
-    // Series
-    const seriesStart = districtEnd;
+
+    // Series letters
     const seriesEnd =
-      seriesStart + seriesLength;
+      districtEnd +
+      seriesLength;
 
     for (
-      let i = seriesStart;
+      let i = districtEnd;
       i < seriesEnd;
       i++
     ) {
-      candidate += toLetter(plate[i]);
+      candidate += toLetter(
+        plate[i]
+      );
     }
 
-    // Final 4 digits
+
+    // Last four digits
     for (
       let i = seriesEnd;
       i < plate.length;
       i++
     ) {
-      candidate += toDigit(plate[i]);
+      candidate += toDigit(
+        plate[i]
+      );
     }
 
-    if (isValidIndianPlate(candidate)) {
+
+    if (
+      isValidIndianPlate(candidate)
+    ) {
       return candidate;
     }
   }
+
 
   return plate;
 };
 
 
-// --------------------------------------------------
-// Compress / resize image for Plate Recognizer
-// --------------------------------------------------
+// ==================================================
+// IMAGE SIZE PREPARATION
+// ==================================================
 
-const prepareForPlateRecognizer = async (
+const prepareBaseImage = async (
   imageBuffer
 ) => {
-  /*
-    Keep image below provider limit.
 
-    We use 2.5 MB as a safer target
-    instead of going very close to 3 MB.
-  */
-
-  const MAX_SIZE =
-    2.5 * 1024 * 1024;
-
-
-  // Already small enough
   if (
-    imageBuffer.length <= MAX_SIZE
+    imageBuffer.length <= MAX_PR_SIZE
   ) {
-    return {
-      buffer: imageBuffer,
-      mimeType: null,
-      compressed: false,
-    };
+    return imageBuffer;
   }
 
 
-  console.log(
-    `Large image detected: ${(
-      imageBuffer.length /
-      (1024 * 1024)
-    ).toFixed(2)} MB`
-  );
-
-
-  // ------------------------------------------
-  // First compression attempt
-  // ------------------------------------------
-
-  let compressedBuffer =
+  let buffer =
     await sharp(imageBuffer)
       .rotate()
       .resize({
@@ -245,21 +330,17 @@ const prepareForPlateRecognizer = async (
         withoutEnlargement: true,
       })
       .jpeg({
-        quality: 80,
+        quality: 82,
         mozjpeg: true,
       })
       .toBuffer();
 
 
-  // ------------------------------------------
-  // If still too large, compress further
-  // ------------------------------------------
-
   if (
-    compressedBuffer.length > MAX_SIZE
+    buffer.length > MAX_PR_SIZE
   ) {
 
-    compressedBuffer =
+    buffer =
       await sharp(imageBuffer)
         .rotate()
         .resize({
@@ -267,59 +348,25 @@ const prepareForPlateRecognizer = async (
           withoutEnlargement: true,
         })
         .jpeg({
-          quality: 65,
+          quality: 68,
           mozjpeg: true,
         })
         .toBuffer();
   }
 
 
-  console.log(
-    `Compressed image: ${(
-      compressedBuffer.length /
-      (1024 * 1024)
-    ).toFixed(2)} MB`
-  );
-
-
-  return {
-    buffer: compressedBuffer,
-    mimeType: 'image/jpeg',
-    compressed: true,
-  };
+  return buffer;
 };
 
 
-// --------------------------------------------------
-// Plate Recognizer
-// --------------------------------------------------
+// ==================================================
+// CALL PLATE RECOGNIZER
+// ==================================================
 
-const recognizeWithPlateRecognizer = async (
-  imageBuffer,
-  originalName,
-  mimeType
+const callPlateRecognizer = async (
+  buffer,
+  name
 ) => {
-
-  const prepared =
-    await prepareForPlateRecognizer(
-      imageBuffer
-    );
-
-
-  const finalBuffer =
-    prepared.buffer;
-
-
-  const finalMimeType =
-    prepared.mimeType ||
-    mimeType;
-
-
-  const finalFilename =
-    prepared.compressed
-      ? 'plate-image.jpg'
-      : originalName;
-
 
   const form =
     new FormData();
@@ -327,18 +374,17 @@ const recognizeWithPlateRecognizer = async (
 
   form.append(
     'upload',
-    finalBuffer,
+    buffer,
     {
       filename:
-        finalFilename,
+        `${name}.jpg`,
 
       contentType:
-        finalMimeType,
+        'image/jpeg',
     }
   );
 
 
-  // India-specific recognition
   form.append(
     'regions',
     'in'
@@ -347,14 +393,10 @@ const recognizeWithPlateRecognizer = async (
 
   const response =
     await axios.post(
-
-      'https://api.platerecognizer.com/v1/plate-reader/',
-
+      PLATE_API_URL,
       form,
-
       {
         headers: {
-
           ...form.getHeaders(),
 
           Authorization:
@@ -370,420 +412,653 @@ const recognizeWithPlateRecognizer = async (
     );
 
 
-  const results =
-    response.data.results || [];
+  return (
+    response.data.results || []
+  );
+};
 
 
-  return results.map(
-    (result) => {
+// ==================================================
+// CROP DETECTED PLATE
+// ==================================================
 
-      const candidates =
-        (
-          result.candidates || []
-        ).map(
-          (candidate) => {
+const cropDetectedPlate = async (
+  imageBuffer,
+  box
+) => {
 
-            const raw =
-              normalizePlate(
-                candidate.plate
-              );
+  if (!box) {
+    return imageBuffer;
+  }
 
-            const corrected =
-              correctIndianPlate(
-                raw
-              );
 
-            return {
+  const metadata =
+    await sharp(imageBuffer)
+      .metadata();
 
-              plateNumber:
-                corrected,
 
-              rawPlate:
-                raw,
+  const imageWidth =
+    metadata.width;
 
-              score:
-                candidate.score || 0,
+  const imageHeight =
+    metadata.height;
 
-              validIndianPlate:
-                isValidIndianPlate(
-                  corrected
-                ),
-            };
+
+  if (
+    !imageWidth ||
+    !imageHeight
+  ) {
+    return imageBuffer;
+  }
+
+
+  const plateWidth =
+    box.xmax - box.xmin;
+
+  const plateHeight =
+    box.ymax - box.ymin;
+
+
+  // Add around 8% padding
+  const paddingX =
+    Math.round(
+      plateWidth * 0.08
+    );
+
+  const paddingY =
+    Math.round(
+      plateHeight * 0.12
+    );
+
+
+  const left =
+    Math.max(
+      0,
+      box.xmin - paddingX
+    );
+
+
+  const top =
+    Math.max(
+      0,
+      box.ymin - paddingY
+    );
+
+
+  const right =
+    Math.min(
+      imageWidth,
+      box.xmax + paddingX
+    );
+
+
+  const bottom =
+    Math.min(
+      imageHeight,
+      box.ymax + paddingY
+    );
+
+
+  const width =
+    Math.max(
+      1,
+      right - left
+    );
+
+
+  const height =
+    Math.max(
+      1,
+      bottom - top
+    );
+
+
+  return sharp(imageBuffer)
+    .extract({
+      left,
+      top,
+      width,
+      height,
+    })
+
+    // Enlarge plate for OCR
+    .resize({
+      width: Math.max(
+        700,
+        width * 2
+      ),
+
+      withoutEnlargement:
+        false,
+    })
+
+    .jpeg({
+      quality: 94,
+    })
+
+    .toBuffer();
+};
+
+
+// ==================================================
+// CREATE CROPPED PLATE VARIANTS
+// ==================================================
+
+const createPlateVariants = async (
+  plateBuffer
+) => {
+
+  const variants = [];
+
+
+  // ----------------------------------------------
+  // 1. Normal enlarged crop
+  // ----------------------------------------------
+
+  variants.push({
+    name:
+      'plate-original',
+
+    buffer:
+      plateBuffer,
+
+    weight:
+      1.0,
+  });
+
+
+  // ----------------------------------------------
+  // 2. Contrast + sharpen
+  // ----------------------------------------------
+
+  const enhanced =
+    await sharp(plateBuffer)
+      .normalize()
+      .sharpen({
+        sigma: 1.1,
+      })
+      .jpeg({
+        quality: 94,
+      })
+      .toBuffer();
+
+
+  variants.push({
+    name:
+      'plate-enhanced',
+
+    buffer:
+      enhanced,
+
+    weight:
+      1.15,
+  });
+
+
+  // ----------------------------------------------
+  // 3. Slight left rotation
+  // ----------------------------------------------
+
+  const rotateLeft =
+    await sharp(plateBuffer)
+      .rotate(-6, {
+        background: {
+          r: 255,
+          g: 255,
+          b: 255,
+        },
+      })
+      .sharpen()
+      .jpeg({
+        quality: 92,
+      })
+      .toBuffer();
+
+
+  variants.push({
+    name:
+      'plate-rotate-left',
+
+    buffer:
+      rotateLeft,
+
+    weight:
+      0.95,
+  });
+
+
+  // ----------------------------------------------
+  // 4. Slight right rotation
+  // ----------------------------------------------
+
+  const rotateRight =
+    await sharp(plateBuffer)
+      .rotate(6, {
+        background: {
+          r: 255,
+          g: 255,
+          b: 255,
+        },
+      })
+      .sharpen()
+      .jpeg({
+        quality: 92,
+      })
+      .toBuffer();
+
+
+  variants.push({
+    name:
+      'plate-rotate-right',
+
+    buffer:
+      rotateRight,
+
+    weight:
+      0.95,
+  });
+
+
+  // ----------------------------------------------
+  // 5. Side-angle left correction
+  // ----------------------------------------------
+
+  try {
+
+    const sideLeft =
+      await sharp(plateBuffer)
+        .affine(
+          [
+            [1, -0.12],
+            [0, 1],
+          ],
+          {
+            background: {
+              r: 255,
+              g: 255,
+              b: 255,
+            },
           }
-        );
+        )
+        .sharpen()
+        .jpeg({
+          quality: 92,
+        })
+        .toBuffer();
 
 
-      const rawPrimary =
-        normalizePlate(
-          result.plate
-        );
+    variants.push({
+      name:
+        'plate-side-left',
+
+      buffer:
+        sideLeft,
+
+      weight:
+        1.0,
+    });
+
+  } catch (error) {
+
+    console.log(
+      'Side-left preprocessing skipped'
+    );
+  }
 
 
-      const primary =
-        correctIndianPlate(
-          rawPrimary
-        );
+  // ----------------------------------------------
+  // 6. Side-angle right correction
+  // ----------------------------------------------
+
+  try {
+
+    const sideRight =
+      await sharp(plateBuffer)
+        .affine(
+          [
+            [1, 0.12],
+            [0, 1],
+          ],
+          {
+            background: {
+              r: 255,
+              g: 255,
+              b: 255,
+            },
+          }
+        )
+        .sharpen()
+        .jpeg({
+          quality: 92,
+        })
+        .toBuffer();
 
 
-      return {
+    variants.push({
+      name:
+        'plate-side-right',
 
+      buffer:
+        sideRight,
+
+      weight:
+        1.0,
+    });
+
+  } catch (error) {
+
+    console.log(
+      'Side-right preprocessing skipped'
+    );
+  }
+
+
+  return variants;
+};
+
+
+// ==================================================
+// EXTRACT OCR CANDIDATES
+// ==================================================
+
+const extractCandidates = (
+  apiResults,
+  source,
+  weight
+) => {
+
+  const candidates = [];
+
+
+  for (
+    const result of apiResults
+  ) {
+
+    const primary =
+      correctIndianPlate(
+        result.plate
+      );
+
+
+    if (primary) {
+
+      candidates.push({
         plateNumber:
           primary,
 
-        rawPlate:
-          rawPrimary,
-
-        confidence:
+        score:
           result.score || 0,
 
-        validIndianPlate:
+        weightedScore:
+          (result.score || 0) *
+          weight,
+
+        valid:
           isValidIndianPlate(
             primary
           ),
 
-        candidates,
-
-        boundingBox:
-          result.box || null,
-      };
+        source,
+      });
     }
-  );
-};
 
 
-// --------------------------------------------------
-// Gemini Vision
-// --------------------------------------------------
-
-const recognizeWithGemini = async (
-  imageBuffer,
-  mimeType
-) => {
-
-  if (
-    !process.env.GEMINI_API_KEY
-  ) {
-    throw new Error(
-      'GEMINI_API_KEY is missing'
-    );
-  }
-
-
-  const ai =
-    new GoogleGenAI({
-      apiKey:
-        process.env.GEMINI_API_KEY,
-    });
-
-
-  const base64Image =
-    imageBuffer.toString(
-      'base64'
-    );
-
-
-  const interaction =
-    await ai.interactions.create({
-
-      model:
-        'gemini-3.6-flash',
-
-      input: [
-
-        {
-          type: 'image',
-
-          data:
-            base64Image,
-
-          mime_type:
-            mimeType,
-        },
-
-        {
-          type: 'text',
-
-          text: `
-Read every visible Indian vehicle registration plate in this image.
-
-Rules:
-- Return ONLY plate numbers.
-- Use uppercase letters.
-- Remove spaces and hyphens.
-- Do not explain anything.
-- Do not guess if unreadable.
-- If multiple plates are visible, separate them using commas.
-
-Examples:
-UP80BB9347
-DL8CAF5031
-MH43D3193
-
-If multiple:
-UP80BB9347,DL8CAF5031
-          `.trim(),
-        },
-      ],
-    });
-
-
-  const text =
-    interaction.output_text || '';
-
-
-  const plates =
-    text
-      .split(',')
-      .map(
-        (plate) =>
-          correctIndianPlate(
-            plate.trim()
-          )
+    for (
+      const item
+      of (
+        result.candidates || []
       )
-      .filter(Boolean);
-
-
-  return plates;
-};
-
-
-// --------------------------------------------------
-// Search Plate Recognizer candidate list
-// --------------------------------------------------
-
-const findMatchingCandidate = (
-  plateRecognizerResult,
-  targetPlate
-) => {
-
-  const normalizedTarget =
-    normalizePlate(
-      targetPlate
-    );
-
-
-  return (
-    plateRecognizerResult
-      .candidates || []
-  ).find(
-    (candidate) =>
-      normalizePlate(
-        candidate.plateNumber
-      ) ===
-      normalizedTarget
-  );
-};
-
-
-// --------------------------------------------------
-// Fusion logic
-//
-// One final answer
-// --------------------------------------------------
-
-const chooseFinalPlate = (
-  plateRecognizerResult,
-  geminiPlates
-) => {
-
-  const prPlate =
-    normalizePlate(
-      plateRecognizerResult
-        .plateNumber
-    );
-
-
-  const prValid =
-    isValidIndianPlate(
-      prPlate
-    );
-
-
-  // Get Gemini valid Indian plates
-  const validGeminiPlates =
-    geminiPlates
-      .map(normalizePlate)
-      .filter(
-        isValidIndianPlate
-      );
-
-
-  const geminiPlate =
-    validGeminiPlates[0] ||
-    null;
-
-
-  // ------------------------------------------
-  // Case 1:
-  // Both agree exactly
-  // ------------------------------------------
-
-  if (
-    geminiPlate &&
-    geminiPlate === prPlate
-  ) {
-
-    return {
-
-      plateNumber:
-        prPlate,
-
-      confidence:
-        plateRecognizerResult
-          .confidence,
-    };
-  }
-
-
-  // ------------------------------------------
-  // Case 2:
-  // Gemini result appears inside
-  // Plate Recognizer candidate list
-  //
-  // Strong evidence for Gemini
-  // ------------------------------------------
-
-  if (geminiPlate) {
-
-    const matchingCandidate =
-      findMatchingCandidate(
-        plateRecognizerResult,
-        geminiPlate
-      );
-
-
-    if (matchingCandidate) {
-
-      return {
-
-        plateNumber:
-          geminiPlate,
-
-        confidence:
-          matchingCandidate.score,
-      };
-    }
-  }
-
-
-  // ------------------------------------------
-  // Case 3:
-  // Both outputs are valid Indian plates
-  // but disagree
-  // ------------------------------------------
-
-  if (
-    prValid &&
-    geminiPlate
-  ) {
-
-    /*
-      Your tests showed Plate Recognizer
-      can still be wrong at ~0.92 confidence.
-
-      Only give PR priority if extremely
-      confident.
-    */
-
-    if (
-      plateRecognizerResult
-        .confidence >= 0.97
     ) {
 
-      return {
+      const plate =
+        correctIndianPlate(
+          item.plate
+        );
 
+
+      if (!plate) {
+        continue;
+      }
+
+
+      candidates.push({
         plateNumber:
-          prPlate,
+          plate,
 
-        confidence:
-          plateRecognizerResult
-            .confidence,
+        score:
+          item.score || 0,
+
+        weightedScore:
+          (item.score || 0) *
+          weight,
+
+        valid:
+          isValidIndianPlate(
+            plate
+          ),
+
+        source,
+      });
+    }
+  }
+
+
+  return candidates;
+};
+
+
+// ==================================================
+// VOTE FOR EXACT PLATE STRING
+// ==================================================
+
+const chooseFinalPlate = (
+  candidates
+) => {
+
+  if (
+    candidates.length === 0
+  ) {
+    return null;
+  }
+
+
+  // Prefer valid Indian plates.
+  let usable =
+    candidates.filter(
+      (candidate) =>
+        candidate.valid
+    );
+
+
+  if (
+    usable.length === 0
+  ) {
+    usable = candidates;
+  }
+
+
+  const votes = {};
+
+
+  for (
+    const candidate
+    of usable
+  ) {
+
+    const plate =
+      candidate.plateNumber;
+
+
+    if (!votes[plate]) {
+
+      votes[plate] = {
+        score: 0,
+        count: 0,
+        bestConfidence: 0,
+        sources: new Set(),
       };
     }
 
 
-    // Otherwise Gemini gets priority
-    return {
+    votes[plate].score +=
+      candidate.weightedScore;
 
-      plateNumber:
-        geminiPlate,
 
-      /*
-        This is a fusion score,
-        not Gemini's native confidence.
-      */
+    votes[plate].count++;
 
-      confidence:
-        0.9,
-    };
+
+    votes[plate]
+      .sources
+      .add(
+        candidate.source
+      );
+
+
+    votes[plate]
+      .bestConfidence =
+        Math.max(
+          votes[plate]
+            .bestConfidence,
+
+          candidate.score
+        );
   }
 
 
-  // ------------------------------------------
-  // Case 4:
-  // PR invalid, Gemini valid
-  // ------------------------------------------
+  const sorted =
+    Object.entries(votes)
+      .sort(
+        (a, b) => {
 
-  if (
-    !prValid &&
-    geminiPlate
-  ) {
-
-    return {
-
-      plateNumber:
-        geminiPlate,
-
-      confidence:
-        0.9,
-    };
-  }
+          const scoreA =
+            a[1].score +
+            a[1].count *
+              0.35 +
+            a[1].sources.size *
+              0.6;
 
 
-  // ------------------------------------------
-  // Case 5:
-  // PR valid, Gemini failed
-  // ------------------------------------------
-
-  if (prValid) {
-
-    return {
-
-      plateNumber:
-        prPlate,
-
-      confidence:
-        plateRecognizerResult
-          .confidence,
-    };
-  }
+          const scoreB =
+            b[1].score +
+            b[1].count *
+              0.35 +
+            b[1].sources.size *
+              0.6;
 
 
-  // ------------------------------------------
-  // Final fallback
-  // ------------------------------------------
+          return (
+            scoreB -
+            scoreA
+          );
+        }
+      );
+
+
+  const [
+    plateNumber,
+    stats,
+  ] = sorted[0];
+
 
   return {
-
-    plateNumber:
-      geminiPlate ||
-      prPlate ||
-      null,
+    plateNumber,
 
     confidence:
-      geminiPlate
-        ? 0.8
-        : (
-            plateRecognizerResult
-              .confidence || 0
-          ),
+      stats.bestConfidence,
   };
 };
 
 
-// --------------------------------------------------
-// Main OCR function
-// --------------------------------------------------
+// ==================================================
+// PROCESS ONE DETECTED PLATE
+// ==================================================
+
+const processDetectedPlate = async (
+  baseBuffer,
+  detection,
+  index
+) => {
+
+  const crop =
+    await cropDetectedPlate(
+      baseBuffer,
+      detection.box
+    );
+
+
+  const variants =
+    await createPlateVariants(
+      crop
+    );
+
+
+  let allCandidates = [];
+
+
+  for (
+    let i = 0;
+    i < variants.length;
+    i++
+  ) {
+
+    const variant =
+      variants[i];
+
+
+    if (i > 0) {
+      await sleep(
+        REQUEST_DELAY
+      );
+    }
+
+
+    try {
+
+      console.log(
+        `Plate ${index + 1}: ${variant.name}`
+      );
+
+
+      const results =
+        await callPlateRecognizer(
+          variant.buffer,
+          variant.name
+        );
+
+
+      const candidates =
+        extractCandidates(
+          results,
+          variant.name,
+          variant.weight
+        );
+
+
+      allCandidates.push(
+        ...candidates
+      );
+
+    } catch (error) {
+
+      console.error(
+        `${variant.name} OCR failed:`,
+
+        error.response?.data ||
+        error.message
+      );
+    }
+  }
+
+
+  return chooseFinalPlate(
+    allCandidates
+  );
+};
+
+
+// ==================================================
+// MAIN OCR
+// ==================================================
 
 const recognizePlates = async (
   imageBuffer,
@@ -793,14 +1068,9 @@ const recognizePlates = async (
 
   try {
 
-    // ------------------------------------------
-    // Checks
-    // ------------------------------------------
-
     if (!imageBuffer) {
-
       throw new Error(
-        'Image buffer is missing'
+        'Image buffer missing'
       );
     }
 
@@ -809,21 +1079,16 @@ const recognizePlates = async (
       !process.env
         .PLATE_RECOGNIZER_API_KEY
     ) {
-
       throw new Error(
-        'Plate Recognizer API key is missing'
+        'Plate Recognizer API key missing'
       );
     }
 
 
     const allowedTypes = [
-
       'image/jpeg',
-
       'image/jpg',
-
       'image/png',
-
       'image/webp',
     ];
 
@@ -833,144 +1098,100 @@ const recognizePlates = async (
         mimeType
       )
     ) {
-
       throw new Error(
         `Unsupported image type: ${mimeType}`
       );
     }
 
 
-    // ------------------------------------------
-    // Plate Recognizer
-    //
-    // Failure should NOT stop Gemini.
-    // ------------------------------------------
+    const baseBuffer =
+      await prepareBaseImage(
+        imageBuffer
+      );
 
-    let plateRecognizerResults =
-      [];
+
+    // ----------------------------------------------
+    // FIRST PASS:
+    // detect plate locations in full image
+    // ----------------------------------------------
+
+    let detections = [];
 
 
     try {
 
-      plateRecognizerResults =
-        await recognizeWithPlateRecognizer(
-
-          imageBuffer,
-
-          originalName,
-
-          mimeType
+      detections =
+        await callPlateRecognizer(
+          baseBuffer,
+          'detection-pass'
         );
 
     } catch (error) {
 
       console.error(
-        'Plate Recognizer Error:',
+        'Initial detection failed:',
+
         error.response?.data ||
         error.message
       );
     }
 
-
-    // ------------------------------------------
-    // Gemini
-    //
-    // Failure should NOT stop PR.
-    // ------------------------------------------
-
-    let geminiPlates =
-      [];
-
-
-    try {
-
-      geminiPlates =
-        await recognizeWithGemini(
-
-          imageBuffer,
-
-          mimeType
-        );
-
-    } catch (error) {
-
-      console.error(
-        'Gemini OCR Error:',
-        error.response?.data ||
-        error.message
-      );
-    }
-
-
-    // Debugging
-    console.log(
-      'Plate Recognizer Results:',
-      plateRecognizerResults
-    );
-
-    console.log(
-      'Gemini Results:',
-      geminiPlates
-    );
-
-
-    // ------------------------------------------
-    // Neither found anything
-    // ------------------------------------------
 
     if (
-      plateRecognizerResults.length === 0 &&
-      geminiPlates.length === 0
+      detections.length === 0
     ) {
 
       return [];
     }
 
 
-    // ------------------------------------------
-    // Only Gemini worked
-    // ------------------------------------------
+    // ----------------------------------------------
+    // SECOND PASS:
+    // crop each plate and OCR it carefully
+    // ----------------------------------------------
 
-    if (
-      plateRecognizerResults.length === 0
+    const finalResults = [];
+
+
+    for (
+      let i = 0;
+      i < detections.length;
+      i++
     ) {
 
-      return geminiPlates
-
-        .filter(
-          isValidIndianPlate
-        )
-
-        .map(
-          (plateNumber) => ({
-
-            plateNumber,
-
-            confidence:
-              0.8,
-          })
+      // Prevent rate-limit between plates
+      if (i > 0) {
+        await sleep(
+          REQUEST_DELAY
         );
+      }
+
+
+      const result =
+        await processDetectedPlate(
+          baseBuffer,
+          detections[i],
+          i
+        );
+
+
+      if (result) {
+
+        finalResults.push(
+          result
+        );
+      }
     }
 
 
-    // ------------------------------------------
-    // Fuse every detected PR plate
-    // with Gemini
-    // ------------------------------------------
-
-    const finalResults =
-      plateRecognizerResults
-        .map(
-          (prResult) =>
-
-            chooseFinalPlate(
-              prResult,
-              geminiPlates
-            )
-        );
+    console.log(
+      'Final OCR results:',
+      finalResults
+    );
 
 
     return finalResults;
+
 
   } catch (error) {
 
