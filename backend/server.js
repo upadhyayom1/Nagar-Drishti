@@ -12,7 +12,8 @@ const startServer = async () => {
     console.log('✅ Connected to database');
 
     await engine.init();
-    console.log('Simulation engine initialized with DB data.');
+    engine.start();
+    console.log('Simulation engine initialized with DB data and ticking started.');
 
     const PORT = env.PORT || 3000;
     app.listen(PORT, '0.0.0.0', () => {

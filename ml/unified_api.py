@@ -4,7 +4,7 @@ from pathlib import Path
 
 # Add the microservices to the Python path so their internal relative imports work correctly
 ROOT_DIR = Path(__file__).resolve().parent
-sys.path.append(str(ROOT_DIR / "ml" / "vehicle_movement_analysis"))
+sys.path.append(str(ROOT_DIR / "vehicle_movement_analysis"))
 sys.path.append(str(ROOT_DIR / "license_plate_number_extraction"))
 
 from fastapi import FastAPI
