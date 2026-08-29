@@ -43,7 +43,7 @@ export function CongestionForecastWidget() {
   return (
     <GlassCard 
       padding="md" 
-      glow={hasBottlenecks ? 'danger' : 'cyber'}
+      glow={hasBottlenecks ? 'critical' : 'cyan'}
       className={`h-full flex flex-col space-y-4 ${hasBottlenecks ? 'border-rose-500/50' : 'border-cyan-500/30'}`}
     >
       <div className="flex items-center justify-between">
@@ -53,7 +53,8 @@ export function CongestionForecastWidget() {
             AI Traffic Forecast
           </h3>
         </div>
-        <Badge variant={hasBottlenecks ? 'danger' : 'info'} size="sm" icon={<Clock size={12} />}>
+        <Badge variant={hasBottlenecks ? 'danger' : 'info'} size="sm" className="flex items-center gap-1">
+          <Clock size={12} />
           +{forecast.horizon_minutes} Mins
         </Badge>
       </div>
