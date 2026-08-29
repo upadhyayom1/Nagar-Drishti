@@ -19,6 +19,5 @@ COPY --chown=user . $HOME/app
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-EXPOSE 10000
-
-CMD ["sh", "-c", "uvicorn unified_api:app --host 0.0.0.0 --port ${PORT:-10000}"]
+# Start the server using Render's dynamically injected PORT variable
+CMD uvicorn unified_api:app --host 0.0.0.0 --port $PORT
