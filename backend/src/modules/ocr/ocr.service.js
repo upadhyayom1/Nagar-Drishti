@@ -12,7 +12,10 @@ const recognizePlate = async (imageBuffer, originalName, mimeType) => {
     });
 
     const response = await axios.post(`${env.ANPR_SERVICE_URL}/api/recognize`, form, {
-      headers: form.getHeaders(),
+      headers: {
+        ...form.getHeaders(),
+        'Content-Length': form.getLengthSync()
+      },
       maxContentLength: Infinity,
       maxBodyLength: Infinity,
       timeout: 120000,

@@ -419,11 +419,17 @@ class SimulationEngine {
           direction: d.direction,
           latitude: d.latitude,
           longitude: d.longitude,
-          source: d.source,
-          speed: d.speed
+          source: d.source
         })),
         skipDuplicates: true
       }).catch(err => console.error('Failed to persist simulated detections:', err));
+
+      // Also update vehicle lastSeen
+      const vehicleIds = liveDetections.map(d => d.vehicleId);
+      prisma.vehicle.updateMany({
+        where: { id: { in: vehicleIds } },
+        data: { lastSeen: new Date(this.time) }
+      }).catch(err => console.error('Failed to update vehicle lastSeen:', err));
     }
 
     this.liveCameraCounts = new Map();
@@ -434,13 +440,13 @@ class SimulationEngine {
     }
     this.liveAlerts = this.cameras.flatMap((camera) => {
       const vehicleCount = this.liveCameraCounts.get(camera.id) || 0;
-      if (vehicleCount < 6) return [];
+      if (vehicleCount < 10) return [];
       return [{
         id: `simulation-congestion-${camera.id}`,
         type: 'TRAFFIC_SURGE',
         severity: vehicleCount >= 12 ? 'critical' : 'high',
-        title: 'Simulation Traffic Congestion',
-        description: `${vehicleCount} simulated vehicles are currently within ${camera.name || camera.cameraCode}.`,
+        title: 'Traffic Congestion Spike',
+        description: `${vehicleCount} vehicles are currently within ${camera.name || camera.cameraCode}.`,
         cameraId: camera.id,
         cameraCode: camera.cameraCode,
         cameraName: camera.name || camera.cameraCode,

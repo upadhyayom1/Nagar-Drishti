@@ -13,11 +13,10 @@ function parseTrafficWindow({ from, to } = {}) {
 
 function getTrafficLevel({ detectionCount, vehicleCount, durationMinutes }) {
   const hourlyVehicleRate = (vehicleCount * 60) / durationMinutes;
-  const hourlyDetectionRate = (detectionCount * 60) / durationMinutes;
   
-  if (hourlyVehicleRate >= 80 || hourlyDetectionRate >= 150) return 'congested';
-  if (hourlyVehicleRate >= 35 || hourlyDetectionRate >= 70) return 'high';
-  if (hourlyVehicleRate >= 12 || hourlyDetectionRate >= 25) return 'moderate';
+  if (hourlyVehicleRate >= 80) return 'congested';
+  if (hourlyVehicleRate >= 35) return 'high';
+  if (hourlyVehicleRate >= 12) return 'moderate';
   return 'low';
 }
 
@@ -41,6 +40,7 @@ async function getTrafficSnapshot(windowInput = {}, cameraId) {
       by: ['cameraId'],
       where,
       _count: { _all: true },
+      _max: { timestamp: true },
     }),
     prisma.detection.groupBy({
       by: ['cameraId', 'vehicleId'],
@@ -50,6 +50,7 @@ async function getTrafficSnapshot(windowInput = {}, cameraId) {
   ]);
   
   const countByCamera = new Map(windowCounts.map((item) => [item.cameraId, item._count._all]));
+  const lastDetectionByCamera = new Map(windowCounts.map((item) => [item.cameraId, item._max.timestamp]));
   const uniqueVehiclesByCamera = new Map();
   for (const item of vehicleCameraPairs) {
     uniqueVehiclesByCamera.set(item.cameraId, (uniqueVehiclesByCamera.get(item.cameraId) || 0) + 1);
@@ -69,12 +70,14 @@ async function getTrafficSnapshot(windowInput = {}, cameraId) {
       const liveVehicles = liveEngineVehiclesByCam.get(camera.id) || 0;
       const vehiclesDetected = liveVehicles > 0 ? liveVehicles : (uniqueVehiclesByCamera.get(camera.id) || 0);
       const detectionCount = windowDetectionCount;
+      const lastDetectionTime = lastDetectionByCamera.get(camera.id) || (liveVehicles > 0 ? new Date() : camera.updatedAt);
 
       return {
         ...camera,
         vehicleCount: vehiclesDetected,
         vehiclesDetected,
         detectionCount,
+        updatedAt: lastDetectionTime,
         trafficLevel: getTrafficLevel({ detectionCount: windowDetectionCount, vehicleCount: vehiclesDetected, durationMinutes: window.durationMinutes }),
         zone: camera.zone?.name || null,
         road: camera.road?.name || null,

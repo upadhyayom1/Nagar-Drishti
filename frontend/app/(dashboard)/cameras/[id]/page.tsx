@@ -13,8 +13,8 @@ import type { Detection } from '@/types';
 
 export default function CameraDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { data: camera }          = useQuery({ queryKey: ['camera', id],     queryFn: () => cameraService.getCameraById(id) });
-  const { data: detections = [] } = useQuery({ queryKey: ['detections', id], queryFn: () => cameraService.getDetectionsByCamera(id) });
+  const { data: camera }          = useQuery({ queryKey: ['camera', id],     queryFn: () => cameraService.getCameraById(id), refetchInterval: 3000 });
+  const { data: detections = [] } = useQuery({ queryKey: ['detections', id], queryFn: () => cameraService.getDetectionsByCamera(id), refetchInterval: 3000 });
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const toggleFullscreen = useCallback(() => {
@@ -49,7 +49,7 @@ export default function CameraDetailPage({ params }: { params: Promise<{ id: str
           <p className="text-xs font-mono text-[var(--text-secondary)] mt-1">{camera.location} · Sector Zone: {camera.zone}</p>
         </div>
         <span className="text-xs font-mono text-cyan-400 font-bold bg-cyan-500/10 px-3.5 py-1.5 rounded-xl border border-cyan-400/30 shadow-[0_0_15px_rgba(0,240,255,0.25)]">
-          NODE: {camera.id}
+          NODE: {camera.cameraCode}
         </span>
       </div>
 
@@ -65,17 +65,35 @@ export default function CameraDetailPage({ params }: { params: Promise<{ id: str
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-400/[0.04] to-cyan-400/[0.1] pointer-events-none" />
             <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-40 animate-pulse pointer-events-none" style={{ top: '35%' }} />
 
-            {/* Simulated Bounding Box + OCR Plate Readout Overlays with Neon Halos */}
+            {/* Dynamic Bounding Box + OCR Plate Readout Overlays with Neon Halos */}
             <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute border-2 border-cyan-400 rounded shadow-[0_0_15px_rgba(0,240,255,0.8)]" style={{ left: '22%', top: '44%', width: '14%', height: '20%' }}>
-                <span className="absolute -top-5 left-0 text-[9px] font-mono bg-cyan-400 text-[#060913] px-1 py-0.5 rounded-sm whitespace-nowrap font-bold shadow-md">TN38AB1234 · 95%</span>
-              </div>
-              <div className="absolute border-2 border-fuchsia-500 rounded shadow-[0_0_15px_rgba(236,72,153,0.8)]" style={{ left: '56%', top: '48%', width: '12%', height: '18%' }}>
-                <span className="absolute -top-5 left-0 text-[9px] font-mono bg-fuchsia-500 text-white px-1 py-0.5 rounded-sm whitespace-nowrap font-bold shadow-md">UP70CD5678 · 88%</span>
-              </div>
-              <div className="absolute border-2 border-amber-400 rounded shadow-[0_0_15px_rgba(245,158,11,0.8)]" style={{ left: '74%', top: '42%', width: '9%', height: '14%' }}>
-                <span className="absolute -top-5 left-0 text-[9px] font-mono bg-amber-400 text-[#060913] px-1 py-0.5 rounded-sm whitespace-nowrap font-bold shadow-md">UP70EF9012 · 76%</span>
-              </div>
+              {Object.values(detections
+                .filter(d => (Date.now() - new Date(d.timestamp).getTime()) < 35000)
+                .reduce((acc, d) => {
+                  if (!acc[d.vehiclePlate]) acc[d.vehiclePlate] = d;
+                  return acc;
+                }, {} as Record<string, Detection>))
+                .slice(0, Math.max(0, camera.vehiclesDetected))
+                .map((d: Detection) => {
+                  const hash = d.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                  const left = 15 + (hash % 60); 
+                  const top = 20 + ((hash * 7) % 50);
+                  const colors = ['cyan', 'fuchsia', 'amber'];
+                  const color = colors[hash % colors.length];
+                  
+                  const borderColorClass = color === 'cyan' ? 'border-cyan-400' : color === 'fuchsia' ? 'border-fuchsia-500' : 'border-amber-400';
+                  const shadowClass = color === 'cyan' ? 'shadow-[0_0_15px_rgba(0,240,255,0.8)]' : color === 'fuchsia' ? 'shadow-[0_0_15px_rgba(236,72,153,0.8)]' : 'shadow-[0_0_15px_rgba(245,158,11,0.8)]';
+                  const bgClass = color === 'cyan' ? 'bg-cyan-400' : color === 'fuchsia' ? 'bg-fuchsia-500' : 'bg-amber-400';
+                  const textClass = color === 'fuchsia' ? 'text-white' : 'text-[#060913]';
+
+                  return (
+                    <div key={d.id} className={`absolute border-2 ${borderColorClass} rounded ${shadowClass} transition-all duration-1000`} style={{ left: `${left}%`, top: `${top}%`, width: '14%', height: '20%' }}>
+                      <span className={`absolute -top-5 left-0 text-[9px] font-mono ${bgClass} ${textClass} px-1 py-0.5 rounded-sm whitespace-nowrap font-bold shadow-md`}>
+                        {d.vehiclePlate} · {d.confidence}%
+                      </span>
+                    </div>
+                  );
+                })}
             </div>
 
             {/* Live Status Indicators */}

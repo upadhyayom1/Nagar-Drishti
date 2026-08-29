@@ -120,7 +120,7 @@ export default function PlateDetectionPage() {
       queryClient.invalidateQueries({ queryKey: ['recentVehicles'] });
       queryClient.invalidateQueries({ queryKey: ['trafficStats'] });
     } catch (recognitionError) {
-      setError(recognitionError instanceof Error ? recognitionError.message : 'Plate recognition failed. Check the backend recognition service and try again.');
+      setError(recognitionError instanceof Error ? recognitionError.message : 'Plate recognition failed. Check the neural recognition engine and try again.');
     } finally {
       setIsProcessing(false);
     }

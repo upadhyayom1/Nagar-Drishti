@@ -11,8 +11,8 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024,
   },
   fileFilter: (req, file, callback) => {
-    if (file.mimetype.startsWith('image/')) return callback(null, true);
-    return callback(new Error('Only image files can be processed for plate recognition'));
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) return callback(null, true);
+    return callback(new Error('Only image and video files can be processed for plate recognition'));
   },
 });
 

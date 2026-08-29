@@ -197,7 +197,7 @@ function LoginFormContent() {
             <div className="space-y-1.5">
               <label className="text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)] font-semibold flex items-center justify-between">
                 <span>{role === 'admin' ? 'Operator Identifier' : 'Username, Email, or Phone'}</span>
-                <span className="text-[10px] text-cyan-400 font-normal">Backend-verified account</span>
+                <span className="text-[10px] text-cyan-400 font-normal">Neural Vault Authenticated</span>
               </label>
               <Input
                 value={username}

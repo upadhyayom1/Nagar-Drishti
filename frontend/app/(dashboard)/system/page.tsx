@@ -33,7 +33,7 @@ export default function SystemDiagnosticsPage() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight font-display">System Diagnostics</h1>
-          <p className="text-xs font-mono text-[var(--text-secondary)] mt-0.5 uppercase tracking-wider">Persisted camera health and backend telemetry</p>
+          <p className="text-xs font-mono text-[var(--text-secondary)] mt-0.5 uppercase tracking-wider">Persisted optical core and neural subsystem telemetry</p>
         </div>
         <button onClick={() => refetch()} disabled={isFetching} className="px-3.5 py-1.5 rounded-xl border border-cyan-500/30 text-xs font-display font-bold text-cyan-500 dark:text-cyan-400 hover:bg-cyan-500/10 disabled:opacity-50 transition-all cursor-pointer">
           {isFetching ? 'Refreshing…' : 'Refresh Telemetry'}
