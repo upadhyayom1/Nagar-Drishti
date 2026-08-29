@@ -13,6 +13,7 @@ const cameraRoutes = require('./modules/camera/camera.routes');
 const vehicleRoutes = require('./modules/vehicle/vehicle.routes');
 const simulationRoutes = require('./modules/simulation/simulation.routes');
 const detectionRoutes = require('./modules/detection/detection.routes');
+const trafficRoutes = require('./modules/traffic/traffic.routes');
 const app = express();
 
 app.use(express.json());
@@ -40,6 +41,7 @@ app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/simulation', simulationRoutes);
 app.use('/api/detections', detectionRoutes);
 app.use('/api/ocr', ocrRoutes);
+app.use('/api/traffic', trafficRoutes);
 
 
 

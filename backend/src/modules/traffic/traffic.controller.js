@@ -1,4 +1,6 @@
 const trafficService = require('./traffic.service');
+const axios = require('axios');
+const { env } = require('../../config/env');
 
 const getRoadTrafficData = async (req, res) => {
   try {
@@ -31,8 +33,33 @@ const getTrafficSummary = async (req, res) => {
   }
 };
 
+const getForecast = async (req, res) => {
+  try {
+    const { horizon_mins, capacity_threshold } = req.query;
+    
+    const mlUrl = new URL(`${env.ML_SERVICE_URL}/api/forecast/congestion`);
+    if (horizon_mins) mlUrl.searchParams.append('horizon_mins', horizon_mins);
+    if (capacity_threshold) mlUrl.searchParams.append('capacity_threshold', capacity_threshold);
+
+    const response = await axios.get(mlUrl.toString());
+
+    return res.status(200).json({
+      success: true,
+      data: response.data,
+    });
+  } catch (error) {
+    console.error('Traffic Forecast Controller Error:', error.message);
+    
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch traffic forecast from ML service',
+    });
+  }
+};
+
 module.exports = {
   getRoadTrafficData,
   getRoadTraffic,
   getTrafficSummary,
+  getForecast,
 };

@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Inbox,
   ScanLine,
+  TrendingUp,
 } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 
@@ -104,6 +105,20 @@ const navGroups: { label: string; items: NavItem[] }[] = [
           'text-violet-400 drop-shadow-[0_0_8px_rgba(139,92,246,0.7)]',
         hoverClass:
           'hover:border-violet-400/50 hover:bg-violet-500/10 hover:shadow-[0_0_16px_rgba(139,92,246,0.2)] hover:text-violet-400',
+      },
+      {
+        name: 'Traffic Forecast',
+        href: '/forecast',
+        icon: TrendingUp,
+        color: '#facc15',
+        bgActive: 'bg-yellow-500/15',
+        borderActive: 'border-yellow-400/60',
+        glowShadow: 'shadow-[0_0_22px_rgba(250,204,21,0.35)]',
+        leftPillColor: 'bg-[#facc15] shadow-[0_0_10px_#facc15]',
+        iconColor:
+          'text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.7)]',
+        hoverClass:
+          'hover:border-yellow-400/50 hover:bg-yellow-500/10 hover:shadow-[0_0_16px_rgba(250,204,21,0.2)] hover:text-yellow-400',
       },
       {
         name: 'Movement Network',

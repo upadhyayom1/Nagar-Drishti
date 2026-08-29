@@ -12,6 +12,7 @@ import { analyticsService } from '@/services/analyticsService';
 import { alertService }     from '@/services/alertService';
 import { formatTime, formatRelativeTime, cn } from '@/lib/utils';
 import { useFilterStore }   from '@/store/filterStore';
+import { CongestionForecastWidget } from '@/components/dashboard/CongestionForecastWidget';
 import type { Alert } from '@/types';
 
 // Dynamic import for Leaflet map with zero SSR issues
@@ -170,57 +171,66 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Real-Time Sentinel Feed Column */}
-        <GlassCard padding="sm" glow="rose" accent="rose" className="lg:col-span-1 flex flex-col h-[575px]">
-          <div className="flex items-center justify-between mb-3.5 pb-3 border-b border-[var(--glass-border)]">
-            <h3 className="text-xs font-display font-bold text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-2">
-              <Radio size={13} className="text-rose-500 dark:text-rose-400 animate-pulse" />
-              Live Sentinel Feed
-            </h3>
-            <Badge variant="critical" size="sm" dot pulse>{alerts.length}</Badge>
-          </div>
+        {/* Right Hand Side Column for Feed and Forecast */}
+        <div className="lg:col-span-1 flex flex-col gap-4 h-[575px]">
+          
+          {/* Real-Time Sentinel Feed */}
+          <GlassCard padding="sm" glow="rose" accent="rose" className="flex-1 flex flex-col min-h-[300px]">
+            <div className="flex items-center justify-between mb-3.5 pb-3 border-b border-[var(--glass-border)]">
+              <h3 className="text-xs font-display font-bold text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-2">
+                <Radio size={13} className="text-rose-500 dark:text-rose-400 animate-pulse" />
+                Live Sentinel Feed
+              </h3>
+              <Badge variant="critical" size="sm" dot pulse>{alerts.length}</Badge>
+            </div>
 
-          <div className="space-y-2.5 flex-1 overflow-y-auto pr-1">
-            {alerts.map((alert: Alert) => (
-              <div
-                key={alert.id}
-                className={cn(
-                  'p-3.5 rounded-xl border transition-all duration-200 cursor-pointer',
-                  alert.severity === 'critical'
-                    ? 'bg-rose-500/10 border-rose-500/30 hover:border-rose-500/60 shadow-[0_0_16px_rgba(244,63,94,0.2)]'
-                    : alert.severity === 'high'
-                    ? 'bg-amber-500/10 border-amber-500/30 hover:border-amber-500/60 shadow-[0_0_14px_rgba(245,158,11,0.15)]'
-                    : 'bg-white/[0.03] border-[var(--glass-border)] hover:border-cyan-400/40 hover:bg-white/[0.06]',
-                )}
-              >
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="text-xs font-semibold text-[var(--text-primary)] truncate font-display">
-                    {alert.title}
-                  </span>
-                  <Badge variant={severityVariant(alert.severity)} size="sm">
-                    {alert.severity}
-                  </Badge>
-                </div>
-                <p className="text-xs text-[var(--text-secondary)] line-clamp-2 mb-2 leading-relaxed font-body">
-                  {alert.description}
-                </p>
-                <div className="flex items-center justify-between text-[10px] font-mono">
-                  {alert.vehiclePlate && (
-                    <span className="text-cyan-500 dark:text-cyan-400 font-bold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">
-                      {alert.vehiclePlate}
-                    </span>
+            <div className="space-y-2.5 flex-1 overflow-y-auto pr-1">
+              {alerts.map((alert: Alert) => (
+                <div
+                  key={alert.id}
+                  className={cn(
+                    'p-3.5 rounded-xl border transition-all duration-200 cursor-pointer',
+                    alert.severity === 'critical'
+                      ? 'bg-rose-500/10 border-rose-500/30 hover:border-rose-500/60 shadow-[0_0_16px_rgba(244,63,94,0.2)]'
+                      : alert.severity === 'high'
+                      ? 'bg-amber-500/10 border-amber-500/30 hover:border-amber-500/60 shadow-[0_0_14px_rgba(245,158,11,0.15)]'
+                      : 'bg-white/[0.03] border-[var(--glass-border)] hover:border-cyan-400/40 hover:bg-white/[0.06]',
                   )}
-                  <span 
-                    title={formatTime(alert.timestamp)} 
-                    className="text-[var(--text-tertiary)] ml-auto cursor-help"
-                  >
-                    {formatRelativeTime(alert.timestamp)}
-                  </span>
+                >
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-xs font-semibold text-[var(--text-primary)] truncate font-display">
+                      {alert.title}
+                    </span>
+                    <Badge variant={severityVariant(alert.severity)} size="sm">
+                      {alert.severity}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-[var(--text-secondary)] line-clamp-2 mb-2 leading-relaxed font-body">
+                    {alert.description}
+                  </p>
+                  <div className="flex items-center justify-between text-[10px] font-mono">
+                    {alert.vehiclePlate && (
+                      <span className="text-cyan-500 dark:text-cyan-400 font-bold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">
+                        {alert.vehiclePlate}
+                      </span>
+                    )}
+                    <span 
+                      title={formatTime(alert.timestamp)} 
+                      className="text-[var(--text-tertiary)] ml-auto cursor-help"
+                    >
+                      {formatRelativeTime(alert.timestamp)}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          </GlassCard>
+
+          {/* AI Traffic Congestion Forecast */}
+          <div className="h-[250px] shrink-0">
+            <CongestionForecastWidget />
           </div>
-        </GlassCard>
+        </div>
       </div>
     </PageWrapper>
   );
