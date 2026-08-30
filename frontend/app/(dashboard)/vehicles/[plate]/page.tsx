@@ -1,10 +1,10 @@
 'use client';
 
 import { use } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Eye, Clock, Route, Camera, BrainCircuit } from 'lucide-react';
+import { ArrowLeft, Eye, Clock, Route, Camera, BrainCircuit, Loader2 } from 'lucide-react';
 import { GlassCard }   from '@/components/ui/GlassCard';
 import { Badge }       from '@/components/ui/Badge';
 import { Button }      from '@/components/ui/Button';
@@ -19,7 +19,21 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
   const decodedPlate = decodeURIComponent(plate).toUpperCase();
 
   const { data: vehicle }        = useQuery({ queryKey: ['vehicle', decodedPlate],           queryFn: () => vehicleService.getVehicleByPlate(decodedPlate) });
-  const { data: detections = [] }= useQuery({ queryKey: ['vehicleDetections', decodedPlate], queryFn: () => vehicleService.getVehicleDetections(decodedPlate) });
+  
+  const { 
+    data: detectionsData, 
+    fetchNextPage, 
+    hasNextPage, 
+    isFetchingNextPage 
+  } = useInfiniteQuery({
+    queryKey: ['vehicleDetections', decodedPlate],
+    queryFn: ({ pageParam }) => vehicleService.getVehicleDetections(decodedPlate, pageParam as string | undefined),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor || undefined,
+  });
+  const detections = detectionsData?.pages.flatMap(page => page.items) || [];
+  
+  const { data: heatmapData = Array(28).fill(0) } = useQuery({ queryKey: ['vehicleHeatmap', decodedPlate], queryFn: () => vehicleService.getVehicleHeatmap(decodedPlate) });
   const { data: journey }        = useQuery({ queryKey: ['vehicleJourney', decodedPlate],    queryFn: () => vehicleService.getVehicleJourney(decodedPlate) });
   const { data: intelligence, refetch: fetchIntelligence, isFetching: isAnalyzing } = useQuery({ 
     queryKey: ['vehicleIntelligence', decodedPlate], 
@@ -37,17 +51,7 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
   );
 
   const statusVariant = vehicle.status === 'blacklist' ? 'danger' : vehicle.status === 'watchlist' ? 'warning' : 'success';
-  const activityDays = Array.from({ length: 28 }, (_, index) => {
-    const day = new Date();
-    day.setHours(0, 0, 0, 0);
-    day.setDate(day.getDate() - (27 - index));
-    const nextDay = new Date(day);
-    nextDay.setDate(nextDay.getDate() + 1);
-    return detections.filter((detection) => {
-      const timestamp = new Date(detection.timestamp);
-      return timestamp >= day && timestamp < nextDay;
-    }).length;
-  });
+  const activityDays = heatmapData;
   const maxActivity = Math.max(...activityDays, 1);
 
   return (
@@ -103,7 +107,7 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
                   key={d.id}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.05, duration: 0.25 }}
+                  transition={{ delay: (i % 15) * 0.05, duration: 0.25 }}
                   className="flex items-start gap-4 relative"
                 >
                   <div className="w-6 h-6 rounded-full ring-2 ring-cyan-400 bg-slate-950 flex items-center justify-center shrink-0 z-10 shadow-[0_0_10px_rgba(6,182,212,0.6)]">
@@ -126,6 +130,20 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
                 </motion.div>
               ))}
             </div>
+            
+            {hasNextPage && (
+              <div className="mt-8 flex justify-center pb-4 relative z-10">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => fetchNextPage()} 
+                  disabled={isFetchingNextPage}
+                  className="bg-slate-950 text-cyan-400 border-cyan-400/30 hover:bg-cyan-950/50"
+                >
+                  {isFetchingNextPage ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Loading...</> : 'Load Previous Records'}
+                </Button>
+              </div>
+            )}
           </div>
           {detections.length === 0 && (
             <p className="text-center text-xs font-mono text-slate-500 py-10">No detection events recorded for this vehicle</p>

@@ -36,40 +36,47 @@ const recognizePlates = async (req, res) => {
 
     for (const [index, file] of req.files.entries()) {
       try {
-        const result = await ocrService.recognizePlate(
+        const platesFound = await ocrService.recognizePlate(
           file.buffer,
           file.originalname,
           file.mimetype
         );
-        const plateNumber = String(result.plateNumber || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-        if (!plateNumber) {
-          results.push({ sourceFile: file.originalname, detected: false, confidence: 0 });
+        if (!platesFound || platesFound.length === 0) {
+          results.push({ sourceFile: file.originalname, detected: false, confidence: 0, error: 'No plates detected.' });
           continue;
         }
 
-        const vehicle = await prisma.vehicle.upsert({
-          where: { plateNumber },
-          update: { lastSeen: new Date(timestamp) },
-          create: { plateNumber, firstSeen: new Date(timestamp), lastSeen: new Date(timestamp) },
-        });
-        const recorded = await recordDetection({
-          vehicleId: vehicle.id,
-          cameraId: camera.id,
-          plateText: plateNumber,
-          timestamp: new Date(timestamp),
-          ocrConfidence: result.confidence,
-          source: 'AI',
-        });
-        results.push({
-          sourceFile: file.originalname,
-          detected: true,
-          plateNumber,
-          confidence: Math.round(result.confidence * 1000) / 10,
-          detectionId: recorded.detection.id,
-          timestamp: recorded.detection.timestamp,
-          isBlacklisted: recorded.detection.isBlacklisted,
-        });
+        for (const plateResult of platesFound) {
+          const plateNumber = String(plateResult.plateNumber || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+          
+          if (!plateNumber) continue;
+
+          const vehicle = await prisma.vehicle.upsert({
+            where: { plateNumber },
+            update: { lastSeen: new Date(timestamp) },
+            create: { plateNumber, firstSeen: new Date(timestamp), lastSeen: new Date(timestamp) },
+          });
+          
+          const recorded = await recordDetection({
+            vehicleId: vehicle.id,
+            cameraId: camera.id,
+            plateText: plateNumber,
+            timestamp: new Date(timestamp),
+            ocrConfidence: plateResult.confidence,
+            source: 'AI',
+          });
+          
+          results.push({
+            sourceFile: file.originalname,
+            detected: true,
+            plateNumber,
+            confidence: Math.round(plateResult.confidence * 1000) / 10,
+            detectionId: recorded.detection.id,
+            timestamp: recorded.detection.timestamp,
+            isBlacklisted: recorded.detection.isBlacklisted,
+          });
+        }
       } catch (fileError) {
         results.push({
           sourceFile: file.originalname,

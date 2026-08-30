@@ -23,22 +23,18 @@ const recognizePlate = async (imageBuffer, originalName, mimeType) => {
     const results = response.data.results || [];
 
     if (!results || results.length === 0) {
-      return {
-        plateNumber: null,
-        confidence: 0,
-      };
+      return [];
     }
 
-    const plate = results
+    const plates = results
       .filter((result) => result.plateNumber)
-      .sort((left, right) => (right.confidence || 0) - (left.confidence || 0))[0];
+      .sort((left, right) => (right.confidence || 0) - (left.confidence || 0))
+      .map(plate => ({
+        plateNumber: plate.plateNumber?.toUpperCase() || null,
+        confidence: plate.confidence || 0,
+      }));
 
-    if (!plate) return { plateNumber: null, confidence: 0 };
-
-    return {
-      plateNumber: plate.plateNumber?.toUpperCase() || null,
-      confidence: plate.confidence || 0,
-    };
+    return plates.length > 0 ? plates : [];
   } catch (error) {
     console.error(
       'OCR Service Error:',

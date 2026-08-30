@@ -44,8 +44,8 @@ const getForecast = async (req, res) => {
     }
     
     const mlUrl = new URL(`${env.ML_SERVICE_URL}/api/forecast/congestion`);
-    if (horizonMinutes !== undefined) mlUrl.searchParams.append('horizon_mins', String(horizonMinutes));
-    if (capacity_threshold) mlUrl.searchParams.append('capacity_threshold', capacity_threshold);
+    if (horizonMinutes !== undefined) mlUrl.searchParams.append('minutes', String(horizonMinutes));
+    if (capacity_threshold) mlUrl.searchParams.append('threshold', capacity_threshold);
 
     const response = await axios.get(mlUrl.toString());
     const data = response.data;

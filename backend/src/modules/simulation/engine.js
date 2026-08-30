@@ -82,6 +82,27 @@ class SimulationEngine {
       
       const parts = startNode.split(',').map(Number);
       
+      const hour = new Date().getHours();
+      let wakeProbability = 0.8;
+      if (hour >= 23 || hour <= 4) wakeProbability = 0.05;
+      else if (hour >= 5 && hour <= 7) wakeProbability = 0.3;
+
+      let initialState = 'MOVING';
+      let initialRestUntil = null;
+      
+      // Randomly start some vehicles in a RESTING state to prevent all vehicles moving at once on startup
+      if (Math.random() > wakeProbability) {
+          initialState = 'RESTING';
+          const maxRestMins = 8 * 60; 
+          const restMins = Math.random() * maxRestMins; 
+          initialRestUntil = new Date(Date.now() + restMins * 60000);
+      } else {
+          // For vehicles that start moving, stagger their initial departure by up to 60 seconds
+          // so they don't all hit the road at the exact same millisecond.
+          initialState = 'RESTING';
+          initialRestUntil = new Date(Date.now() + Math.random() * 60000);
+      }
+      
       return {
         id: v.id,
         plateNumber: v.plateNumber,
@@ -89,8 +110,8 @@ class SimulationEngine {
         speed: getSimulationSpeed(v),
         status: v.status, // Needed for Blacklist checks
         
-        state: 'MOVING',
-        restUntil: null,
+        state: initialState,
+        restUntil: initialRestUntil,
         
         currentNode: startNode,
         destinationNode: destNode,
@@ -406,12 +427,14 @@ class SimulationEngine {
                 if (!v.activeCameras.has(cam.id)) {
                     v.activeCameras.add(cam.id);
                     
+                    // Add a random millisecond jitter (0-999ms) so detections in the same tick don't share the exact same timestamp
+                    const jitterMs = Math.floor(Math.random() * 1000);
                     const detection = {
                         id: `simulation-${this.nextEventId++}`,
                         vehicleId: v.id,
                         cameraId: cam.id,
                         plateText: v.plateNumber,
-                        timestamp: new Date(this.time),
+                        timestamp: new Date(this.time.getTime() - jitterMs),
                         source: 'SIMULATION',
                         speed: v.speed,
                         vehicleConfidence: 0.95 + (Math.random() * 0.04),
@@ -479,7 +502,16 @@ class SimulationEngine {
                          cameraId: detection.cameraId,
                          message: `Blacklisted vehicle ${bv.plateNumber} detected on camera.`,
                          status: 'ACTIVE',
-                         createdAt: new Date(this.time)
+                         createdAt: detection.timestamp
+                     }
+                 }).catch(() => {});
+             } else {
+                 // Bump the alert to the top if it already exists
+                 prisma.alert.update({
+                     where: { id: existingAlert.id },
+                     data: {
+                         createdAt: detection.timestamp,
+                         cameraId: detection.cameraId
                      }
                  }).catch(() => {});
              }
