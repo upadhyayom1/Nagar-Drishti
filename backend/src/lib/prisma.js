@@ -1,20 +1,10 @@
-const dns = require('dns');
-dns.setDefaultResultOrder('ipv4first');
-
 const { PrismaClient } = require('@prisma/client');
-const { PrismaNeon } = require('@prisma/adapter-neon');
-const { neonConfig } = require('@neondatabase/serverless');
+const { Pool } = require('pg');
+const { PrismaPg } = require('@prisma/adapter-pg');
 const { env } = require('../config/env');
 
-const connectionString = env.DATABASE_URL;
-
-// Ensure WebSocket is used if available (Polyfill for node if needed)
-const ws = require('ws');
-neonConfig.webSocketConstructor = ws;
-
-// PrismaNeon takes the driver's configuration object, not an already-created
-// Pool. Passing the Pool caused Prisma to fall back to localhost at runtime.
-const adapter = new PrismaNeon({ connectionString });
+const pool = new Pool({ connectionString: env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
 
 const prisma = global.prisma || new PrismaClient({
   adapter,
