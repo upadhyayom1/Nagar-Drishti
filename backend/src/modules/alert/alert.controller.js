@@ -70,8 +70,7 @@ exports.getAlerts = async (req, res) => {
 exports.getActiveAlertCount = async (req, res) => {
   try {
     const alerts = await getDeduplicatedActiveAlerts();
-    const simulationAlerts = global.simulationEngine?.running ? global.simulationEngine.getLiveAlerts() : [];
-    res.status(200).json(alerts.length + simulationAlerts.length);
+    res.status(200).json(alerts.length);
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
   }
@@ -79,10 +78,8 @@ exports.getActiveAlertCount = async (req, res) => {
 
 exports.getNotificationSummary = async (req, res) => {
   try {
-    const databaseAlerts = await getDeduplicatedActiveAlerts();
-    const simulationAlerts = global.simulationEngine?.running ? global.simulationEngine.getLiveAlerts() : [];
-    const alerts = [...simulationAlerts, ...databaseAlerts]
-      .sort((left, right) => new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime());
+    const alerts = await getDeduplicatedActiveAlerts();
+    alerts.sort((left, right) => new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime());
     const limit = Math.min(Math.max(Number(req.query.limit) || 8, 1), 100);
     res.status(200).json({ success: true, data: { items: alerts.slice(0, limit), total: alerts.length } });
   } catch (error) {

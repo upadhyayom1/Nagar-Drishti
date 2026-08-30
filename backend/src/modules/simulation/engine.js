@@ -87,6 +87,10 @@ class SimulationEngine {
         plateNumber: v.plateNumber,
         type: v.vehicleType || 'CAR',
         speed: getSimulationSpeed(v),
+        status: v.status, // Needed for Blacklist checks
+        
+        state: 'MOVING',
+        restUntil: null,
         
         currentNode: startNode,
         destinationNode: destNode,
@@ -315,8 +319,35 @@ class SimulationEngine {
 
     // Move vehicles
     for (let v of this.vehicles) {
+        if (v.state === 'RESTING') {
+            if (v.restUntil && this.time < v.restUntil) continue;
+            
+            // Reached end of rest duration. Check time-of-day probability to wake up.
+            const hour = this.time.getHours();
+            let wakeProbability = 0.8; // Default day time
+            if (hour >= 23 || hour <= 4) wakeProbability = 0.05; // Very low at night
+            else if (hour >= 5 && hour <= 7) wakeProbability = 0.3; // Early morning
+            
+            if (Math.random() > wakeProbability) {
+                // Sleep for another 30 mins if probability check fails
+                v.restUntil = new Date(this.time.getTime() + 30 * 60000);
+                continue;
+            }
+            
+            v.state = 'MOVING';
+            v.restUntil = null;
+        }
+
         if (!v.currentRoute || v.routeIndex >= v.currentRoute.length) {
             // Reached destination or has no valid route
+            
+            const minRestMins = 15;
+            const maxRestMins = 8 * 60; // Up to 8 hours resting at destination
+            const restMins = minRestMins + Math.random() * (maxRestMins - minRestMins);
+            
+            v.state = 'RESTING';
+            v.restUntil = new Date(this.time.getTime() + restMins * 60000);
+
             v.destinationNode = this.selectDestination(v.currentNode);
             v.currentRoute = this.calculateRoute(v.currentNode, v.destinationNode, v.recentNodes);
             v.routeIndex = 0;
@@ -329,13 +360,13 @@ class SimulationEngine {
                     v.currentRoute = [neighbors[Math.floor(Math.random() * neighbors.length)]];
                     v.destinationNode = v.currentRoute[0].target;
                 } else {
-                    // Truly stuck, teleport
+                    // Truly stuck, teleport but rest first
                     v.currentNode = this.nodesList[Math.floor(Math.random() * this.nodesList.length)];
                     v.coords = v.currentNode.split(',').map(Number);
                 }
             }
-            // Recalculate the route and keep the current tick's movement instead
-            // of pausing a vehicle for a full tick at every destination.
+            // Skip moving this tick while it enters RESTING state
+            continue;
         }
 
         const speedMs = v.speed * (1000 / 3600);
@@ -430,33 +461,65 @@ class SimulationEngine {
         where: { id: { in: vehicleIds } },
         data: { lastSeen: new Date(this.time) }
       }).catch(err => console.error('Failed to update vehicle lastSeen:', err));
+
+      // Generate Blacklist alerts
+      const blacklistedVehicles = this.vehicles.filter(v => v.status === 'BLACKLISTED' && liveDetections.some(d => d.vehicleId === v.id));
+      for (const bv of blacklistedVehicles) {
+         const detection = liveDetections.find(d => d.vehicleId === bv.id);
+         if (!detection) continue;
+         prisma.alert.findFirst({
+             where: { vehicleId: bv.id, type: 'BLACKLIST_MATCH', status: 'ACTIVE' }
+         }).then(existingAlert => {
+             if (!existingAlert) {
+                 prisma.alert.create({
+                     data: {
+                         type: 'BLACKLIST_MATCH',
+                         severity: 'CRITICAL',
+                         vehicleId: bv.id,
+                         cameraId: detection.cameraId,
+                         message: `Blacklisted vehicle ${bv.plateNumber} detected on camera.`,
+                         status: 'ACTIVE',
+                         createdAt: new Date(this.time)
+                     }
+                 }).catch(() => {});
+             }
+         }).catch(() => {});
+      }
     }
 
     this.liveCameraCounts = new Map();
     for (const vehicle of this.vehicles) {
+      if (vehicle.state === 'RESTING') continue; // Don't count resting vehicles as active traffic
       for (const cameraId of vehicle.activeCameras) {
         this.liveCameraCounts.set(cameraId, (this.liveCameraCounts.get(cameraId) || 0) + 1);
       }
     }
-    this.liveAlerts = this.cameras.flatMap((camera) => {
-      const vehicleCount = this.liveCameraCounts.get(camera.id) || 0;
-      if (vehicleCount < 10) return [];
-      return [{
-        id: `simulation-congestion-${camera.id}`,
-        type: 'TRAFFIC_SURGE',
-        severity: vehicleCount >= 12 ? 'critical' : 'high',
-        title: 'Traffic Congestion Spike',
-        description: `${vehicleCount} vehicles are currently within ${camera.name || camera.cameraCode}.`,
-        cameraId: camera.id,
-        cameraCode: camera.cameraCode,
-        cameraName: camera.name || camera.cameraCode,
-        location: camera.name || camera.cameraCode,
-        timestamp: new Date(this.time),
-        isRead: false,
-        isResolved: false,
-        isSimulation: true,
-      }];
-    });
+
+    // Process Congestion Alerts directly to DB
+    for (const camera of this.cameras) {
+        const vehicleCount = this.liveCameraCounts.get(camera.id) || 0;
+        
+        if (vehicleCount >= 10) {
+            prisma.alert.findFirst({
+                where: { cameraId: camera.id, type: 'CONGESTION', status: 'ACTIVE' }
+            }).then(existingAlert => {
+                if (!existingAlert) {
+                    prisma.alert.create({
+                        data: {
+                            type: 'CONGESTION',
+                            severity: vehicleCount >= 12 ? 'CRITICAL' : 'HIGH',
+                            cameraId: camera.id,
+                            message: `Traffic Congestion Spike: ${vehicleCount} vehicles are currently active within camera zone.`,
+                            status: 'ACTIVE',
+                            createdAt: new Date(this.time)
+                        }
+                    }).catch(() => {});
+                }
+            }).catch(() => {});
+        }
+    }
+    
+    this.liveAlerts = []; // Deprecated in favor of DB alerts
   }
 
   getLiveCameraCounts() {
