@@ -562,6 +562,27 @@ class SimulationEngine {
     return new Map(this.liveCameraCounts);
   }
 
+  /**
+   * Vehicles currently within a camera's detection radius, from live
+   * simulation state only (never from historical Detection rows). This is
+   * what "click a camera, see who's there right now" must use — it answers
+   * "who is at this camera right now", not "who has ever been seen here".
+   */
+  getLiveVehiclesAtCamera(cameraId) {
+    if (!this.running) return [];
+    return this.vehicles
+      .filter((vehicle) => vehicle.state !== 'RESTING' && vehicle.activeCameras?.has(cameraId))
+      .map((vehicle) => ({
+        vehicleId: vehicle.id,
+        plateNumber: vehicle.plateNumber,
+        vehicleType: vehicle.type,
+        status: vehicle.status,
+        speed: Number.isFinite(vehicle.speed) ? Math.round(vehicle.speed * 10) / 10 : null,
+        latitude: vehicle.coords?.[1] ?? null,
+        longitude: vehicle.coords?.[0] ?? null,
+      }));
+  }
+
   getLiveAlerts() {
     return [...this.liveAlerts];
   }

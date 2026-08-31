@@ -33,6 +33,30 @@ exports.getTraffic = async (req, res) => {
   }
 };
 
+// Live simulation state only — "who is at this camera right now", never a
+// count of historical Detection rows. The frontend should not calculate
+// this itself; it just requests and renders this endpoint's result.
+exports.getLiveDetections = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const engine = global.simulationEngine;
+    const running = Boolean(engine?.running);
+    const vehicles = running ? engine.getLiveVehiclesAtCamera(id) : [];
+    res.status(200).json({
+      success: true,
+      data: {
+        cameraId: id,
+        simulationRunning: running,
+        vehicleCount: vehicles.length,
+        vehicles,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching live camera detections:', error);
+    res.status(500).json({ success: false, message: 'Server error fetching live detections' });
+  }
+};
+
 function enrichCamera(camera) {
   return {
     ...camera,
