@@ -1,7 +1,6 @@
-```markdown
-# UrbanPulse - Command Center 🚀
+# NagarDrishti - Command Center 🚀
 
-UrbanPulse is an AI-powered vehicle intelligence and traffic analytics platform for Prayagraj. The frontend consumes the Express/Prisma backend for its cameras, roads, zones, detections, analytics, alerts, and blacklist records.
+NagarDrishti is an AI-powered vehicle intelligence and traffic analytics platform for Prayagraj. The frontend consumes the Express/Prisma backend for its cameras, roads, zones, detections, analytics, alerts, and blacklist records.
 
 ## 🛠 Tech Stack
 

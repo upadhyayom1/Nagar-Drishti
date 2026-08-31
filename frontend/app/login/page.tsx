@@ -107,7 +107,7 @@ function LoginFormContent() {
               <ShieldCheck size={20} className="text-cyan-400" />
             </div>
             <span className="font-display font-bold text-xl text-[var(--text-primary)]">
-              Urban<span className="text-gradient-spectral">Pulse</span>
+              Nagar<span className="text-gradient-spectral">Drishti</span>
             </span>
           </Link>
           <p className="text-xs text-[var(--text-secondary)] font-mono uppercase tracking-wider">
@@ -202,7 +202,7 @@ function LoginFormContent() {
               <Input
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder={role === 'admin' ? 'e.g. operator.krishnan' : 'e.g. citizen@urbanpulse.gov'}
+                placeholder={role === 'admin' ? 'e.g. operator.krishnan' : 'e.g. citizen@nagardrishti.gov'}
                 className="h-10 text-xs font-mono"
               />
             </div>

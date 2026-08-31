@@ -67,7 +67,7 @@ export default function LandingPage() {
   const { data: systemHealth } = useQuery({ queryKey: ['systemHealth'], queryFn: analyticsService.getSystemHealth });
 
   useEffect(() => {
-    const saved = localStorage.getItem('urbanpulse_theme') as 'dark' | 'light' | null;
+    const saved = localStorage.getItem('nagardrishti_theme') as 'dark' | 'light' | null;
     if (saved) {
       setTheme(saved);
       document.documentElement.setAttribute('data-theme', saved);
@@ -147,7 +147,7 @@ export default function LandingPage() {
               <ShieldCheck size={17} className="text-cyan-500 dark:text-cyan-400" />
             </div>
             <span className="font-display font-bold text-base text-[var(--text-primary)]">
-              Urban<span className="text-gradient-spectral">Pulse</span>
+              Nagar<span className="text-gradient-spectral">Drishti</span>
             </span>
           </div>
 
@@ -303,7 +303,7 @@ export default function LandingPage() {
             Choose Your Intelligence Workspace
           </h2>
           <p className="text-[var(--text-secondary)] max-w-xl mx-auto text-xs font-body">
-            UrbanPulse unifies municipal command operations with direct citizen field intelligence.
+            NagarDrishti unifies municipal command operations with direct citizen field intelligence.
           </p>
         </div>
 
@@ -390,7 +390,7 @@ export default function LandingPage() {
             Built for Authorized Public Safety &amp; Management
           </h2>
           <p className="text-[var(--text-secondary)] max-w-2xl mx-auto text-xs font-body">
-            UrbanPulse is purpose-engineered strictly for authorized traffic management, emergency response coordination, and municipal planning.
+            NagarDrishti is purpose-engineered strictly for authorized traffic management, emergency response coordination, and municipal planning.
           </p>
         </div>
 
@@ -462,7 +462,7 @@ export default function LandingPage() {
               <div className="flex items-center gap-2.5">
                 <ShieldCheck size={18} className="text-cyan-500 dark:text-cyan-400" />
                 <span className="font-display font-bold text-base text-[var(--text-primary)]">
-                  Urban<span className="text-gradient-spectral">Pulse</span>
+                  Nagar<span className="text-gradient-spectral">Drishti</span>
                 </span>
               </div>
               <p className="text-xs text-[var(--text-secondary)] font-body leading-relaxed">
@@ -493,13 +493,13 @@ export default function LandingPage() {
             <div className="space-y-2.5">
               <p className="text-xs font-display font-semibold uppercase tracking-wider text-[var(--text-primary)]">Authorized Scope</p>
               <div className="p-3 rounded-xl bg-white/[0.03] border border-[var(--glass-border)] text-[10px] font-mono text-[var(--text-secondary)] leading-relaxed">
-                UrbanPulse is designed strictly for authorized traffic management, emergency response coordination and municipal public-safety operations.
+                NagarDrishti is designed strictly for authorized traffic management, emergency response coordination and municipal public-safety operations.
               </div>
             </div>
           </div>
 
           <div className="pt-6 border-t border-[var(--glass-border)] flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-[var(--text-tertiary)] font-body">
-            <p>© {new Date().getFullYear()} UrbanPulse. Architected &amp; crafted for smart city operations.</p>
+            <p>© {new Date().getFullYear()} NagarDrishti. Architected &amp; crafted for smart city operations.</p>
             <p className="font-mono text-[10px] text-[var(--text-tertiary)]">Prayagraj Municipal Grid · v3.0 Dual-Role</p>
           </div>
         </div>

@@ -156,7 +156,7 @@ export default function AlertsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `urbanpulse_alerts_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `nagardrishti_alerts_${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

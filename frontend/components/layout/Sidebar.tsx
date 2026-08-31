@@ -207,7 +207,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         {!sidebarCollapsed && (
           <div className="min-w-0">
             <h1 className="text-sm font-bold tracking-tight text-[var(--text-primary)] leading-none font-display">
-              Urban<span className="text-gradient-spectral">Pulse</span>
+              Nagar<span className="text-gradient-spectral">Drishti</span>
             </h1>
 
             <span className="text-[9px] font-mono text-[var(--text-secondary)] tracking-[0.16em] uppercase mt-1 block">
@@ -335,7 +335,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             </p>
 
             <p className="text-[8px] text-[var(--text-tertiary)] mt-0.5 leading-tight font-body">
-              UrbanPulse Command Grid
+              NagarDrishti Command Grid
             </p>
           </div>
         )}

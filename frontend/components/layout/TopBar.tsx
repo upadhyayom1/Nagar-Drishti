@@ -27,7 +27,7 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/cameras/'))                                       return 'Camera Feed Telemetry';
   if (pathname.startsWith('/vehicles/') && pathname.endsWith('/trajectory')) return 'Trajectory Reconstruction';
   if (pathname.startsWith('/vehicles/') && pathname !== '/vehicles')         return 'Vehicle Intelligence Profile';
-  return pageTitles[pathname] ?? 'UrbanPulse';
+  return pageTitles[pathname] ?? 'NagarDrishti';
 }
 
 export function TopBar() {
@@ -50,7 +50,7 @@ export function TopBar() {
 
   // Initialize theme from localStorage or system preference on mount
   useEffect(() => {
-    const saved = localStorage.getItem('urbanpulse_theme') as 'dark' | 'light' | null;
+    const saved = localStorage.getItem('nagardrishti_theme') as 'dark' | 'light' | null;
     if (saved) {
       setTheme(saved);
       document.documentElement.setAttribute('data-theme', saved);
