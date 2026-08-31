@@ -16,6 +16,7 @@ const variantStyles = {
     'shadow-[0_0_22px_rgba(0,240,255,0.45)]',
     'hover:shadow-[0_0_32px_rgba(0,240,255,0.7)] hover:from-cyan-300 hover:to-cyan-400 hover:scale-[1.02]',
     'active:scale-[0.98]',
+    'focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
   ),
   cyan: cn(
     'font-display font-semibold text-[#050b14] font-bold',
@@ -24,19 +25,22 @@ const variantStyles = {
     'shadow-[0_0_20px_rgba(0,240,255,0.4)]',
     'hover:shadow-[0_0_30px_rgba(0,240,255,0.65)] hover:scale-[1.02]',
     'active:scale-[0.98]',
+    'focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2',
   ),
   secondary: cn(
     'bg-[var(--glass-surface)] backdrop-blur-xl text-[var(--text-primary)] font-body font-medium',
-    'border border-[var(--glass-border)] border-top-[var(--glass-highlight)]',
+    'border border-[var(--glass-border)]',
     'shadow-[0_4px_16px_rgba(0,0,0,0.3)]',
     'hover:border-cyan-400/60 hover:bg-white/[0.08] hover:text-[var(--text-primary)] hover:shadow-[0_0_20px_rgba(0,240,255,0.25)] hover:scale-[1.015]',
     'active:scale-[0.98]',
+    'focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2',
   ),
   ghost: cn(
     'text-[var(--text-secondary)] bg-transparent font-body font-medium',
     'border border-transparent',
     'hover:text-[var(--text-primary)] hover:bg-[var(--glass-surface)] hover:border-[var(--glass-border)]',
     'active:scale-[0.98]',
+    'focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2',
   ),
   violet: cn(
     'bg-violet-500/15 backdrop-blur-xl text-violet-600 dark:text-violet-300 font-body font-medium',
@@ -44,6 +48,7 @@ const variantStyles = {
     'shadow-[0_0_16px_rgba(139,92,246,0.25)]',
     'hover:bg-violet-500/25 hover:border-violet-500/60 hover:shadow-[0_0_25px_rgba(139,92,246,0.45)] hover:scale-[1.015]',
     'active:scale-[0.98]',
+    'focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2',
   ),
   danger: cn(
     'bg-rose-500/15 backdrop-blur-xl text-rose-600 dark:text-rose-300 font-body font-medium',
@@ -51,6 +56,7 @@ const variantStyles = {
     'shadow-[0_0_16px_rgba(244,63,94,0.25)]',
     'hover:bg-rose-500/25 hover:border-rose-500/60 hover:shadow-[0_0_25px_rgba(244,63,94,0.45)] hover:scale-[1.015]',
     'active:scale-[0.98]',
+    'focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2',
   ),
   success: cn(
     'bg-emerald-500/15 backdrop-blur-xl text-emerald-600 dark:text-emerald-300 font-body font-medium',
@@ -58,6 +64,7 @@ const variantStyles = {
     'shadow-[0_0_16px_rgba(16,185,129,0.25)]',
     'hover:bg-emerald-500/25 hover:border-emerald-500/60 hover:shadow-[0_0_25px_rgba(16,185,129,0.45)] hover:scale-[1.015]',
     'active:scale-[0.98]',
+    'focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2',
   ),
 };
 
@@ -74,7 +81,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       className={cn(
         'inline-flex items-center justify-center cursor-pointer',
         'transition-all duration-150 ease-out outline-none',
-        'focus-visible:ring-2 focus-visible:ring-cyan-400/50',
         'disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none',
         variantStyles[variant],
         sizeStyles[size],

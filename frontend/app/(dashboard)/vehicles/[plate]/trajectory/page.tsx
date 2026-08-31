@@ -9,6 +9,7 @@ import { ArrowLeft, Play, Pause, RotateCcw, Radio } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Button }    from '@/components/ui/Button';
 import { vehicleService } from '@/services/vehicleService';
+import { useUIStore } from '@/store/uiStore';
 import { formatTime, formatDuration, formatDistance, formatSpeed, cn } from '@/lib/utils';
 import type { Waypoint } from '@/types';
 import 'leaflet/dist/leaflet.css';
@@ -40,6 +41,7 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
   const decodedPlate = decodeURIComponent(plate).toUpperCase();
   const [currentWaypointIndex, setCurrentWaypointIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const theme = useUIStore((s) => s.theme);
 
   const { data: journey } = useQuery({
     queryKey: ['vehicleJourney', decodedPlate],
@@ -81,8 +83,12 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
   const centerLng = waypoints.reduce((s, w) => s + w.lng, 0) / waypoints.length;
   const currentWaypoint = waypoints[currentWaypointIndex];
 
+  const darkTileUrl = 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png';
+  const lightTileUrl = 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/rastertiles/voyager/{z}/{x}/{y}.png';
+  const tileUrl = theme === 'light' ? lightTileUrl : darkTileUrl;
+
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-140px)] -m-5 rounded-2xl overflow-hidden bg-[var(--bg-void)] border border-[var(--border-glass)] font-body">
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-140px)] -m-5 rounded-2xl overflow-hidden bg-[var(--bg-void)] border border-[var(--glass-border)] font-body">
       {/* Map Canvas */}
       <div className="flex-1 relative min-h-[350px]">
         <MapContainer
@@ -92,7 +98,8 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
           zoomControl={true}
         >
           <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            key={theme}
+            url={tileUrl}
             subdomains="abcd"
             maxZoom={19}
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
@@ -101,14 +108,14 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
           {/* Inactive planned route path */}
           <Polyline
             positions={routeCoords}
-            pathOptions={{ color: '#5b8cff', weight: 2, opacity: 0.25, dashArray: '6 6' }}
+            pathOptions={{ color: theme === 'light' ? '#0284c7' : '#38bdf8', weight: 2, opacity: 0.35, dashArray: '6 6' }}
           />
 
           {/* Active traversed route (Accent Cyan) */}
           {visibleRoute.length > 1 && (
             <Polyline
               positions={visibleRoute}
-              pathOptions={{ color: '#22d3ee', weight: 4, opacity: 0.95 }}
+              pathOptions={{ color: theme === 'light' ? '#0284c7' : '#00f0ff', weight: 4, opacity: 0.95 }}
             />
           )}
 
@@ -119,18 +126,19 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
               center={[wp.lat, wp.lng]}
               radius={i <= currentWaypointIndex ? 7 : 4.5}
               pathOptions={{
-                color:       i <= currentWaypointIndex ? '#22d3ee' : '#5b8cff',
-                fillColor:   i <= currentWaypointIndex ? '#22d3ee' : '#0e1016',
+                color:       i <= currentWaypointIndex ? '#00f0ff' : '#6366f1',
+                fillColor:   i <= currentWaypointIndex ? '#00f0ff' : '#0e1016',
                 fillOpacity: i <= currentWaypointIndex ? 0.9 : 0.4,
                 weight: 1.5,
               }}
             >
               <Popup>
-                <div className="p-3 min-w-[190px] font-body">
-                  <p className="font-bold text-xs text-white font-display">{wp.cameraName}</p>
+                <div className="p-3 min-w-[190px] font-body text-[var(--text-primary)]">
+                  <p className="font-bold text-xs font-display text-[var(--text-primary)]">{wp.cameraName}</p>
+                  <p className="text-[10px] text-cyan-400 font-mono mt-0.5">{wp.cameraId}</p>
                   <div className="text-[10px] text-[var(--text-secondary)] mt-2 space-y-0.5 font-mono">
-                    <p>Time: <span className="text-white font-semibold">{formatTime(wp.timestamp)}</span></p>
-                    <p>Speed: <span className="text-[var(--accent-cyan)] font-semibold">{wp.speed} km/h</span></p>
+                    <p>Time: <span className="font-semibold text-[var(--text-primary)]">{formatTime(wp.timestamp)}</span></p>
+                    <p>Speed: <span className="text-cyan-400 font-semibold">{wp.speed} km/h</span></p>
                   </div>
                 </div>
               </Popup>
@@ -142,8 +150,8 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
             center={[currentWaypoint.lat, currentWaypoint.lng]}
             radius={12}
             pathOptions={{
-              color:       '#5b8cff',
-              fillColor:   '#22d3ee',
+              color:       '#6366f1',
+              fillColor:   '#00f0ff',
               fillOpacity: 0.9,
               weight: 3,
             }}
@@ -161,8 +169,8 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
 
         {/* Target Plate Floating Badge */}
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000]">
-          <div className="px-5 py-1.5 rounded-full bg-[#06070a]/90 backdrop-blur-2xl border border-[var(--accent-cyan)]/40 shadow-[0_0_20px_rgba(34,211,238,0.25)]">
-            <span className="font-mono font-bold text-[var(--accent-cyan)] text-sm tracking-widest">{decodedPlate}</span>
+          <div className="px-5 py-1.5 rounded-full bg-[var(--bg-elevated)]/90 backdrop-blur-2xl border border-cyan-400/40 shadow-[0_0_20px_rgba(0,240,255,0.25)]">
+            <span className="font-mono font-bold text-cyan-400 text-sm tracking-widest">{decodedPlate}</span>
           </div>
         </div>
       </div>
@@ -172,41 +180,41 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
         initial={{ x: 200, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
-        className="w-full lg:w-84 bg-[var(--surface-glass)] backdrop-blur-2xl border-t lg:border-t-0 lg:border-l border-[var(--border-glass)] overflow-y-auto p-5 space-y-4 shrink-0 flex flex-col"
+        className="w-full lg:w-84 bg-[var(--glass-surface)] backdrop-blur-2xl border-t lg:border-t-0 lg:border-l border-[var(--glass-border)] overflow-y-auto p-5 space-y-4 shrink-0 flex flex-col"
       >
         <div>
-          <h2 className="text-xs font-bold text-white uppercase tracking-wider font-display flex items-center gap-2">
-            <Radio size={13} className="text-[var(--accent-cyan)] animate-pulse" />
+          <h2 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider font-display flex items-center gap-2">
+            <Radio size={13} className="text-cyan-400 animate-pulse" />
             Trajectory Telemetry
           </h2>
-          <p className="text-[10px] font-mono text-[var(--text-secondary)] mt-0.5">Route vector sequence & metrics</p>
+          <p className="text-[10px] font-mono text-[var(--text-secondary)] mt-0.5">Route vector sequence &amp; metrics</p>
         </div>
 
         {/* Telemetry KPI Grid */}
         <div className="grid grid-cols-2 gap-2">
           <GlassCard padding="sm" className="p-3">
             <div className="text-[8px] font-mono text-[var(--text-secondary)] uppercase tracking-wider">Distance</div>
-            <div className="text-sm font-mono font-bold text-white mt-0.5">{formatDistance(journey.totalDistance)}</div>
+            <div className="text-sm font-mono font-bold text-[var(--text-primary)] mt-0.5">{formatDistance(journey.totalDistance)}</div>
           </GlassCard>
           <GlassCard padding="sm" className="p-3">
             <div className="text-[8px] font-mono text-[var(--text-secondary)] uppercase tracking-wider">Duration</div>
-            <div className="text-sm font-mono font-bold text-white mt-0.5">{formatDuration(journey.totalDuration)}</div>
+            <div className="text-sm font-mono font-bold text-[var(--text-primary)] mt-0.5">{formatDuration(journey.totalDuration)}</div>
           </GlassCard>
           <GlassCard padding="sm" className="p-3">
             <div className="text-[8px] font-mono text-[var(--text-secondary)] uppercase tracking-wider">Avg Velocity</div>
-            <div className="text-sm font-mono font-bold text-[var(--accent-cyan)] mt-0.5">{formatSpeed(journey.avgSpeed)}</div>
+            <div className="text-sm font-mono font-bold text-cyan-400 mt-0.5">{formatSpeed(journey.avgSpeed)}</div>
           </GlassCard>
           <GlassCard padding="sm" className="p-3">
             <div className="text-[8px] font-mono text-[var(--text-secondary)] uppercase tracking-wider">Waypoints</div>
-            <div className="text-sm font-mono font-bold text-white mt-0.5">{waypoints.length} nodes</div>
+            <div className="text-sm font-mono font-bold text-[var(--text-primary)] mt-0.5">{waypoints.length} nodes</div>
           </GlassCard>
         </div>
 
         {/* Playback Controls */}
-        <div className="p-3 rounded-xl bg-white/[0.02] border border-[var(--border-glass)] space-y-3">
+        <div className="p-3 rounded-xl bg-white/[0.02] border border-[var(--glass-border)] space-y-3">
           <div className="flex items-center justify-between text-[11px] font-mono">
             <span className="text-[var(--text-secondary)]">Progress</span>
-            <span className="text-[var(--accent-cyan)] font-bold">{currentWaypointIndex + 1} / {waypoints.length}</span>
+            <span className="text-cyan-400 font-bold">{currentWaypointIndex + 1} / {waypoints.length}</span>
           </div>
 
           <input
@@ -218,7 +226,7 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
               setCurrentWaypointIndex(Number(e.target.value));
               setIsPlaying(false);
             }}
-            className="w-full accent-[var(--accent-cyan)] h-1 rounded-lg bg-white/10 cursor-pointer"
+            className="w-full accent-cyan-400 h-1 rounded-lg bg-white/10 cursor-pointer"
           />
 
           <div className="flex items-center gap-2 pt-1">
@@ -226,7 +234,7 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
               variant="primary"
               size="sm"
               onClick={() => setIsPlaying(!isPlaying)}
-              className="flex-1"
+              className="flex-1 cursor-pointer"
             >
               {isPlaying ? <><Pause size={13} /> Pause</> : <><Play size={13} /> Playback</>}
             </Button>
@@ -235,6 +243,7 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
               size="sm"
               onClick={handleReset}
               title="Reset"
+              className="cursor-pointer"
             >
               <RotateCcw size={13} />
             </Button>
@@ -259,18 +268,19 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
                   className={cn(
                     'p-2.5 rounded-xl border text-xs cursor-pointer transition-all duration-150',
                     isCurrent
-                      ? 'bg-[var(--accent-cyan)]/10 border-[var(--accent-cyan)]/40 shadow-[0_0_12px_rgba(34,211,238,0.15)]'
+                      ? 'bg-cyan-500/10 border-cyan-400/50 shadow-[0_0_12px_rgba(0,240,255,0.15)] text-[var(--text-primary)]'
                       : isPassed
-                      ? 'bg-white/[0.02] border-white/5 opacity-60 hover:opacity-100'
+                      ? 'bg-white/[0.02] border-white/5 opacity-60 hover:opacity-100 text-[var(--text-secondary)]'
                       : 'bg-transparent border-transparent text-[var(--text-tertiary)] hover:bg-white/[0.02]',
                   )}
                 >
                   <div className="flex items-center justify-between gap-1 mb-1">
-                    <span className="font-semibold text-white font-display truncate">{wp.cameraName}</span>
+                    <span className="font-semibold font-display truncate text-[var(--text-primary)]">{wp.cameraName}</span>
                     <span className="text-[9px] font-mono text-[var(--text-secondary)]">{formatTime(wp.timestamp)}</span>
                   </div>
                   <div className="flex items-center justify-between text-[10px] font-mono">
-                    <span className="text-[var(--text-secondary)]">Speed: {wp.speed} km/h</span>
+                    <span className="text-cyan-400 font-semibold">{wp.cameraId}</span>
+                    <span className="text-[var(--text-secondary)]">{wp.speed} km/h</span>
                   </div>
                 </div>
               );

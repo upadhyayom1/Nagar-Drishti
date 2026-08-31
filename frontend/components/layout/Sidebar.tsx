@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -47,10 +48,8 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         borderActive: 'border-cyan-400/60',
         glowShadow: 'shadow-[0_0_22px_rgba(0,240,255,0.35)]',
         leftPillColor: 'bg-[#00f0ff] shadow-[0_0_10px_#00f0ff]',
-        iconColor:
-          'text-cyan-400 drop-shadow-[0_0_8px_rgba(0,240,255,0.7)]',
-        hoverClass:
-          'hover:border-cyan-400/50 hover:bg-cyan-500/10 hover:shadow-[0_0_16px_rgba(0,240,255,0.2)] hover:text-cyan-400',
+        iconColor: 'text-cyan-400 drop-shadow-[0_0_8px_rgba(0,240,255,0.7)]',
+        hoverClass: 'hover:border-cyan-400/50 hover:bg-cyan-500/10 hover:shadow-[0_0_16px_rgba(0,240,255,0.2)] hover:text-cyan-400',
       },
       {
         name: 'Live Cameras',
@@ -61,10 +60,8 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         borderActive: 'border-emerald-400/60',
         glowShadow: 'shadow-[0_0_22px_rgba(0,230,176,0.35)]',
         leftPillColor: 'bg-[#00E6B0] shadow-[0_0_10px_#00E6B0]',
-        iconColor:
-          'text-emerald-400 drop-shadow-[0_0_8px_rgba(0,230,176,0.7)]',
-        hoverClass:
-          'hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:shadow-[0_0_16px_rgba(0,230,176,0.2)] hover:text-emerald-400',
+        iconColor: 'text-emerald-400 drop-shadow-[0_0_8px_rgba(0,230,176,0.7)]',
+        hoverClass: 'hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:shadow-[0_0_16px_rgba(0,230,176,0.2)] hover:text-emerald-400',
       },
       {
         name: 'Vehicle Intelligence',
@@ -75,10 +72,8 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         borderActive: 'border-sky-400/60',
         glowShadow: 'shadow-[0_0_22px_rgba(56,189,248,0.35)]',
         leftPillColor: 'bg-[#38bdf8] shadow-[0_0_10px_#38bdf8]',
-        iconColor:
-          'text-sky-400 drop-shadow-[0_0_8px_rgba(56,189,248,0.7)]',
-        hoverClass:
-          'hover:border-sky-400/50 hover:bg-sky-500/10 hover:shadow-[0_0_16px_rgba(56,189,248,0.2)] hover:text-sky-400',
+        iconColor: 'text-sky-400 drop-shadow-[0_0_8px_rgba(56,189,248,0.7)]',
+        hoverClass: 'hover:border-sky-400/50 hover:bg-sky-500/10 hover:shadow-[0_0_16px_rgba(56,189,248,0.2)] hover:text-sky-400',
       },
       {
         name: 'AI Plate Detection',
@@ -101,10 +96,8 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         borderActive: 'border-violet-400/60',
         glowShadow: 'shadow-[0_0_22px_rgba(139,92,246,0.35)]',
         leftPillColor: 'bg-[#8b5cf6] shadow-[0_0_10px_#8b5cf6]',
-        iconColor:
-          'text-violet-400 drop-shadow-[0_0_8px_rgba(139,92,246,0.7)]',
-        hoverClass:
-          'hover:border-violet-400/50 hover:bg-violet-500/10 hover:shadow-[0_0_16px_rgba(139,92,246,0.2)] hover:text-violet-400',
+        iconColor: 'text-violet-400 drop-shadow-[0_0_8px_rgba(139,92,246,0.7)]',
+        hoverClass: 'hover:border-violet-400/50 hover:bg-violet-500/10 hover:shadow-[0_0_16px_rgba(139,92,246,0.2)] hover:text-violet-400',
       },
       {
         name: 'Traffic Forecast',
@@ -129,10 +122,8 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         borderActive: 'border-pink-400/60',
         glowShadow: 'shadow-[0_0_22px_rgba(236,72,153,0.35)]',
         leftPillColor: 'bg-[#ec4899] shadow-[0_0_10px_#ec4899]',
-        iconColor:
-          'text-pink-400 drop-shadow-[0_0_8px_rgba(236,72,153,0.7)]',
-        hoverClass:
-          'hover:border-pink-400/50 hover:bg-pink-500/10 hover:shadow-[0_0_16px_rgba(236,72,153,0.2)] hover:text-pink-400',
+        iconColor: 'text-pink-400 drop-shadow-[0_0_8px_rgba(236,72,153,0.7)]',
+        hoverClass: 'hover:border-pink-400/50 hover:bg-pink-500/10 hover:shadow-[0_0_16px_rgba(236,72,153,0.2)] hover:text-pink-400',
       },
     ],
   },
@@ -149,10 +140,8 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         borderActive: 'border-amber-400/60',
         glowShadow: 'shadow-[0_0_22px_rgba(245,158,11,0.35)]',
         leftPillColor: 'bg-[#f59e0b] shadow-[0_0_10px_#f59e0b]',
-        iconColor:
-          'text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.7)]',
-        hoverClass:
-          'hover:border-amber-400/50 hover:bg-amber-500/10 hover:shadow-[0_0_16px_rgba(245,158,11,0.2)] hover:text-amber-400',
+        iconColor: 'text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.7)]',
+        hoverClass: 'hover:border-amber-400/50 hover:bg-amber-500/10 hover:shadow-[0_0_16px_rgba(245,158,11,0.2)] hover:text-amber-400',
       },
       {
         name: 'Sentinel Alerts',
@@ -163,10 +152,8 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         borderActive: 'border-rose-400/60',
         glowShadow: 'shadow-[0_0_22px_rgba(244,63,94,0.35)]',
         leftPillColor: 'bg-[#f43f5e] shadow-[0_0_10px_#f43f5e]',
-        iconColor:
-          'text-rose-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.7)]',
-        hoverClass:
-          'hover:border-rose-400/50 hover:bg-rose-500/10 hover:shadow-[0_0_16px_rgba(244,63,94,0.2)] hover:text-rose-400',
+        iconColor: 'text-rose-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.7)]',
+        hoverClass: 'hover:border-rose-400/50 hover:bg-rose-500/10 hover:shadow-[0_0_16px_rgba(244,63,94,0.2)] hover:text-rose-400',
       },
       {
         name: 'Threat Watchlist',
@@ -177,10 +164,8 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         borderActive: 'border-rose-400/60',
         glowShadow: 'shadow-[0_0_22px_rgba(251,113,133,0.35)]',
         leftPillColor: 'bg-[#fb7185] shadow-[0_0_10px_#fb7185]',
-        iconColor:
-          'text-rose-400 drop-shadow-[0_0_8px_rgba(251,113,133,0.7)]',
-        hoverClass:
-          'hover:border-rose-400/50 hover:bg-rose-500/10 hover:shadow-[0_0_16px_rgba(251,113,133,0.2)] hover:text-rose-400',
+        iconColor: 'text-rose-400 drop-shadow-[0_0_8px_rgba(251,113,133,0.7)]',
+        hoverClass: 'hover:border-rose-400/50 hover:bg-rose-500/10 hover:shadow-[0_0_16px_rgba(251,113,133,0.2)] hover:text-rose-400',
       },
       {
         name: 'System Diagnostics',
@@ -191,10 +176,8 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         borderActive: 'border-teal-400/60',
         glowShadow: 'shadow-[0_0_22px_rgba(20,184,166,0.35)]',
         leftPillColor: 'bg-[#14b8a6] shadow-[0_0_10px_#14b8a6]',
-        iconColor:
-          'text-teal-400 drop-shadow-[0_0_8px_rgba(20,184,166,0.7)]',
-        hoverClass:
-          'hover:border-teal-400/50 hover:bg-teal-500/10 hover:shadow-[0_0_16px_rgba(20,184,166,0.2)] hover:text-teal-400',
+        iconColor: 'text-teal-400 drop-shadow-[0_0_8px_rgba(20,184,166,0.7)]',
+        hoverClass: 'hover:border-teal-400/50 hover:bg-teal-500/10 hover:shadow-[0_0_16px_rgba(20,184,166,0.2)] hover:text-teal-400',
       },
     ],
   },
@@ -222,9 +205,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         {!sidebarCollapsed && (
           <div className="min-w-0">
             <h1 className="text-sm font-bold tracking-tight text-[var(--text-primary)] leading-none font-display">
-              Urban<span className="text-gradient-spectral">Pulse</span>
+              Nagar<span className="text-gradient-spectral">Drishti</span>
             </h1>
-
             <span className="text-[9px] font-mono text-[var(--text-secondary)] tracking-[0.16em] uppercase mt-1 block">
               AI Command OS
             </span>
@@ -242,12 +224,11 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               </p>
             )}
 
-            <div className="space-y-1">
+            <div className="space-y-1 relative">
               {group.items.map((item) => {
                 const isActive =
                   pathname === item.href ||
-                  (item.href !== '/dashboard' &&
-                    pathname.startsWith(item.href));
+                  (item.href !== '/dashboard' && pathname.startsWith(item.href));
 
                 return (
                   <Link
@@ -261,13 +242,12 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                       sidebarCollapsed
                         ? 'justify-center px-2 py-2.5'
                         : 'px-3 py-2',
-
                       isActive
                         ? cn(
                             item.bgActive,
                             item.borderActive,
                             item.glowShadow,
-                            'font-semibold scale-[1.015] text-[var(--text-primary)]'
+                            'font-semibold text-[var(--text-primary)]'
                           )
                         : cn(
                             'text-[var(--text-secondary)] border-transparent font-medium hover:scale-[1.01]',
@@ -275,14 +255,22 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                           )
                     )}
                   >
-                    {isActive && (
-                      <div
-                        className={cn(
-                          'absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-5 rounded-r-full',
-                          item.leftPillColor
-                        )}
-                      />
-                    )}
+                    {/* Shared-layout sliding active pill — slides between items on route change */}
+                    <AnimatePresence>
+                      {isActive && (
+                        <motion.div
+                          layoutId="sidebar-active-pill"
+                          className={cn(
+                            'absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-5 rounded-r-full',
+                            item.leftPillColor
+                          )}
+                          initial={{ opacity: 0, scaleY: 0.5 }}
+                          animate={{ opacity: 1, scaleY: 1 }}
+                          exit={{ opacity: 0, scaleY: 0.5 }}
+                          transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+                        />
+                      )}
+                    </AnimatePresence>
 
                     <item.icon
                       size={16}
@@ -324,21 +312,17 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <button
           onClick={toggleSidebar}
           className={cn(
-            'w-full flex items-center gap-2 py-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.04] border border-transparent transition-all duration-150 mb-2 cursor-pointer',
+            'w-full flex items-center gap-2 py-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.04] border border-transparent transition-all duration-150 mb-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-400',
             sidebarCollapsed ? 'justify-center' : 'px-2.5'
           )}
-          aria-label={
-            sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'
-          }
+          aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {sidebarCollapsed ? (
             <ChevronRight size={14} />
           ) : (
             <>
               <ChevronLeft size={14} />
-              <span className="text-[11px] font-display">
-                Collapse Sidebar
-              </span>
+              <span className="text-[11px] font-display">Collapse Sidebar</span>
             </>
           )}
         </button>
@@ -348,9 +332,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             <p className="text-[8px] font-mono text-cyan-400 uppercase tracking-wider font-semibold">
               Authorized Operations
             </p>
-
             <p className="text-[8px] text-[var(--text-tertiary)] mt-0.5 leading-tight font-body">
-              UrbanPulse Command Grid
+              NagarDrishti Command Grid
             </p>
           </div>
         )}

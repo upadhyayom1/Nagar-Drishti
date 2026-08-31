@@ -28,7 +28,7 @@ export default function UserPortalLayout({ children }: { children: React.ReactNo
               </div>
               <div>
                 <span className="font-display font-bold text-sm text-[var(--text-primary)]">
-                  Urban<span className="text-gradient-brand">Pulse</span>
+                  Nagar<span className="text-gradient-brand">Drishti</span>
                 </span>
                 <span className="text-[9px] font-mono text-[var(--text-secondary)] block -mt-0.5">
                   Citizen Reporting Portal
@@ -64,7 +64,7 @@ export default function UserPortalLayout({ children }: { children: React.ReactNo
 
       {/* ── Footer ── */}
       <footer className="py-6 px-4 text-center border-t border-[var(--glass-border)] text-xs text-[var(--text-tertiary)] font-body relative z-10">
-        <p>© {new Date().getFullYear()} UrbanPulse Public Safety · Municipal Citizen Reporting System</p>
+        <p>© {new Date().getFullYear()} NagarDrishti Public Safety · Municipal Citizen Reporting System</p>
       </footer>
     </div>
     </AuthGuard>
