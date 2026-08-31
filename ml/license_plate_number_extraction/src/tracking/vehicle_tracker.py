@@ -60,6 +60,16 @@ class VehicleTrack:
         ranked = sorted(self.observations, key=lambda o: o.quality.overall, reverse=True)
         return ranked[:k]
 
+    def has_enough_good_observations(self, k: int, quality_threshold: float) -> bool:
+        """True once at least `k` stored observations already clear
+        `quality_threshold`. Used to stop running the (relatively
+        expensive) plate detector on every remaining frame of a long-lived
+        track once we already have all the good evidence OCR will ever
+        need from it -- a vehicle sitting in traffic for 300 frames gains
+        nothing from a 301st near-identical high-quality crop."""
+        good = sum(1 for o in self.observations if o.quality.overall >= quality_threshold)
+        return good >= k
+
 
 class TrackManager:
     """Owns the dictionary of active/finished VehicleTrack objects and applies

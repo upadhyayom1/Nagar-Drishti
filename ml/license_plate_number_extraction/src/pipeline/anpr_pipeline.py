@@ -22,7 +22,7 @@ from src.tracking.vehicle_tracker import PlateObservation, TrackManager, Vehicle
 from src.utils.image_quality import passes_minimum_quality, score_plate_crop
 from src.utils.logger import get_logger
 from src.utils.video import VideoReader, VideoSourceError, VideoWriter
-from src.validation.plate_validator import validate_plate
+from src.validation.plate_validator import suggest_format_corrections, validate_plate
 
 logger = get_logger(__name__)
 
@@ -73,6 +73,7 @@ class ANPRPipeline:
             min_confidence=ocr_cfg["min_confidence"],
             min_text_length=ocr_cfg["min_text_length"],
             max_text_length=ocr_cfg["max_text_length"],
+            early_stop_confidence=ocr_cfg.get("early_stop_confidence", 0.90),
         )
 
         self.track_manager = TrackManager(
@@ -101,6 +102,13 @@ class ANPRPipeline:
     def _process_frame(self, frame: np.ndarray, frame_index: int, annotate: bool) -> np.ndarray:
         vehicles = self.vehicle_detector.detect_and_track(frame)
 
+        # First pass: update track bookkeeping for every vehicle and decide
+        # which vehicles actually need a plate-detector call this frame.
+        # Vehicles whose track already has enough strong observations are
+        # skipped -- there is nothing to gain from re-detecting the same
+        # plate for the 200th time on a vehicle idling at a signal.
+        needs_detection: List[int] = []          # indices into `vehicles`
+        vehicle_crops: List[Optional[np.ndarray]] = []
         for v in vehicles:
             track = self.track_manager.update_vehicle(
                 track_id=v.track_id,
@@ -109,17 +117,35 @@ class ANPRPipeline:
                 confidence=v.confidence,
                 frame_index=frame_index,
             )
-
             x1, y1, x2, y2 = v.bbox
-            vehicle_crop = frame[y1:y2, x1:x2]
-            if vehicle_crop.size == 0:
-                continue
+            crop = frame[y1:y2, x1:x2]
+            vehicle_crops.append(crop if crop.size else None)
 
-            plate_detections = self.plate_detector.detect(vehicle_crop)
+            skip = crop.size == 0 or track.has_enough_good_observations(
+                self.quality_cfg["top_k_for_ocr"], self.quality_cfg.get("skip_detection_quality", 0.75)
+            )
+            if not skip:
+                needs_detection.append(len(vehicle_crops) - 1)
+
+        # Second pass: ONE batched plate-detector call covering every
+        # vehicle in this frame that still needs it, instead of one
+        # model call per vehicle (see PlateDetector.detect_batch).
+        batch_results: List[List] = [[] for _ in vehicles]
+        if needs_detection:
+            crops_to_run = [vehicle_crops[i] for i in needs_detection]
+            detected = self.plate_detector.detect_batch(crops_to_run)
+            for i, dets in zip(needs_detection, detected):
+                batch_results[i] = dets
+
+        # Third pass: quality-gate + store observations + annotate.
+        for i, v in enumerate(vehicles):
+            x1, y1, x2, y2 = v.bbox
+            vehicle_crop = vehicle_crops[i]
+            plate_detections = batch_results[i]
             best_plate_bbox_frame = None
             best_plate_text_for_overlay = self._last_known_text.get(v.track_id)
 
-            if plate_detections:
+            if vehicle_crop is not None and plate_detections:
                 best_plate = max(plate_detections, key=lambda d: d.confidence)
                 px1, py1, px2, py2 = best_plate.bbox
                 plate_crop = vehicle_crop[py1:py2, px1:px2]
@@ -188,7 +214,13 @@ class ANPRPipeline:
 
         readings: List[OCRReading] = []
         for obs in top_obs:
-            variants = generate_variants(obs.crop_bgr, target_height=self.pre_cfg["target_height"])
+            variants = generate_variants(
+                obs.crop_bgr,
+                target_height=self.pre_cfg["target_height"],
+                sharpness=obs.quality.sharpness,
+                contrast=obs.quality.contrast,
+                aspect_ratio=obs.quality.aspect_ratio,
+            )
             reading = self.ocr_engine.read_best(
                 variants, frame_index=obs.frame_index, quality_weight=obs.quality.overall
             )
@@ -217,6 +249,29 @@ class ANPRPipeline:
 
         fusion = fuse_readings(readings, min_supporting_frames=self.fusion_cfg["min_supporting_frames"])
         validation = validate_plate(fusion.text) if fusion.text else None
+        format_corrected = False
+
+        # If the raw fused text doesn't match a known Indian format, see if
+        # it is uniquely one confusable-character swap away from a valid
+        # one (e.g. fused text has a '8' where the standard format's series
+        # letters must be a letter -> try 'B'). Only ever act on this when
+        # there is EXACTLY one such candidate: if two different templates
+        # each propose a different "fix", that's evidence we don't actually
+        # know which is right, and the original reading is reported as-is
+        # rather than guessed at (never hallucinate a specific correction
+        # out of genuine ambiguity).
+        if fusion.text and validation and not validation.is_valid:
+            candidates = suggest_format_corrections(fusion.text, self.fusion_cfg["char_confusions"])
+            if len(candidates) == 1:
+                corrected_text = candidates[0]
+                corrected_validation = validate_plate(corrected_text)
+                logger.info(
+                    f"Vehicle {track.track_id}: format-corrected '{fusion.text}' -> "
+                    f"'{corrected_text}' (unique confusable-character fix)."
+                )
+                fusion.text = corrected_text
+                validation = corrected_validation
+                format_corrected = True
 
         mean_plate_det_conf = float(np.mean([o.detector_confidence for o in top_obs]))
         overall_confidence = self._compute_confidence(
@@ -225,12 +280,15 @@ class ANPRPipeline:
             char_agreement=fusion.char_agreement,
             supporting_frames=fusion.supporting_frames,
             detector_confidence=(track.mean_detection_confidence + mean_plate_det_conf) / 2.0,
+            format_corrected=format_corrected,
         )
 
         status = self._status_for_confidence(overall_confidence)
 
         plate_number = fusion.text if status != "UNKNOWN" else None
         reason = None if plate_number else "Insufficient visual/temporal agreement across frames."
+        if plate_number and format_corrected:
+            reason = "Plate text auto-corrected from a visually-confusable OCR character to match a valid Indian plate format."
 
         if plate_number:
             self._last_known_text[track.track_id] = plate_number
@@ -247,6 +305,7 @@ class ANPRPipeline:
             reason=reason,
             plate_format=validation.plate_type if validation else None,
             state_code=validation.state_code if validation else None,
+            format_corrected=format_corrected,
         )
         self.results.append(result)
         logger.info(
@@ -261,12 +320,20 @@ class ANPRPipeline:
         char_agreement: float,
         supporting_frames: int,
         detector_confidence: float,
+        format_corrected: bool = False,
     ) -> float:
         w = self.conf_cfg["weights"]
         frames_score = min(1.0, supporting_frames / max(1, self.quality_cfg["top_k_for_ocr"] / 2))
+        # A format match obtained via a unique confusable-character
+        # correction is real evidence but slightly less certain than a
+        # direct match, since it required inferring one character from
+        # format structure rather than reading it outright.
+        format_score = 0.0
+        if format_valid:
+            format_score = 0.85 if format_corrected else 1.0
         score = (
             w["ocr"] * ocr_confidence
-            + w["format_validity"] * (1.0 if format_valid else 0.0)
+            + w["format_validity"] * format_score
             + w["char_agreement"] * char_agreement
             + w["supporting_frames"] * frames_score
             + w["detector_confidence"] * detector_confidence
