@@ -81,11 +81,11 @@ export const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
           paddingMap[padding],
           accent !== 'none' && accentMap[accent],
           hover && cn(
-            'transition-all duration-300 ease-out',
+            'transition-all duration-150 ease-out',
             'hover:-translate-y-0.5 hover:scale-[1.012]',
             glow !== 'none' && glowMap[glow],
           ),
-          onClick && 'cursor-pointer',
+          onClick && 'cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 outline-none',
           className,
         )}
         {...props}

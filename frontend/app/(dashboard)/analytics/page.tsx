@@ -3,30 +3,29 @@
 import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useQuery } from '@tanstack/react-query';
-import { Car, Gauge, TrendingUp, AlertTriangle, Download, RefreshCw } from 'lucide-react';
+import { Car, Gauge, TrendingUp, AlertTriangle, Download, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { StatCard }    from '@/components/ui/StatCard';
 import { GlassCard }   from '@/components/ui/GlassCard';
 import { Badge }       from '@/components/ui/Badge';
 import { Button }      from '@/components/ui/Button';
+import { SkeletonCard } from '@/components/ui/SkeletonCard';
+import { EmptyState }   from '@/components/ui/EmptyState';
 import { PageWrapper } from '@/components/layout/PageWrapper';
 import { analyticsService } from '@/services/analyticsService';
 
 const AreaChartWrapper = dynamic(
   () => import('@/components/charts/AreaChartWrapper').then((m) => ({ default: m.AreaChartWrapper })),
-  { ssr: false, loading: () => <ChartSkeleton /> }
+  { ssr: false, loading: () => <SkeletonCard variant="chart" height={280} /> }
 );
 const BarChartWrapper = dynamic(
   () => import('@/components/charts/BarChartWrapper').then((m) => ({ default: m.BarChartWrapper })),
-  { ssr: false, loading: () => <ChartSkeleton /> }
+  { ssr: false, loading: () => <SkeletonCard variant="chart" height={280} /> }
 );
 
-function ChartSkeleton() {
-  return (
-    <div className="h-[280px] flex flex-col items-center justify-center text-[var(--text-secondary)] font-mono text-xs">
-      <div className="w-8 h-8 rounded-full border-2 border-cyan-400/20 border-t-cyan-400 animate-spin mb-2" />
-      <span>Loading Telemetry Curve...</span>
-    </div>
-  );
+/** Clamp congestion index to [0, 100] for display; preserve raw for tooltip */
+function clampCongestionIndex(raw: number | undefined): { display: number; raw: number } {
+  const r = raw ?? 0;
+  return { display: Math.min(Math.round(r), 100), raw: Math.round(r) };
 }
 
 export default function AnalyticsPage() {
@@ -42,10 +41,12 @@ export default function AnalyticsPage() {
   }, [timeRange]);
 
   const { data: stats, refetch, isFetching } = useQuery({ queryKey: ['trafficStats', analyticsWindow], queryFn: () => analyticsService.getTrafficStats(analyticsWindow) });
-  const { data: hourlyData = [] }   = useQuery({ queryKey: ['hourlyTraffic', analyticsWindow],  queryFn: () => analyticsService.getHourlyTraffic(analyticsWindow) });
-  const { data: cameraTraffic = [] } = useQuery({ queryKey: ['cameraTraffic', analyticsWindow],  queryFn: () => analyticsService.getCameraTraffic(analyticsWindow) });
-  const { data: busiestRoads = [] }  = useQuery({ queryKey: ['busiestRoads', analyticsWindow],  queryFn: () => analyticsService.getBusiestRoads(analyticsWindow) });
-  const { data: anomalies = [] }    = useQuery({ queryKey: ['anomalies'],     queryFn: analyticsService.getTrafficAnomalies });
+  const { data: hourlyData = [], isLoading: hourlyLoading }     = useQuery({ queryKey: ['hourlyTraffic', analyticsWindow],  queryFn: () => analyticsService.getHourlyTraffic(analyticsWindow) });
+  const { data: cameraTraffic = [], isLoading: cameraLoading }  = useQuery({ queryKey: ['cameraTraffic', analyticsWindow],  queryFn: () => analyticsService.getCameraTraffic(analyticsWindow) });
+  const { data: busiestRoads = [], isLoading: roadsLoading }    = useQuery({ queryKey: ['busiestRoads', analyticsWindow],   queryFn: () => analyticsService.getBusiestRoads(analyticsWindow) });
+  const { data: anomalies = [], isLoading: anomaliesLoading }   = useQuery({ queryKey: ['anomalies'],      queryFn: analyticsService.getTrafficAnomalies });
+
+  const congestion = clampCongestionIndex(stats?.congestionIndex);
 
   const handleExportReport = () => {
     const reportData = {
@@ -85,7 +86,7 @@ export default function AnalyticsPage() {
               <button
                 key={range}
                 onClick={() => setTimeRange(range)}
-                className={`px-3 py-1 rounded-lg uppercase tracking-wider text-[10px] font-bold transition-all ${
+                className={`px-3 py-1 rounded-lg uppercase tracking-wider text-[10px] font-bold transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-400 ${
                   timeRange === range
                     ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-400/40 shadow-[0_0_12px_rgba(6,182,212,0.3)]'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent'
@@ -96,35 +97,48 @@ export default function AnalyticsPage() {
             ))}
           </div>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => refetch()}
-            disabled={isFetching}
-            className="text-xs"
-          >
+          <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={isFetching} className="text-xs">
             <RefreshCw size={13} className={isFetching ? 'animate-spin text-cyan-400' : ''} />
             Sync
           </Button>
 
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleExportReport}
-            className="text-xs"
-          >
+          <Button variant="secondary" size="sm" onClick={handleExportReport} className="text-xs">
             <Download size={13} />
             Export Intel
           </Button>
         </div>
       </div>
 
-      {/* Multi-Chromatic KPI Stat Cards */}
+      {/* KPI Stat Cards — Bug #1: Congestion Index clamped to 100, raw shown in subtitle tooltip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label={`Total Volume (${timeRange})`} value={stats?.totalVehiclesToday?.toLocaleString('en-IN') ?? 2847} icon={Car} colorTheme="violet" />
-        <StatCard label="Network Velocity"   value={stats ? `${stats.avgSpeed} km/h` : '38.5 km/h'} icon={Gauge} colorTheme="cyan" />
-        <StatCard label="Congestion Index"  value={stats?.congestionIndex ?? 42} icon={TrendingUp} subtitle="/ 100 max density" colorTheme="amber" />
-        <StatCard label="Incident Anomalies" value={stats?.incidentsToday ?? 3} icon={AlertTriangle} colorTheme="rose" />
+        <StatCard
+          label={`Total Volume (${timeRange})`}
+          value={stats?.totalVehiclesToday?.toLocaleString('en-IN') ?? 2847}
+          icon={Car}
+          colorTheme="violet"
+        />
+        <StatCard
+          label="Network Velocity"
+          value={stats ? `${stats.avgSpeed} km/h` : '38.5 km/h'}
+          icon={Gauge}
+          colorTheme="cyan"
+        />
+        {/* Congestion Index — clamped display, raw value in subtitle */}
+        <div title={congestion.raw > 100 ? `Raw value: ${congestion.raw} (clamped to 100)` : undefined}>
+          <StatCard
+            label="Congestion Index"
+            value={`${congestion.display} / 100`}
+            icon={TrendingUp}
+            subtitle={congestion.raw > 100 ? `Raw: ${congestion.raw} (normalized)` : 'Network density score'}
+            colorTheme="amber"
+          />
+        </div>
+        <StatCard
+          label="Incident Anomalies"
+          value={stats?.incidentsToday ?? 3}
+          icon={AlertTriangle}
+          colorTheme="rose"
+        />
       </div>
 
       {/* Charts Row */}
@@ -136,7 +150,11 @@ export default function AnalyticsPage() {
             </p>
             <Badge variant="violet" size="sm">Diurnal Curve</Badge>
           </div>
-          <AreaChartWrapper data={hourlyData} dataKey="vehicles" xAxisKey="hour" color="#8b5cf6" gradientId="vehiclesGrad" />
+          {hourlyLoading ? (
+            <SkeletonCard variant="chart" height={280} />
+          ) : (
+            <AreaChartWrapper data={hourlyData} dataKey="vehicles" xAxisKey="hour" color="#8b5cf6" gradientId="vehiclesGrad" />
+          )}
         </GlassCard>
 
         <GlassCard glow="cyan">
@@ -146,7 +164,11 @@ export default function AnalyticsPage() {
             </p>
             <Badge variant="cyan" size="sm">{cameraTraffic.length} Sensor Nodes</Badge>
           </div>
-          <BarChartWrapper data={cameraTraffic} dataKey="vehicleCount" xAxisKey="cameraName" color="#00f0ff" />
+          {cameraLoading ? (
+            <SkeletonCard variant="chart" height={280} />
+          ) : (
+            <BarChartWrapper data={cameraTraffic} dataKey="vehicleCount" xAxisKey="cameraName" color="#00f0ff" />
+          )}
         </GlassCard>
       </div>
 
@@ -157,35 +179,41 @@ export default function AnalyticsPage() {
           <p className="text-xs font-display font-bold uppercase tracking-wider text-[var(--text-primary)] mb-4">
             Busiest Transit Corridors
           </p>
-          <div className="space-y-4">
-            {busiestRoads.map((road, i) => (
-              <div key={road.id} className="flex items-center gap-3.5">
-                <span className="text-xs font-mono text-cyan-400 font-bold w-6 shrink-0">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-bold text-[var(--text-primary)] truncate font-display">{road.name}</span>
-                    <span className="text-[11px] font-mono text-[var(--text-secondary)] shrink-0 ml-2">
-                      {road.vehicleCount.toLocaleString()} detections
-                    </span>
+          {roadsLoading ? (
+            <SkeletonCard variant="list" rows={5} />
+          ) : busiestRoads.length === 0 ? (
+            <EmptyState icon={TrendingUp} title="No Corridor Data" subtitle="Traffic corridor data is not yet available for the selected time window." />
+          ) : (
+            <div className="space-y-4">
+              {busiestRoads.map((road, i) => (
+                <div key={road.id} className="flex items-center gap-3.5">
+                  <span className="text-xs font-mono text-cyan-400 font-bold w-6 shrink-0">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-bold text-[var(--text-primary)] truncate font-display">{road.name}</span>
+                      <span className="text-[11px] font-mono text-[var(--text-secondary)] shrink-0 ml-2">
+                        {road.vehicleCount.toLocaleString()} detections
+                      </span>
+                    </div>
+                    <div className="h-2 bg-[var(--bg-elevated-2)] rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-indigo-500 shadow-[0_0_12px_rgba(6,182,212,0.5)] transition-all duration-700"
+                        style={{ width: `${(road.vehicleCount / (busiestRoads[0]?.vehicleCount || 1)) * 100}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-indigo-500 shadow-[0_0_12px_rgba(6,182,212,0.5)]"
-                      style={{ width: `${(road.vehicleCount / (busiestRoads[0]?.vehicleCount || 1)) * 100}%` }}
-                    />
-                  </div>
+                  <Badge
+                    variant={road.congestionLevel === 'congested' ? 'critical' : road.congestionLevel === 'high' ? 'warn' : 'ok'}
+                    size="sm"
+                  >
+                    {road.congestionLevel}
+                  </Badge>
                 </div>
-                <Badge
-                  variant={road.congestionLevel === 'congested' ? 'critical' : road.congestionLevel === 'high' ? 'warn' : 'ok'}
-                  size="sm"
-                >
-                  {road.congestionLevel}
-                </Badge>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </GlassCard>
 
         {/* Traffic Anomalies */}
@@ -193,17 +221,24 @@ export default function AnalyticsPage() {
           <p className="text-xs font-display font-bold uppercase tracking-wider text-[var(--text-primary)] mb-4">
             Automated Anomaly Detection
           </p>
-          <div className="space-y-3">
-            {anomalies.map((a, i) => (
-              <div key={i} className="flex items-start gap-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
-                <AlertTriangle size={16} className="text-amber-400 shrink-0 mt-0.5" />
-                <p className="text-xs text-[var(--text-primary)] leading-relaxed font-body">{a}</p>
-              </div>
-            ))}
-            {anomalies.length === 0 && (
-              <p className="text-center text-xs font-mono text-[var(--text-tertiary)] py-10">No active anomalies detected across network</p>
-            )}
-          </div>
+          {anomaliesLoading ? (
+            <SkeletonCard variant="list" rows={4} />
+          ) : anomalies.length === 0 ? (
+            <EmptyState
+              icon={CheckCircle2}
+              title="All Systems Normal"
+              subtitle="No anomalies detected across the sensor network."
+            />
+          ) : (
+            <div className="space-y-3">
+              {anomalies.map((a, i) => (
+                <div key={i} className="flex items-start gap-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                  <AlertTriangle size={16} className="text-amber-400 shrink-0 mt-0.5" />
+                  <p className="text-xs text-[var(--text-primary)] leading-relaxed font-body">{a}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </GlassCard>
       </div>
     </PageWrapper>
