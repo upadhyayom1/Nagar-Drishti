@@ -65,28 +65,59 @@ class PlateDetector:
         if vehicle_crop is None or vehicle_crop.size == 0:
             return []
         if self.model is not None:
-            return self._detect_yolo(vehicle_crop)
+            return self._detect_yolo([vehicle_crop])[0]
         return self._detect_heuristic(vehicle_crop)
+
+    def detect_batch(self, vehicle_crops: List[np.ndarray]) -> List[List[PlateDetection]]:
+        """Detect plates in several vehicle crops with ONE model call
+        instead of one call per crop.
+
+        A single-vehicle-at-a-time `.predict()` call pays fixed per-call
+        Python/inference overhead (pre/post-processing, device transfer)
+        regardless of how small the crop is. On a busy CCTV frame with a
+        dozen vehicles, calling `detect()` in a loop means paying that
+        overhead a dozen times per frame. Ultralytics accepts a *list* of
+        images and runs them as one batched forward pass, so this is the
+        single biggest per-frame efficiency win available for multi-vehicle
+        scenes and should always be preferred over looping `detect()`.
+        """
+        valid = [(i, c) for i, c in enumerate(vehicle_crops) if c is not None and c.size > 0]
+        results_per_crop: List[List[PlateDetection]] = [[] for _ in vehicle_crops]
+        if not valid:
+            return results_per_crop
+
+        if self.model is not None:
+            batched = self._detect_yolo([c for _, c in valid])
+            for (orig_idx, _), dets in zip(valid, batched):
+                results_per_crop[orig_idx] = dets
+        else:
+            for orig_idx, crop in valid:
+                results_per_crop[orig_idx] = self._detect_heuristic(crop)
+        return results_per_crop
 
     # ------------------------------------------------------------------ #
     # YOLO path
     # ------------------------------------------------------------------ #
-    def _detect_yolo(self, vehicle_crop: np.ndarray) -> List[PlateDetection]:
+    def _detect_yolo(self, vehicle_crops: List[np.ndarray]) -> List[List[PlateDetection]]:
         results = self.model.predict(
-            vehicle_crop, conf=self.confidence, iou=self.iou, device=self.device, verbose=False
+            vehicle_crops, conf=self.confidence, iou=self.iou, device=self.device, verbose=False
         )
-        detections = []
-        if not results:
-            return detections
-        boxes = results[0].boxes
-        if boxes is None:
-            return detections
-        xyxy = boxes.xyxy.cpu().numpy()
-        confs = boxes.conf.cpu().numpy()
-        for box, conf in zip(xyxy, confs):
-            x1, y1, x2, y2 = [max(0, int(v)) for v in box]
-            detections.append(PlateDetection(bbox=(x1, y1, x2, y2), confidence=float(conf), source="yolo"))
-        return detections
+        per_image: List[List[PlateDetection]] = []
+        for result in results:
+            detections = []
+            boxes = result.boxes
+            if boxes is not None:
+                xyxy = boxes.xyxy.cpu().numpy()
+                confs = boxes.conf.cpu().numpy()
+                for box, conf in zip(xyxy, confs):
+                    x1, y1, x2, y2 = [max(0, int(v)) for v in box]
+                    detections.append(PlateDetection(bbox=(x1, y1, x2, y2), confidence=float(conf), source="yolo"))
+            per_image.append(detections)
+        # ultralytics may return fewer results than inputs only in
+        # pathological cases; pad defensively so callers can always zip 1:1.
+        while len(per_image) < len(vehicle_crops):
+            per_image.append([])
+        return per_image
 
     # ------------------------------------------------------------------ #
     # Classical CV fallback

@@ -28,6 +28,7 @@ class VehicleResult:
     reason: Optional[str] = None
     plate_format: Optional[str] = None
     state_code: Optional[str] = None
+    format_corrected: bool = False
 
 
 def write_json(results: List[VehicleResult], path: str):
@@ -43,6 +44,7 @@ def write_csv(results: List[VehicleResult], path: str):
     fieldnames = [
         "vehicle_id", "vehicle_type", "plate_number", "status", "confidence",
         "frames_used", "first_frame", "last_frame", "reason", "plate_format", "state_code",
+        "format_corrected",
     ]
     with open(path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)

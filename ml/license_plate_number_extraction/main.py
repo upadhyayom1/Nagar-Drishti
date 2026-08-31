@@ -12,8 +12,8 @@ Usage:
 import argparse
 import os
 import sys
-
 import yaml
+import re  # Added for optimized OCR constraints
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -21,6 +21,100 @@ from src.pipeline.anpr_pipeline import ANPRPipeline
 from src.utils.logger import get_logger, setup_logging
 from src.utils.video import VideoSourceError
 
+# ======================================================================
+# HIGH-EFFICIENCY INDIAN NUMBER PLATE CONSTRAINTS
+# ======================================================================
+
+CLEAN_PATTERN = re.compile(r'[^A-Z0-9]')
+
+# Flexible Pattern: State(2) + RTO(2) + Series(1-3) + Number(4)
+# Allows for OCR confusions and series codes that are 1, 2, or 3 letters long.
+PLATE_EXTRACTOR = re.compile(
+    r'([A-Z0124568]{2})'              # State: 2 chars
+    r'([0-9OQDUILTEZASGBP]{2})'       # RTO: 2 numbers 
+    r'([A-Z0124568]{1,3})'            # Series: 1 to 3 chars (Fixes the "C" in TM87C5106)
+    r'([0-9OQDUILTEZASGBP]{4})'       # Unique Number: 4 numbers
+)
+
+NUM_TO_LETTER_TBL = str.maketrans('0124568', 'OIZASGB')
+LETTER_TO_NUM_TBL = str.maketrans('OQDUILTEZASGBP', '00001111245689')
+
+# 1. THE WHITELIST: All currently valid Indian State/UT Codes
+VALID_STATES = {
+    "AP", "AR", "AS", "BR", "CG", "CH", "DD", "DL", "GA", "GJ",
+    "HR", "HP", "JH", "JK", "KA", "KL", "LA", "LD", "MH", "ML",
+    "MN", "MP", "MZ", "NL", "OD", "PB", "PY", "RJ", "SK", "TN",
+    "TR", "TS", "TG", "UK", "UP", "WB"
+}
+
+# 2. THE CORRECTION MAP: Maps invalid OCR confusions to valid states.
+STATE_MISMATCH_MAP = {
+    # TN (Tamil Nadu)
+    "TM": "TN", "TV": "TN", "YN": "TN", "TW": "TN", "TH": "TN", "IN": "TN", "ZN": "TN", "7N": "TN",
+    # MH (Maharashtra)
+    "NH": "MH", "MN": "MH", "MW": "MH", "WH": "MH", "MR": "MH", "MI": "MH", "MA": "MH",
+    # UP (Uttar Pradesh)
+    "VP": "UP", "UR": "UP", "UF": "UP", "VF": "UP", "OP": "UP", "DP": "UP", "VR": "UP",
+    # DL (Delhi)
+    "OL": "DL", "CL": "DL", "QL": "DL", "DI": "DL", "BL": "DL", "GL": "DL",
+    # KA (Karnataka)
+    "KR": "KA", "XA": "KA", "KN": "KA", "KX": "KA", "XR": "KA",
+    # GJ (Gujarat)
+    "CJ": "GJ", "CI": "GJ", "CU": "GJ", "OJ": "GJ", "GI": "GJ",
+    # RJ (Rajasthan)
+    "PJ": "RJ", "RI": "RJ", "FJ": "RJ", "PI": "RJ",
+    # MP (Madhya Pradesh)
+    "NP": "MP", "MF": "MP", "NF": "MP",
+    # WB (West Bengal)
+    "VR": "WB", "MB": "WB", "WV": "WB", "VV": "WB", "VVB": "WB",
+    # HR (Haryana)
+    "HA": "HR", "HK": "HR", "HB": "HR",
+    # KL (Kerala)
+    "KI": "KL", "XL": "KL", "IL": "KL", "RL": "KL", "AL": "KL",
+    # CG (Chhattisgarh)
+    "CC": "CG", "GG": "CG", "CO": "CG", "C6": "CG",
+    # PB (Punjab)
+    "PR": "PB", "FB": "PB", "P8": "PB",
+    # OD (Odisha)
+    "CD": "OD", "OO": "OD", "QO": "OD", "QD": "OD", "DD": "OD", 
+    # TS/TG (Telangana)
+    "IS": "TS", "I5": "TS", "T5": "TS", "TC": "TG", "T6": "TG",
+    # UK (Uttarakhand)
+    "VK": "UK", "UX": "UK", "OK": "UK", "OX": "UK"
+}
+
+def enforce_indian_plate_constraints(raw_plate: str) -> str:
+    if not raw_plate:
+        return ""
+        
+    plate = CLEAN_PATTERN.sub('', raw_plate.upper())
+    
+    # Check if plate is between 9 and 11 chars. If not, try to extract a valid pattern.
+    if len(plate) < 9 or len(plate) > 11:
+        match = PLATE_EXTRACTOR.search(plate)
+        if match:
+            plate = "".join(match.groups())
+        else:
+            return plate # Failsafe: return raw OCR if no pattern is found
+            
+    # We now have a guaranteed 9, 10, or 11 char plate.
+    # Dynamic slicing from the front and back handles variable length series codes seamlessly.
+    state_clean = plate[:2].translate(NUM_TO_LETTER_TBL)
+    rto_clean = plate[2:4].translate(LETTER_TO_NUM_TBL)
+    series_clean = plate[4:-4].translate(NUM_TO_LETTER_TBL)
+    number_clean = plate[-4:].translate(LETTER_TO_NUM_TBL)
+    
+    # Apply State Code Correction Logic
+    if state_clean not in VALID_STATES:
+        state_clean = STATE_MISMATCH_MAP.get(state_clean, state_clean)
+    
+    # Reject 0000
+    if number_clean == '0000':
+        number_clean = plate[-4:] 
+        
+    return state_clean + rto_clean + series_clean + number_clean
+
+# ======================================================================
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -138,9 +232,19 @@ def main():
     print("\n===== ANPR RESULTS =====")
     if not results:
         print("No vehicles were detected in the provided source.")
+        
     for r in results:
-        plate = r.plate_number or "UNKNOWN"
-        print(f"Vehicle #{r.vehicle_id} ({r.vehicle_type}) -> {plate} -> {r.confidence * 100:.1f}% [{r.status}]")
+        raw_plate = r.plate_number or "UNKNOWN"
+        
+        if raw_plate != "UNKNOWN":
+            # Apply the optimized OCR correction and state mapping
+            corrected_plate = enforce_indian_plate_constraints(raw_plate)
+            r.plate_number = corrected_plate
+        else:
+            corrected_plate = "UNKNOWN"
+            
+        print(f"Vehicle #{r.vehicle_id} ({r.vehicle_type}) -> {corrected_plate} (Raw: {raw_plate}) -> {r.confidence * 100:.1f}% [{r.status}]")
+
     print(f"\nJSON:  {config['output']['json_path']}")
     print(f"CSV:   {config['output']['csv_path']}")
     if config["output"]["save_annotated_video"]:

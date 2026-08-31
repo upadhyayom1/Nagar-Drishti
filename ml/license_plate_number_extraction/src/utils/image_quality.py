@@ -84,8 +84,16 @@ def score_plate_crop(
 
     contrast_score = min(1.0, contrast / 55.0)
 
-    # plates are wide rectangles; heavily-skewed aspect ratios are suspicious
-    aspect_score = 1.0 if 1.5 <= aspect_ratio <= 6.5 else 0.4
+    # Most 4-wheeler plates are wide single-line rectangles (~3.5-5:1), but a
+    # huge share of Indian traffic is two-wheelers, whose plates are legally
+    # squarish two-line plates (~1.0-1.8:1). Both shapes are completely
+    # normal and must not be penalized -- only genuinely implausible shapes
+    # (near-square noise blobs below 0.8, or absurdly elongated slivers
+    # above 6.5) are downweighted.
+    if 0.8 <= aspect_ratio <= 6.5:
+        aspect_score = 1.0
+    else:
+        aspect_score = 0.4
 
     angle_score = max(0.0, 1.0 - abs(skew_angle) / 30.0)
 
