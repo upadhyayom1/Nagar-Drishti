@@ -67,7 +67,8 @@ export interface Route {
   id: string;
   name: string;
   vehicleCount: number;
-  avgSpeed: number;
+  detectionCount: number;
+  avgSpeed: number | null;
   congestionLevel: TrafficLevel;
 }
 
@@ -89,6 +90,7 @@ export interface Alert {
 
 export interface TrafficStats {
   totalVehiclesToday: number;
+  detectionCount: number;
   avgSpeed: number | null;
   activeCameras: number;
   activeAlerts: number;
@@ -99,6 +101,8 @@ export interface TrafficStats {
 export interface HourlyTraffic {
   hour: string;
   vehicles: number;
+  uniqueVehicleCount: number;
+  detectionCount: number;
   avgSpeed: number | null;
 }
 
@@ -106,6 +110,7 @@ export interface CameraTraffic {
   cameraId: string;
   cameraName: string;
   vehicleCount: number;
+  detectionCount: number;
   avgSpeed: number | null;
   congestionLevel: TrafficLevel;
 }
@@ -167,13 +172,14 @@ export interface NetworkCorridor {
   origin: { id: string; name: string; code: string };
   destination: { id: string; name: string; code: string };
   volume: number;
-  averageTravelSeconds: number;
-  averageSpeed: number;
+  uniqueVehicleCount: number;
+  averageTravelSeconds: number | null;
+  averageSpeed: number | null;
 }
 
 export interface NetworkAnalytics {
   corridors: NetworkCorridor[];
-  summary: { corridorCount: number; averageTravelSeconds: number; peakVolume: number };
+  summary: { corridorCount: number; averageTravelSeconds: number | null; peakVolume: number; transitionCount: number; uniqueVehicleCount: number };
 }
 
 export interface SystemNode {

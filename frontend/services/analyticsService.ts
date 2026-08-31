@@ -31,8 +31,8 @@ export const analyticsService = {
     return unwrapApiResponse(await apiClient.get<string[]>('/analytics/anomalies'));
   },
 
-  async getNetwork(): Promise<NetworkAnalytics> {
-    return unwrapApiResponse(await apiClient.get<NetworkAnalytics>('/analytics/network'));
+  async getNetwork(window?: AnalyticsWindow): Promise<NetworkAnalytics> {
+    return unwrapApiResponse(await apiClient.get<NetworkAnalytics>('/analytics/network', withWindow(window)));
   },
 
   async getSystemHealth(): Promise<SystemHealth> {

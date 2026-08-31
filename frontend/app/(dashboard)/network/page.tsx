@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRightLeft, Route, Activity, Zap, TrendingUp, Radio } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -11,7 +12,12 @@ import { analyticsService } from '@/services/analyticsService';
 const formatDuration = (seconds: number) => seconds ? `${Math.floor(seconds / 60)}m ${seconds % 60}s` : 'No observations';
 
 export default function MovementNetworkPage() {
-  const { data: network, isLoading } = useQuery({ queryKey: ['network'], queryFn: analyticsService.getNetwork, refetchInterval: 30_000 });
+  const analyticsWindow = useMemo(() => {
+    const to = new Date();
+    const from = new Date(to.getTime() - 24 * 60 * 60 * 1000);
+    return { from: from.toISOString(), to: to.toISOString() };
+  }, []);
+  const { data: network, isLoading } = useQuery({ queryKey: ['network', analyticsWindow], queryFn: () => analyticsService.getNetwork(analyticsWindow), refetchInterval: 30_000 });
   const routes = network?.corridors ?? [];
   const summary = network?.summary;
   const totalFlow = routes.reduce((total, route) => total + route.volume, 0);
@@ -54,8 +60,8 @@ export default function MovementNetworkPage() {
                   </div>
                   <div className="flex items-center gap-5 justify-between sm:justify-end">
                     <div className="text-right">
-                      <div className="font-mono text-xs font-bold text-[var(--text-primary)]">{route.volume.toLocaleString()} transitions</div>
-                      <div className="text-[10px] text-[var(--text-secondary)] font-mono">Avg: {formatDuration(route.averageTravelSeconds)} · {route.averageSpeed} km/h</div>
+                      <div className="font-mono text-xs font-bold text-[var(--text-primary)]">{route.volume.toLocaleString()} transitions · {route.uniqueVehicleCount.toLocaleString()} vehicles</div>
+                      <div className="text-[10px] text-[var(--text-secondary)] font-mono">Avg: {route.averageTravelSeconds != null ? formatDuration(route.averageTravelSeconds) : 'Travel time unavailable'} · {route.averageSpeed != null ? `${route.averageSpeed} km/h` : 'Speed unavailable'}</div>
                     </div>
                     <Badge variant="ok" size="sm" dot>Observed</Badge>
                   </div>

@@ -123,7 +123,7 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label={`Total Volume (${timeRange})`} value={stats?.totalVehiclesToday?.toLocaleString('en-IN') ?? '—'} isLoading={statsLoading} icon={Car} colorTheme="violet" />
         <StatCard label="Network Velocity" value={stats?.avgSpeed ? `${stats.avgSpeed} km/h` : '—'} isLoading={statsLoading} icon={Gauge} colorTheme="cyan" />
-        <StatCard label="Congestion Index" value={stats?.congestionIndex ?? '—'} isLoading={statsLoading} icon={TrendingUp} subtitle="/ 100 max density" colorTheme="amber" />
+        <StatCard label="Congestion Index" value={stats?.congestionIndex ?? '—'} isLoading={statsLoading} icon={TrendingUp} subtitle="normalized observation index / 100" colorTheme="amber" />
         <StatCard label="Incident Anomalies" value={stats?.incidentsToday ?? '—'} isLoading={statsLoading} icon={AlertTriangle} colorTheme="rose" />
       </div>
 
@@ -167,7 +167,7 @@ export default function AnalyticsPage() {
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-xs font-bold text-[var(--text-primary)] truncate font-display">{road.name}</span>
                     <span className="text-[11px] font-mono text-[var(--text-secondary)] shrink-0 ml-2">
-                      {road.vehicleCount.toLocaleString()} detections
+                      {road.vehicleCount.toLocaleString()} vehicles · {road.detectionCount.toLocaleString()} detections
                     </span>
                   </div>
                   <div className="h-2 bg-white/10 rounded-full overflow-hidden">

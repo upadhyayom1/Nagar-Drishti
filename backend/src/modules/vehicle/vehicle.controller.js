@@ -82,11 +82,18 @@ exports.getVehicleJourney = async (req, res, next) => {
     });
     if (!vehicle) return res.status(404).json({ success: false, message: 'Vehicle not found' });
 
-    const detections = await prisma.detection.findMany({
-      where: { vehicleId: vehicle.id },
-      orderBy: { timestamp: 'asc' },
-      include: { camera: { select: { id: true, name: true, cameraCode: true, latitude: true, longitude: true } } },
-    });
+    const [detections, transitions] = await Promise.all([
+      prisma.detection.findMany({
+        where: { vehicleId: vehicle.id },
+        orderBy: { timestamp: 'asc' },
+        include: { camera: { select: { id: true, name: true, cameraCode: true, latitude: true, longitude: true } } },
+      }),
+      prisma.cameraTransition.findMany({
+        where: { vehicleId: vehicle.id },
+        orderBy: { timestamp: 'asc' },
+        select: { sourceCameraId: true, destinationCameraId: true, timestamp: true, travelTimeSeconds: true, distanceMeters: true, averageSpeed: true },
+      }),
+    ]);
     const waypoints = detections.map((detection) => ({
       cameraId: detection.cameraId,
       cameraCode: detection.camera?.cameraCode || 'CAM',
@@ -98,24 +105,55 @@ exports.getVehicleJourney = async (req, res, next) => {
       direction: detection.direction || 'UNKNOWN',
     })).filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lng));
 
-    let totalDistance = 0;
-    for (let index = 1; index < waypoints.length; index++) {
-      const previous = waypoints[index - 1];
-      const current = waypoints[index];
-      const distance = turf.distance([previous.lng, previous.lat], [current.lng, current.lat], { units: 'kilometers' });
-      const durationHours = Math.max(0, (new Date(current.timestamp) - new Date(previous.timestamp)) / 3600000);
-      totalDistance += distance;
-      current.speed = durationHours ? Math.round((distance / durationHours) * 10) / 10 : 0;
+    // Collapse consecutive observations from the same camera. A vehicle can be detected
+    // multiple times while remaining at one camera; those are not separate route legs.
+    const cleanWaypoints = [];
+    for (const point of waypoints) {
+      const previous = cleanWaypoints.at(-1);
+      if (previous?.cameraId === point.cameraId) continue;
+      cleanWaypoints.push(point);
     }
-    const first = waypoints[0]?.timestamp;
-    const last = waypoints.at(-1)?.timestamp;
+
+    let totalDistance = 0;
+    let totalTravelSeconds = 0;
+    let weightedSpeedDistance = 0;
+    let measuredSpeedDistance = 0;
+    for (let index = 1; index < cleanWaypoints.length; index++) {
+      const previous = cleanWaypoints[index - 1];
+      const current = cleanWaypoints[index];
+      const transition = transitions.find((candidate) =>
+        candidate.sourceCameraId === previous.cameraId &&
+        candidate.destinationCameraId === current.cameraId &&
+        new Date(candidate.timestamp).getTime() >= new Date(previous.timestamp).getTime()
+      );
+      const distanceKm = Number.isFinite(transition?.distanceMeters)
+        ? transition.distanceMeters / 1000
+        : turf.distance([previous.lng, previous.lat], [current.lng, current.lat], { units: 'kilometers' });
+      const durationSeconds = Number.isFinite(transition?.travelTimeSeconds) && transition.travelTimeSeconds > 0
+        ? transition.travelTimeSeconds
+        : Math.max(0, (new Date(current.timestamp) - new Date(previous.timestamp)) / 1000);
+      totalDistance += distanceKm;
+      totalTravelSeconds += durationSeconds;
+      if (durationSeconds > 0 && distanceKm > 0) {
+        current.speed = transition?.averageSpeed > 0
+          ? Math.round(transition.averageSpeed * 10) / 10
+          : Math.round((distanceKm / (durationSeconds / 3600)) * 10) / 10;
+        measuredSpeedDistance += distanceKm;
+        weightedSpeedDistance += current.speed * distanceKm;
+      } else {
+        current.speed = null;
+      }
+    }
+    const first = cleanWaypoints[0]?.timestamp;
+    const last = cleanWaypoints.at(-1)?.timestamp;
     const totalDuration = first && last ? Math.max(0, Math.round((new Date(last) - new Date(first)) / 60000)) : 0;
+    const avgSpeed = measuredSpeedDistance > 0 ? weightedSpeedDistance / measuredSpeedDistance : null;
     return res.json({ success: true, data: {
       plate: vehicle.plateNumber,
-      waypoints,
+      waypoints: cleanWaypoints,
       totalDistance: Math.round(totalDistance * 100) / 100,
       totalDuration,
-      avgSpeed: totalDuration ? Math.round((totalDistance / (totalDuration / 60)) * 10) / 10 : 0,
+      avgSpeed: avgSpeed != null ? Math.round(avgSpeed * 10) / 10 : null,
     }});
   } catch (error) { next(error); }
 };

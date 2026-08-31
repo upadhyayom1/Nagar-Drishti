@@ -72,7 +72,9 @@ async function getTrafficSnapshot(windowInput = {}, cameraId) {
       const windowDetectionCount = countByCamera.get(camera.id) || 0;
       const liveVehicles = liveEngineVehiclesByCam.get(camera.id) || 0;
       const vehiclesDetected = simulationRunning ? liveVehicles : (uniqueVehiclesByCamera.get(camera.id) || 0);
-      const detectionCount = simulationRunning ? liveVehicles : windowDetectionCount;
+      // The simulation count represents currently tracked vehicles, not database detections.
+      // Keep historical detectionCount separate so the API never relabels vehicles as detections.
+      const detectionCount = windowDetectionCount;
       const lastDetectionTime = simulationRunning
         ? (liveVehicles > 0 ? liveSimulationTime : camera.updatedAt)
         : (lastDetectionByCamera.get(camera.id) || camera.updatedAt);
