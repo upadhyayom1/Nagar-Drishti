@@ -32,6 +32,9 @@ const recognizePlate = async (imageBuffer, originalName, mimeType) => {
       .map(plate => ({
         plateNumber: plate.plateNumber?.toUpperCase() || null,
         confidence: plate.confidence || 0,
+        status: plate.status || 'UNKNOWN',
+        framesUsed: Number.isFinite(plate.framesUsed) ? plate.framesUsed : 0,
+        reason: plate.reason || null,
       }));
 
     return plates.length > 0 ? plates : [];

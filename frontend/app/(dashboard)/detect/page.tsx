@@ -11,58 +11,7 @@ import { cameraService } from '@/services/cameraService';
 import { ocrService, type PlateRecognitionResult } from '@/services/ocrService';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-const MAX_VIDEO_FRAMES = 6;
-
-function waitForEvent(target: HTMLMediaElement, event: 'loadedmetadata' | 'seeked') {
-  return new Promise<void>((resolve, reject) => {
-    const onSuccess = () => {
-      cleanup();
-      resolve();
-    };
-    const onFailure = () => {
-      cleanup();
-      reject(new Error('Unable to read the selected video'));
-    };
-    const cleanup = () => {
-      target.removeEventListener(event, onSuccess);
-      target.removeEventListener('error', onFailure);
-    };
-    target.addEventListener(event, onSuccess, { once: true });
-    target.addEventListener('error', onFailure, { once: true });
-  });
-}
-
-async function extractVideoFrames(file: File): Promise<File[]> {
-  const url = URL.createObjectURL(file);
-  const video = document.createElement('video');
-  video.muted = true;
-  video.preload = 'metadata';
-  video.src = url;
-
-  try {
-    await waitForEvent(video, 'loadedmetadata');
-    const frameCount = Math.min(MAX_VIDEO_FRAMES, Math.max(1, Math.ceil(video.duration)));
-    const frames: File[] = [];
-
-    for (let frameIndex = 0; frameIndex < frameCount; frameIndex += 1) {
-      video.currentTime = Math.min(video.duration, ((frameIndex + 0.5) / frameCount) * video.duration);
-      await waitForEvent(video, 'seeked');
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9));
-      if (blob) frames.push(new File([blob], `${file.name}-frame-${frameIndex + 1}.jpg`, { type: 'image/jpeg' }));
-    }
-
-    if (frames.length === 0) throw new Error('No usable video frames were found');
-    return frames;
-  } finally {
-    video.removeAttribute('src');
-    video.load();
-    URL.revokeObjectURL(url);
-  }
-}
+const HIGH_CONFIDENCE_THRESHOLD = 85;
 
 export default function PlateDetectionPage() {
   const queryClient = useQueryClient();
@@ -112,8 +61,9 @@ export default function PlateDetectionPage() {
     setResults([]);
 
     try {
-      const frames = file.type.startsWith('video/') ? await extractVideoFrames(file) : [file];
-      const detected = await ocrService.recognizePlates(frames, cameraId, new Date().toISOString());
+      // Keep the complete video intact so the ANPR pipeline can perform
+      // temporal vehicle tracking and multi-frame OCR fusion server-side.
+      const detected = await ocrService.recognizePlates([file], cameraId, new Date().toISOString());
       setResults(detected);
       queryClient.invalidateQueries({ queryKey: ['recentAlerts'] });
       queryClient.invalidateQueries({ queryKey: ['alerts'] });
@@ -149,7 +99,7 @@ export default function PlateDetectionPage() {
               <input type="file" accept="image/*,video/*" onChange={selectFile} className="hidden" />
               <Upload size={30} className="text-cyan-400" />
               <span className="text-sm font-display font-bold text-[var(--text-primary)]">Choose an image or video</span>
-              <span className="max-w-sm text-center text-xs text-[var(--text-secondary)]">Images are sent directly. Videos are sampled into up to six frames in your browser before recognition.</span>
+              <span className="max-w-sm text-center text-xs text-[var(--text-secondary)]">Images are sent directly. Videos are processed as a sequence so the ANPR tracker can fuse evidence across frames.</span>
             </label>
           ) : (
             <div className="relative overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-black/40">
@@ -172,7 +122,7 @@ export default function PlateDetectionPage() {
           <div className="space-y-3 max-h-[430px] overflow-y-auto pr-1">
             {results.map((result, index) => <div key={`${result.sourceFile}-${index}`} className={`rounded-xl border p-3 ${result.detected ? 'border-emerald-500/25 bg-emerald-500/[0.06]' : 'border-white/10 bg-white/[0.02]'}`}>
               <div className="flex items-center justify-between gap-2"><span className="text-xs font-mono text-[var(--text-secondary)] truncate">{result.sourceFile}</span>{result.detected ? <CheckCircle2 size={16} className="shrink-0 text-emerald-400" /> : <AlertCircle size={16} className="shrink-0 text-amber-400" />}</div>
-              {result.detected ? <div className="mt-2 flex items-center justify-between gap-3"><Link href={`/vehicles/${result.plateNumber}`} className="font-mono font-bold text-cyan-300 hover:text-white">{result.plateNumber}</Link><span className="text-xs text-emerald-300">{result.confidence}% confidence</span>{result.isBlacklisted && <Badge variant="danger" size="sm"><ShieldAlert size={11} /> Blacklisted</Badge>}</div> : <p className="mt-2 text-xs text-[var(--text-secondary)]">{result.error || 'No readable plate was found in this frame.'}</p>}
+              {result.detected ? <div className="mt-2 flex items-center justify-between gap-3"><Link href={`/vehicles/${result.plateNumber}`} className="font-mono font-bold text-cyan-300 hover:text-white">{result.plateNumber}</Link><span className={`text-xs ${result.confidence >= HIGH_CONFIDENCE_THRESHOLD ? 'text-emerald-300' : 'text-amber-300'}`}>{result.confidence}% confidence · {result.confidence >= HIGH_CONFIDENCE_THRESHOLD ? 'Verified detection' : 'Low-confidence candidate'}</span>{result.isBlacklisted && <Badge variant="danger" size="sm"><ShieldAlert size={11} /> Blacklisted</Badge>}</div> : <p className="mt-2 text-xs text-[var(--text-secondary)]">{result.error || 'No readable plate was found in this frame.'}</p>}
             </div>)}
           </div>
         </GlassCard>

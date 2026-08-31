@@ -10,6 +10,9 @@ export interface PlateRecognitionResult {
   timestamp?: string;
   isBlacklisted?: boolean;
   error?: string;
+  status?: 'VERIFIED' | 'LIKELY' | 'UNCERTAIN' | 'UNKNOWN';
+  framesUsed?: number;
+  reason?: string;
 }
 
 export interface PlateRecognitionStatus {
