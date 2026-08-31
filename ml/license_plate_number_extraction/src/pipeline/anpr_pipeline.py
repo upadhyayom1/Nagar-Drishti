@@ -99,8 +99,15 @@ class ANPRPipeline:
     # ------------------------------------------------------------------ #
     # Per-frame processing
     # ------------------------------------------------------------------ #
-    def _process_frame(self, frame: np.ndarray, frame_index: int, annotate: bool) -> np.ndarray:
+    def _process_frame(self, frame: np.ndarray, frame_index: int, annotate: bool, is_image: bool = False) -> np.ndarray:
         vehicles = self.vehicle_detector.detect_and_track(frame)
+
+        # Fallback for close-up plate images where no "vehicle" shape is found
+        if not vehicles and is_image:
+            from src.detection.vehicle_detector import VehicleDetection
+            h, w = frame.shape[:2]
+            vehicles = [VehicleDetection(track_id=9999, bbox=(0, 0, w, h), confidence=1.0, class_id=-1, class_name="unknown")]
+            logger.debug("No vehicles detected in static image; using full frame as fallback vehicle bounding box.")
 
         # First pass: update track bookkeeping for every vehicle and decide
         # which vehicles actually need a plate-detector call this frame.
@@ -379,8 +386,9 @@ class ANPRPipeline:
         frame_count = 0
         try:
             logger.info("Processing video...")
+            is_image = getattr(reader, 'total_frames', -1) == 1
             for frame_index, frame in reader.frames():
-                processed = self._process_frame(frame, frame_index, annotate=annotate)
+                processed = self._process_frame(frame, frame_index, annotate=annotate, is_image=is_image)
                 frame_count += 1
 
                 if writer is not None:

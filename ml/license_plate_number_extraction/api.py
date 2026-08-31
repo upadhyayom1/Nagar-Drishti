@@ -66,9 +66,6 @@ async def recognize(file: UploadFile = File(...)):
             shutil.copyfileobj(file.file, output_file)
 
         source_path = upload_path
-        if file.content_type.startswith("image/"):
-            source_path = temp_path / "image-input.mp4"
-            image_to_video(upload_path, source_path)
 
         config = copy.deepcopy(load_config())
         config["output"].update({
