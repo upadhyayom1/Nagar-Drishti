@@ -134,7 +134,7 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
             {hasNextPage && (
               <div className="mt-8 flex justify-center pb-4 relative z-10">
                 <Button 
-                  variant="outline" 
+                  variant="secondary" 
                   size="sm" 
                   onClick={() => fetchNextPage()} 
                   disabled={isFetchingNextPage}
