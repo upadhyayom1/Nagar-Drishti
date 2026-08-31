@@ -122,7 +122,7 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
                     </div>
                     <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs font-mono text-slate-400">
                       <span className="text-cyan-400 font-semibold">{d.cameraName || d.cameraId}</span>
-                      <span>Speed: <span className="text-white font-bold">{d.speed} km/h</span></span>
+                      <span>Speed: <span className="text-white font-bold">{d.speed != null ? `${d.speed} km/h` : '—'}</span></span>
                       <span>Confidence: <span className="text-violet-400 font-bold">{d.confidence}%</span></span>
                       <span>Heading: {d.direction}</span>
                     </div>

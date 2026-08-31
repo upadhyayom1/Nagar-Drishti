@@ -14,7 +14,7 @@ import type { Detection } from '@/types';
 export default function CameraDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { data: camera }          = useQuery({ queryKey: ['camera', id],     queryFn: () => cameraService.getCameraById(id), refetchInterval: 3000 });
-  const { data: detections = [] } = useQuery({ queryKey: ['detections', id], queryFn: () => cameraService.getDetectionsByCamera(id), refetchInterval: 3000 });
+  const { data: detections = [] } = useQuery({ queryKey: ['detections', id], queryFn: () => cameraService.getDetectionsByCamera(id, { live: true, windowMinutes: 2 }), refetchInterval: 3000 });
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const toggleFullscreen = useCallback(() => {
@@ -55,56 +55,31 @@ export default function CameraDetailPage({ params }: { params: Promise<{ id: str
 
       <div className={`grid gap-6 ${isFullscreen ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
         <div className={`space-y-4 ${isFullscreen ? '' : 'lg:col-span-2'}`}>
-          {/* Main Optical Video Stream with Simulated Bounding Box + OCR Overlays */}
+          {/* Optical feed shell. Real detections are shown below; no fabricated bounding boxes are rendered. */}
           <GlassCard padding="none" className="relative aspect-video overflow-hidden border border-cyan-500/30 shadow-[0_0_30px_rgba(0,240,255,0.15)]">
             <div className="absolute inset-0 bg-[#060913] flex items-center justify-center">
-              <Video size={64} className="text-cyan-400/15" />
+              <div className="text-center">
+                <Video size={64} className="mx-auto text-cyan-400/15" />
+                <p className="mt-3 text-[10px] font-mono uppercase tracking-widest text-[var(--text-tertiary)]">
+                  Video stream not configured
+                </p>
+                <p className="mt-1 text-[9px] font-mono text-[var(--text-tertiary)]">
+                  Live ANPR telemetry is displayed from the detection service.
+                </p>
+              </div>
             </div>
-
-            {/* Glowing Scan-line sweep animation */}
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-400/[0.04] to-cyan-400/[0.1] pointer-events-none" />
             <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-40 animate-pulse pointer-events-none" style={{ top: '35%' }} />
 
-            {/* Dynamic Bounding Box + OCR Plate Readout Overlays with Neon Halos */}
-            <div className="absolute inset-0 pointer-events-none">
-              {Object.values(detections
-                .filter(d => (Date.now() - new Date(d.timestamp).getTime()) < 35000)
-                .reduce((acc, d) => {
-                  if (!acc[d.vehiclePlate]) acc[d.vehiclePlate] = d;
-                  return acc;
-                }, {} as Record<string, Detection>))
-                .slice(0, Math.max(0, camera.vehiclesDetected))
-                .map((d: Detection) => {
-                  const hash = d.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-                  const left = 15 + (hash % 60); 
-                  const top = 20 + ((hash * 7) % 50);
-                  const colors = ['cyan', 'fuchsia', 'amber'];
-                  const color = colors[hash % colors.length];
-                  
-                  const borderColorClass = color === 'cyan' ? 'border-cyan-400' : color === 'fuchsia' ? 'border-fuchsia-500' : 'border-amber-400';
-                  const shadowClass = color === 'cyan' ? 'shadow-[0_0_15px_rgba(0,240,255,0.8)]' : color === 'fuchsia' ? 'shadow-[0_0_15px_rgba(236,72,153,0.8)]' : 'shadow-[0_0_15px_rgba(245,158,11,0.8)]';
-                  const bgClass = color === 'cyan' ? 'bg-cyan-400' : color === 'fuchsia' ? 'bg-fuchsia-500' : 'bg-amber-400';
-                  const textClass = color === 'fuchsia' ? 'text-white' : 'text-[#060913]';
-
-                  return (
-                    <div key={d.id} className={`absolute border-2 ${borderColorClass} rounded ${shadowClass} transition-all duration-1000`} style={{ left: `${left}%`, top: `${top}%`, width: '14%', height: '20%' }}>
-                      <span className={`absolute -top-5 left-0 text-[9px] font-mono ${bgClass} ${textClass} px-1 py-0.5 rounded-sm whitespace-nowrap font-bold shadow-md`}>
-                        {d.vehiclePlate} · {d.confidence}%
-                      </span>
-                    </div>
-                  );
-                })}
-            </div>
-
-            {/* Live Status Indicators */}
             <div className="absolute top-3 left-3 flex items-center gap-2">
-              <Badge variant="critical" dot pulse size="sm">LIVE</Badge>
+              <Badge variant={detections.length > 0 ? 'critical' : 'info'} dot pulse={detections.length > 0} size="sm">
+                {detections.length > 0 ? 'LIVE' : 'MONITORING'}
+              </Badge>
               <span className="text-[10px] font-mono bg-black/80 backdrop-blur-md px-2.5 py-0.5 rounded-lg text-white font-bold border border-white/15">
-                {camera.detectionCount} detections
+                {detections.length} recent detections
               </span>
             </div>
 
-            {/* Fullscreen Toggle */}
             <div className="absolute top-3 right-3">
               <button
                 onClick={toggleFullscreen}
@@ -181,10 +156,10 @@ export default function CameraDetailPage({ params }: { params: Promise<{ id: str
                   </div>
                   <div className="flex items-center justify-between text-[11px] font-mono text-[var(--text-secondary)]">
                     <span>{d.vehicleType} · {d.direction}</span>
-                    <span className="text-emerald-400 font-bold">{d.confidence}% match</span>
+                    <span className="text-emerald-400 font-bold">{d.confidence > 0 ? `${d.confidence}% match` : 'unverified'}</span>
                   </div>
                   <div className="text-[10px] font-mono text-[var(--text-tertiary)] mt-1 flex justify-between">
-                    <span>Velocity: <strong className="text-[var(--text-primary)]">{d.speed} km/h</strong></span>
+                    <span>Velocity: <strong className="text-[var(--text-primary)]">{d.speed != null ? `${d.speed} km/h` : '—'}</strong></span>
                   </div>
                 </Link>
               ))}

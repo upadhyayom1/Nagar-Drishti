@@ -3,6 +3,8 @@ const { env } = require('./src/config/env');
 const { prisma } = require('./src/lib/prisma');
 const engine = require('./src/modules/simulation/engine');
 
+let httpServer;
+
 const startServer = async () => {
   try {
     // `$connect` alone does not execute a query for every Prisma adapter. Run a
@@ -16,7 +18,7 @@ const startServer = async () => {
     console.log('Simulation engine initialized with DB data and ticking started.');
 
     const PORT = env.PORT || 3000;
-    app.listen(PORT, '0.0.0.0', () => {
+    httpServer = app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT} in ${env.NODE_ENV} mode`);
 
       // An external monitor is required to keep an idle deployment reachable;
@@ -31,3 +33,22 @@ const startServer = async () => {
 };
 
 startServer();
+
+
+const shutdown = async (signal) => {
+  console.log(`Received ${signal}; shutting down gracefully...`);
+  try {
+    engine.pause();
+    if (httpServer) {
+      await new Promise((resolve) => httpServer.close(resolve));
+    }
+    await prisma.$disconnect();
+  } catch (error) {
+    console.error('Shutdown error:', error);
+  } finally {
+    process.exit(0);
+  }
+};
+
+process.once('SIGINT', () => shutdown('SIGINT'));
+process.once('SIGTERM', () => shutdown('SIGTERM'));

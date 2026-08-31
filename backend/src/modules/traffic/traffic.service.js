@@ -57,9 +57,12 @@ async function getTrafficSnapshot(windowInput = {}, cameraId) {
   }
 
   // Check live simulation engine if active
-  const liveEngineVehiclesByCam = global.simulationEngine?.running
-    ? global.simulationEngine.getLiveCameraCounts()
+  const engine = global.simulationEngine;
+  const simulationRunning = Boolean(engine?.running);
+  const liveEngineVehiclesByCam = simulationRunning
+    ? engine.getLiveCameraCounts()
     : new Map();
+  const liveSimulationTime = simulationRunning ? engine.getState().simulationTime : null;
 
   return {
     from: window.from,
@@ -68,9 +71,11 @@ async function getTrafficSnapshot(windowInput = {}, cameraId) {
     cameras: cameras.map((camera) => {
       const windowDetectionCount = countByCamera.get(camera.id) || 0;
       const liveVehicles = liveEngineVehiclesByCam.get(camera.id) || 0;
-      const vehiclesDetected = liveVehicles > 0 ? liveVehicles : (uniqueVehiclesByCamera.get(camera.id) || 0);
-      const detectionCount = windowDetectionCount;
-      const lastDetectionTime = lastDetectionByCamera.get(camera.id) || (liveVehicles > 0 ? new Date() : camera.updatedAt);
+      const vehiclesDetected = simulationRunning ? liveVehicles : (uniqueVehiclesByCamera.get(camera.id) || 0);
+      const detectionCount = simulationRunning ? liveVehicles : windowDetectionCount;
+      const lastDetectionTime = simulationRunning
+        ? (liveVehicles > 0 ? liveSimulationTime : camera.updatedAt)
+        : (lastDetectionByCamera.get(camera.id) || camera.updatedAt);
 
       return {
         ...camera,
@@ -90,18 +95,27 @@ async function evaluateCongestionAlert(cameraId, timestamp = new Date()) {
   const from = new Date(new Date(timestamp).getTime() - DEFAULT_WINDOW_MINUTES * 60 * 1000);
   const snapshot = await getTrafficSnapshot({ from, to: timestamp }, cameraId);
   const camera = snapshot.cameras[0];
-  if (!camera || !['high', 'congested'].includes(camera.trafficLevel)) return null;
-
-  const severity = camera.trafficLevel === 'congested' ? 'CRITICAL' : 'HIGH';
   const existingActiveAlert = await prisma.alert.findFirst({
     where: { type: 'CONGESTION', cameraId, status: 'ACTIVE' },
     orderBy: { createdAt: 'desc' },
   });
-  const message = `Heavy traffic congestion detected at ${camera.name || camera.cameraCode} with ${camera.vehiclesDetected || camera.vehicleCount} active vehicles tracked in sector.`;
+
+  if (!camera || !['high', 'congested'].includes(camera.trafficLevel)) {
+    if (existingActiveAlert) {
+      return prisma.alert.update({
+        where: { id: existingActiveAlert.id },
+        data: { status: 'RESOLVED', resolvedAt: new Date(timestamp) },
+      });
+    }
+    return null;
+  }
+
+  const severity = camera.trafficLevel === 'congested' ? 'CRITICAL' : 'HIGH';
+  const message = `Heavy traffic congestion detected at ${camera.name || camera.cameraCode} with ${camera.vehiclesDetected || camera.vehicleCount} vehicles tracked in the selected window.`;
   if (existingActiveAlert) {
     return prisma.alert.update({
       where: { id: existingActiveAlert.id },
-      data: { severity, message },
+      data: { severity, message, createdAt: new Date(timestamp), resolvedAt: null },
     });
   }
   return prisma.alert.create({

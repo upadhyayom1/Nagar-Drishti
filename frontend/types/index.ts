@@ -27,7 +27,7 @@ export interface Detection {
   timestamp: string;
   confidence: number;
   vehicleType: string;
-  speed: number;
+  speed: number | null;
   direction: string;
   imageUrl?: string;
 }

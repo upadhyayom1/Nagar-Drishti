@@ -1,9 +1,9 @@
 const config = require('./config');
-const { randomInt, randomWeighted, shuffleArray, random } = require('./utils');
+const { randomInt, randomWeighted, random } = require('./utils');
 const { NODES } = require('../../data/prayagraj.network');
 
 const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-const nodeKeys = Object.keys(NODES);
+const defaultNodeKeys = Object.keys(NODES);
 
 function generatePlate(state) {
   const code = state === 'OTHER' ? 'CG' : state;
@@ -14,38 +14,46 @@ function generatePlate(state) {
   return `${code}${num1}${let1}${let2}${num2}`;
 }
 
-function getRandomNodeKey() {
+function pickNode(nodeKeys) {
   return nodeKeys[Math.floor(random() * nodeKeys.length)];
 }
 
-function generateVehicles() {
+function generateVehicles(options = {}) {
+  const nodeKeys = Array.isArray(options.nodeKeys) && options.nodeKeys.length
+    ? options.nodeKeys
+    : defaultNodeKeys;
+
   console.log(`Generating ${config.vehicleCount} synthetic vehicles...`);
   const vehicles = [];
   const usedPlates = new Set();
 
   for (let i = 0; i < config.vehicleCount; i++) {
     const state = randomWeighted(config.stateDistribution);
-    
+
     let plateNumber;
     do {
       plateNumber = generatePlate(state);
     } while (usedPlates.has(plateNumber));
     usedPlates.add(plateNumber);
 
-    const type = randomWeighted(config.vehicleTypes);
+    const vehicleType = randomWeighted(config.vehicleTypes);
     const profile = randomWeighted(config.profiles);
-    
-    let homeNode = getRandomNodeKey();
-    let workNode = getRandomNodeKey();
-    while (workNode === homeNode) workNode = getRandomNodeKey();
+
+    // These are persistent behavioral anchors. They are not database schema fields;
+    // they stay with the in-memory historical profile for all simulated days.
+    const homeNode = pickNode(nodeKeys);
+    let workNode = pickNode(nodeKeys);
+    let guard = 0;
+    while (workNode === homeNode && guard++ < 20) workNode = pickNode(nodeKeys);
 
     vehicles.push({
       plateNumber,
-      vehicleType: type,
-      profile, 
+      vehicleType,
+      profile,
       homeNode,
       workNode,
-      status: 'ACTIVE'
+      currentLocation: homeNode,
+      status: 'ACTIVE',
     });
   }
 

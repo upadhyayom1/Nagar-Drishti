@@ -127,8 +127,8 @@ async function getBlacklistIntelligence(filters = {}) {
           latitude: latest.latitude ?? latest.camera?.latitude,
           longitude: latest.longitude ?? latest.camera?.longitude,
           timestamp: latest.timestamp,
-          speed: latest.speed || vehicle?.speed || 35,
-          direction: latest.direction || 'EASTBOUND',
+          speed: latest.speed ?? vehicle?.speed ?? null,
+          direction: latest.direction || 'UNKNOWN',
         };
       }
 
@@ -153,8 +153,8 @@ async function getBlacklistIntelligence(filters = {}) {
           lastSeen: vehicle?.lastSeen || lastSighting?.timestamp || record.createdAt,
           totalDetections: vehicle?._count?.detections || detections.length,
           camerasVisited: uniqueCameras.size || (lastSighting ? 1 : 0),
-          averageSpeed: vehicle?.speed || 38,
-          currentRoad: lastSighting?.road || 'Prayagraj Main Corridor',
+          averageSpeed: vehicle?.speed ?? null,
+          currentRoad: lastSighting?.road || null,
         },
         lastSighting,
         nextProbableCamera,

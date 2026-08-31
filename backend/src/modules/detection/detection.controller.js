@@ -1,6 +1,12 @@
 const { prisma } = require('../../lib/prisma');
 const { recordDetection } = require('./detection.service');
 
+function parseOptionalNumber(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 exports.createDetection = async (req, res) => {
   try {
     const { plateNumber, cameraId, timestamp, ocrConfidence, vehicleConfidence, latitude, longitude, direction, imageUrl } = req.body;
@@ -18,10 +24,10 @@ exports.createDetection = async (req, res) => {
       cameraId: camera.id,
       plateText: normalizedPlate,
       timestamp: timestamp ? new Date(timestamp) : new Date(),
-      ocrConfidence: Number.isFinite(ocrConfidence) ? ocrConfidence : null,
-      vehicleConfidence: Number.isFinite(vehicleConfidence) ? vehicleConfidence : null,
-      latitude: Number.isFinite(latitude) ? latitude : null,
-      longitude: Number.isFinite(longitude) ? longitude : null,
+      ocrConfidence: parseOptionalNumber(ocrConfidence),
+      vehicleConfidence: parseOptionalNumber(vehicleConfidence),
+      latitude: parseOptionalNumber(latitude),
+      longitude: parseOptionalNumber(longitude),
       direction: direction || null,
       imageUrl: imageUrl || null,
       source: 'AI',
@@ -130,9 +136,16 @@ exports.getVehicleHeatmap = async (req, res) => {
 exports.getCameraDetections = async (req, res) => {
   try {
     const { cameraId } = req.params;
+    const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 100);
+    const live = String(req.query.live || '').toLowerCase() === 'true' || req.query.live === '1';
+    const windowMinutes = Math.min(Math.max(Number(req.query.windowMinutes) || 2, 1), 60);
+    const where = { cameraId };
+    if (live) {
+      where.timestamp = { gte: new Date(Date.now() - windowMinutes * 60 * 1000), lte: new Date() };
+    }
     const detections = await prisma.detection.findMany({
-      where: { cameraId },
-      take: Math.min(Math.max(Number(req.query.limit) || 100, 1), 100),
+      where,
+      take: limit,
       orderBy: { timestamp: 'desc' },
       include: { vehicle: { select: { plateNumber: true, vehicleType: true, speed: true } }, camera: { select: { cameraCode: true, name: true } } }
     });
@@ -151,10 +164,10 @@ function serializeDetection(detection) {
     cameraCode: detection.camera?.cameraCode || 'CAM',
     cameraName: detection.camera?.name || detection.camera?.cameraCode || 'Prayagraj Optical Node',
     timestamp: detection.timestamp,
-    confidence: Math.round(((detection.ocrConfidence ?? detection.vehicleConfidence ?? 0.95) * 100) * 10) / 10,
+    confidence: Math.round(((detection.ocrConfidence ?? detection.vehicleConfidence ?? 0) * 100) * 10) / 10,
     vehicleType: detection.vehicle?.vehicleType || 'CAR',
-    speed: detection.vehicle?.speed ?? 35,
-    direction: detection.direction || 'EASTBOUND',
+    speed: detection.vehicle?.speed ?? null,
+    direction: detection.direction || 'UNKNOWN',
     imageUrl: detection.imageUrl,
   };
 }

@@ -94,8 +94,8 @@ exports.getVehicleJourney = async (req, res, next) => {
       lat: detection.latitude ?? detection.camera?.latitude,
       lng: detection.longitude ?? detection.camera?.longitude,
       timestamp: detection.timestamp,
-      speed: 35,
-      direction: detection.direction || 'EASTBOUND',
+      speed: detection.speed ?? null,
+      direction: detection.direction || 'UNKNOWN',
     })).filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lng));
 
     let totalDistance = 0;

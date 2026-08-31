@@ -114,7 +114,7 @@ async function processDetectionForBlacklist(detection) {
       cameraName = detection.camera.name;
     } else {
       const cam = await prisma.camera.findUnique({ where: { id: detection.cameraId }});
-      if (cam) cameraName = cam.name + (cam.location ? ` (${cam.location})` : '');
+      if (cam) cameraName = cam.name || cam.cameraCode || detection.cameraId;
     }
 
     const alertMessage = `Blacklisted vehicle ${checkResult.plateNumber} detected by ${cameraName}. Reason: ${checkResult.record.reason}`;

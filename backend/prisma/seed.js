@@ -10,8 +10,16 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  const adminPassword = await bcrypt.hash('admin123', 10);
-  const userPassword = await bcrypt.hash('user123', 10);
+  const isProduction = process.env.NODE_ENV === 'production';
+  const adminSecret = process.env.SEED_ADMIN_PASSWORD || (isProduction ? null : 'admin123');
+  const operatorSecret = process.env.SEED_OPERATOR_PASSWORD || (isProduction ? null : adminSecret);
+  const userSecret = process.env.SEED_USER_PASSWORD || (isProduction ? null : 'user123');
+  if (!adminSecret || !operatorSecret || !userSecret) {
+    throw new Error('Set SEED_ADMIN_PASSWORD, SEED_OPERATOR_PASSWORD and SEED_USER_PASSWORD in production.');
+  }
+  const adminPassword = await bcrypt.hash(adminSecret, 12);
+  const operatorPassword = await bcrypt.hash(operatorSecret, 12);
+  const userPassword = await bcrypt.hash(userSecret, 12);
 
   const adminUser = await prisma.user.upsert({
     where: { username: 'admin' },
@@ -29,7 +37,7 @@ async function main() {
     update: { passwordHash: adminPassword },
     create: {
       username: 'operator.krishnan',
-      passwordHash: adminPassword,
+      passwordHash: operatorPassword,
       name: 'Officer Krishnan',
       role: 'ADMIN',
     },

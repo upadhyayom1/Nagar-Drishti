@@ -15,7 +15,7 @@ def haversine_km(lat1, lon1, lat2, lon2):
     except Exception:
         return 0.0
 
-def analyze_ocr_movement(df_all: pd.DataFrame, vehicle_identifier: str, dwell_threshold_mins: float = 8.0):
+def analyze_ocr_movement(df_all: pd.DataFrame, vehicle_identifier: str, dwell_threshold_mins: float = 8.0, physical_speed_limit_kmh: float = 120.0):
     if df_all is None or df_all.empty:
         return None
 
@@ -66,7 +66,8 @@ def analyze_ocr_movement(df_all: pd.DataFrame, vehicle_identifier: str, dwell_th
     valid_movement = (df["time_diff_sec"] >= 10.0) & (df["distance_km"] >= 0.05) & (~df["is_dwell_stop"])
 
     df["raw_speed_kmh"] = np.where(valid_movement, df["distance_km"] / df["time_diff_hrs"], np.nan)
-    df["derived_speed_kmh"] = df["raw_speed_kmh"].clip(lower=0.0, upper=120.0).fillna(0.0)
+    df["derived_speed_kmh"] = df["raw_speed_kmh"].clip(lower=0.0).fillna(0.0)
+    df["physical_speed_violation"] = df["derived_speed_kmh"] > physical_speed_limit_kmh
 
     # ML Isolation Forest
     anomalies_count = 0
@@ -108,6 +109,7 @@ def analyze_ocr_movement(df_all: pd.DataFrame, vehicle_identifier: str, dwell_th
         "max_segment_speed_kmh": round(float(valid_speeds.max()), 2) if not valid_speeds.empty else 0.0,
         "total_dwell_hours": round(float(dwell_records["time_diff_mins"].sum() / 60.0), 2),
         "anomalous_events_detected": anomalies_count,
+        "physical_speed_violations": int(df["physical_speed_violation"].sum()),
         "frequent_hotspots": hotspot_count,
         "dwell_threshold_used_mins": dwell_threshold_mins
     }

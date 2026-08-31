@@ -1,5 +1,6 @@
 const turf = require('@turf/turf');
 const { prisma } = require('../../lib/prisma');
+const { processDetectionForBlacklist } = require('../blacklist/blacklist.service');
 
 const VEHICLE_SPEED_RANGES = {
   AUTO: [22, 34],
@@ -49,7 +50,7 @@ class SimulationEngine {
     this.timer = null;
     this.tickInProgress = false;
     this.tickRateMs = 1000;
-    this.detectionRadiusMeters = 150;
+    this.detectionRadiusMeters = 45;
     this.maximumVehicles = Math.min(Math.max(Number(process.env.SIMULATION_VEHICLE_COUNT) || 250, 25), 1000);
     this.generatedDetectionCount = 0;
     this.lastPersistenceError = null;
@@ -66,7 +67,9 @@ class SimulationEngine {
   async init() {
     this.roads = await prisma.road.findMany();
     this.cameras = await prisma.camera.findMany();
-    const dbVehicles = await prisma.vehicle.findMany({ where: { status: { in: ['ACTIVE', 'BLACKLISTED'] } } });
+    const dbVehicles = await prisma.vehicle.findMany({
+      where: { status: { in: ['ACTIVE', 'BLACKLISTED'] } },
+    });
 
     this.buildGraph();
     if (this.nodesList.length === 0) {
@@ -74,61 +77,49 @@ class SimulationEngine {
       return;
     }
 
-    // Map DB vehicles to simulation state
-    this.vehicles = sampleVehicles(dbVehicles, this.maximumVehicles).map(v => {
-      const startNode = this.nodesList[Math.floor(Math.random() * this.nodesList.length)];
-      const destNode = this.selectDestination(startNode);
-      const route = this.calculateRoute(startNode, destNode);
-      
-      const parts = startNode.split(',').map(Number);
-      
-      const hour = new Date().getHours();
-      let wakeProbability = 0.8;
-      if (hour >= 23 || hour <= 4) wakeProbability = 0.05;
-      else if (hour >= 5 && hour <= 7) wakeProbability = 0.3;
+    const vehicleIds = dbVehicles.map((vehicle) => vehicle.id);
+    const latestDetections = vehicleIds.length
+      ? await prisma.detection.findMany({
+          where: { vehicleId: { in: vehicleIds } },
+          orderBy: { timestamp: 'desc' },
+          distinct: ['vehicleId'],
+          select: { vehicleId: true, latitude: true, longitude: true, timestamp: true },
+        })
+      : [];
 
-      let initialState = 'MOVING';
-      let initialRestUntil = null;
-      
-      // Randomly start some vehicles in a RESTING state to prevent all vehicles moving at once on startup
-      if (Math.random() > wakeProbability) {
-          initialState = 'RESTING';
-          const maxRestMins = 8 * 60; 
-          const restMins = Math.random() * maxRestMins; 
-          initialRestUntil = new Date(Date.now() + restMins * 60000);
-      } else {
-          // For vehicles that start moving, stagger their initial departure by up to 60 seconds
-          // so they don't all hit the road at the exact same millisecond.
-          initialState = 'RESTING';
-          initialRestUntil = new Date(Date.now() + Math.random() * 60000);
-      }
-      
+    const latestByVehicle = new Map(latestDetections.map((detection) => [detection.vehicleId, detection]));
+
+    this.vehicles = sampleVehicles(dbVehicles, this.maximumVehicles).map((dbVehicle) => {
+      const latest = latestByVehicle.get(dbVehicle.id);
+      const detectedNode = latest && Number.isFinite(latest.longitude) && Number.isFinite(latest.latitude)
+        ? this.findNearestNode([latest.longitude, latest.latitude], 250)
+        : null;
+      const startNode = detectedNode || this.nodesList[Math.floor(Math.random() * this.nodesList.length)];
+      const destination = this.findDestinationAndRoute(startNode);
+      const parts = startNode.split(',').map(Number);
+
       return {
-        id: v.id,
-        plateNumber: v.plateNumber,
-        type: v.vehicleType || 'CAR',
-        speed: getSimulationSpeed(v),
-        status: v.status, // Needed for Blacklist checks
-        
-        state: initialState,
-        restUntil: initialRestUntil,
-        
+        id: dbVehicle.id,
+        plateNumber: dbVehicle.plateNumber,
+        type: dbVehicle.vehicleType || 'CAR',
+        speed: getSimulationSpeed(dbVehicle),
+        status: dbVehicle.status,
+        state: 'RESTING',
+        restUntil: new Date(Date.now() + Math.random() * 60_000),
         currentNode: startNode,
-        destinationNode: destNode,
-        currentRoute: route,
+        destinationNode: destination?.node || startNode,
+        currentRoute: destination?.route || [],
         routeIndex: 0,
         distanceTravelled: 0,
-        coords: parts, 
-        currentRoadId: route.length > 0 ? route[0].roadId : null,
-        
+        coords: parts,
+        currentRoadId: destination?.route?.[0]?.roadId || null,
         recentNodes: [startNode],
         activeCameras: new Set(),
         lastCameraId: null,
-        lastCameraTimestamp: null
+        lastCameraTimestamp: latest?.timestamp || null,
       };
     });
-  }
-  
+  }  
   buildGraph() {
     this.graph.clear();
     this.nodesList = [];
@@ -197,23 +188,49 @@ class SimulationEngine {
     console.log(`Graph built: ${this.nodesList.length} nodes, ${Array.from(this.graph.values()).reduce((a,b)=>a+b.length,0)} edges.`);
   }
   
-  selectDestination(startNode) {
-      if (this.nodesList.length === 0) return startNode;
-      const startParts = startNode.split(',').map(Number);
-      const startPt = turf.point(startParts);
-      
-      for (let i=0; i<20; i++) {
-          const candidate = this.nodesList[Math.floor(Math.random() * this.nodesList.length)];
-          const candParts = candidate.split(',').map(Number);
-          const candPt = turf.point(candParts);
-          
-          if (turf.distance(startPt, candPt, {units: 'meters'}) >= 500) {
-              return candidate;
-          }
+  findNearestNode(coords, maxDistanceMeters = Infinity) {
+    if (!Array.isArray(coords) || coords.length < 2) return null;
+    let bestNode = null;
+    let bestDistance = Infinity;
+    const point = turf.point(coords);
+
+    for (const node of this.nodesList) {
+      const distance = turf.distance(point, turf.point(node.split(',').map(Number)), { units: 'meters' });
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestNode = node;
       }
-      return this.nodesList[Math.floor(Math.random() * this.nodesList.length)];
+    }
+    return bestDistance <= maxDistanceMeters ? bestNode : null;
   }
-  
+
+  findDestinationAndRoute(startNode) {
+    if (!startNode || !this.graph.has(startNode)) return null;
+
+    for (let attempt = 0; attempt < 25; attempt++) {
+      const candidate = this.selectDestination(startNode);
+      if (!candidate) continue;
+      const route = this.calculateRoute(startNode, candidate, []);
+      if (route.length) return { node: candidate, route };
+    }
+
+    const neighbors = this.graph.get(startNode) || [];
+    if (!neighbors.length) return null;
+    const edge = neighbors[Math.floor(Math.random() * neighbors.length)];
+    return { node: edge.target, route: [edge] };
+  }
+
+  selectDestination(startNode) {
+    if (!this.nodesList.length || !this.graph.has(startNode)) return null;
+    const start = turf.point(startNode.split(',').map(Number));
+    const candidates = this.nodesList.filter((node) => {
+      if (node === startNode) return false;
+      const distance = turf.distance(start, turf.point(node.split(',').map(Number)), { units: 'meters' });
+      return distance >= 500;
+    });
+    return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : null;
+  }
+
   calculateRoute(startNode, endNode, recentNodes = []) {
       const cacheKey = `${startNode}->${endNode}`;
       if (recentNodes.length === 0 && this.routeCache.has(cacheKey)) {
@@ -333,8 +350,9 @@ class SimulationEngine {
     this.lastTickTime = now;
 
     // Enforce true real-time sync, ignoring artificial speed multipliers
-    const simDeltaSec = realDeltaSec;
-    this.time = new Date(now);
+    const simSpeed = Math.min(50, Math.max(0.1, Number(this.speed) || 1));
+    const simDeltaSec = realDeltaSec * simSpeed;
+    this.time = new Date(this.time.getTime() + simDeltaSec * 1000);
 
     const liveDetections = [];
 
@@ -369,24 +387,16 @@ class SimulationEngine {
             v.state = 'RESTING';
             v.restUntil = new Date(this.time.getTime() + restMins * 60000);
 
-            v.destinationNode = this.selectDestination(v.currentNode);
-            v.currentRoute = this.calculateRoute(v.currentNode, v.destinationNode, v.recentNodes);
-            v.routeIndex = 0;
-            v.distanceTravelled = 0;
-            
-            // If still no route (e.g. disconnected component trap), just pick random neighbor and force step
-            if (v.currentRoute.length === 0) {
-                const neighbors = this.graph.get(v.currentNode);
-                if (neighbors && neighbors.length > 0) {
-                    v.currentRoute = [neighbors[Math.floor(Math.random() * neighbors.length)]];
-                    v.destinationNode = v.currentRoute[0].target;
-                } else {
-                    // Truly stuck, teleport but rest first
-                    v.currentNode = this.nodesList[Math.floor(Math.random() * this.nodesList.length)];
-                    v.coords = v.currentNode.split(',').map(Number);
-                }
+            const destination = this.findDestinationAndRoute(v.currentNode);
+            if (destination) {
+                v.destinationNode = destination.node;
+                v.currentRoute = destination.route;
+                v.routeIndex = 0;
+                v.distanceTravelled = 0;
+                v.currentRoadId = destination.route[0]?.roadId || null;
+                v.activeCameras.clear();
             }
-            // Skip moving this tick while it enters RESTING state
+            // No route: remain at the current node. Never teleport.
             continue;
         }
 
@@ -440,7 +450,7 @@ class SimulationEngine {
                         vehicleConfidence: 0.95 + (Math.random() * 0.04),
                         ocrConfidence: 0.90 + (Math.random() * 0.09),
                         lane: Math.floor(Math.random() * 3) + 1,
-                        direction: cam.direction || (Math.random() > 0.5 ? 'NORTHBOUND' : 'SOUTHBOUND'),
+                        direction: cam.direction || 'UNKNOWN',
                         latitude: v.coords[1],
                         longitude: v.coords[0]
                     };
@@ -457,65 +467,47 @@ class SimulationEngine {
     }
 
     if (liveDetections.length > 0) {
-      this.recentDetections = [...liveDetections.reverse(), ...this.recentDetections].slice(0, 100);
+      this.recentDetections = [...liveDetections].reverse().concat(this.recentDetections).slice(0, 100);
       this.generatedDetectionCount += liveDetections.length;
-      
-      // Asynchronously persist realistic real-time detections to the database
-      prisma.detection.createMany({
-        data: liveDetections.map(d => ({
-          vehicleId: d.vehicleId,
-          cameraId: d.cameraId,
-          plateText: d.plateText,
-          timestamp: d.timestamp,
-          ocrConfidence: d.ocrConfidence,
-          vehicleConfidence: d.vehicleConfidence,
-          lane: d.lane,
-          direction: d.direction,
-          latitude: d.latitude,
-          longitude: d.longitude,
-          source: d.source
-        })),
-        skipDuplicates: true
-      }).catch(err => console.error('Failed to persist simulated detections:', err));
 
-      // Also update vehicle lastSeen
-      const vehicleIds = liveDetections.map(d => d.vehicleId);
-      prisma.vehicle.updateMany({
-        where: { id: { in: vehicleIds } },
-        data: { lastSeen: new Date(this.time) }
-      }).catch(err => console.error('Failed to update vehicle lastSeen:', err));
+      try {
+        const savedDetections = [];
+        for (const detection of liveDetections) {
+          const saved = await prisma.detection.create({
+            data: {
+              vehicleId: detection.vehicleId,
+              cameraId: detection.cameraId,
+              plateText: detection.plateText,
+              timestamp: detection.timestamp,
+              ocrConfidence: detection.ocrConfidence,
+              vehicleConfidence: detection.vehicleConfidence,
+              lane: detection.lane,
+              direction: detection.direction,
+              latitude: detection.latitude,
+              longitude: detection.longitude,
+              source: detection.source,
+            },
+          });
+          savedDetections.push(saved);
+        }
 
-      // Generate Blacklist alerts
-      const blacklistedVehicles = this.vehicles.filter(v => v.status === 'BLACKLISTED' && liveDetections.some(d => d.vehicleId === v.id));
-      for (const bv of blacklistedVehicles) {
-         const detection = liveDetections.find(d => d.vehicleId === bv.id);
-         if (!detection) continue;
-         prisma.alert.findFirst({
-             where: { vehicleId: bv.id, type: 'BLACKLIST_MATCH', status: 'ACTIVE' }
-         }).then(existingAlert => {
-             if (!existingAlert) {
-                 prisma.alert.create({
-                     data: {
-                         type: 'BLACKLIST_MATCH',
-                         severity: 'CRITICAL',
-                         vehicleId: bv.id,
-                         cameraId: detection.cameraId,
-                         message: `Blacklisted vehicle ${bv.plateNumber} detected on camera.`,
-                         status: 'ACTIVE',
-                         createdAt: detection.timestamp
-                     }
-                 }).catch(() => {});
-             } else {
-                 // Bump the alert to the top if it already exists
-                 prisma.alert.update({
-                     where: { id: existingAlert.id },
-                     data: {
-                         createdAt: detection.timestamp,
-                         cameraId: detection.cameraId
-                     }
-                 }).catch(() => {});
-             }
-         }).catch(() => {});
+        await Promise.all(savedDetections.map((detection) =>
+          prisma.vehicle.update({
+            where: { id: detection.vehicleId },
+            data: { lastSeen: detection.timestamp },
+          })
+        ));
+
+        for (const detection of savedDetections) {
+          const vehicle = this.vehicles.find((item) => item.id === detection.vehicleId);
+          if (vehicle?.status === 'BLACKLISTED') {
+            await processDetectionForBlacklist(detection);
+          }
+        }
+        this.lastPersistenceError = null;
+      } catch (error) {
+        this.lastPersistenceError = error.message;
+        console.error('Failed to persist simulated detections:', error);
       }
     }
 
@@ -527,30 +519,42 @@ class SimulationEngine {
       }
     }
 
-    // Process Congestion Alerts directly to DB
-    for (const camera of this.cameras) {
-        const vehicleCount = this.liveCameraCounts.get(camera.id) || 0;
-        
-        if (vehicleCount >= 10) {
-            prisma.alert.findFirst({
-                where: { cameraId: camera.id, type: 'CONGESTION', status: 'ACTIVE' }
-            }).then(existingAlert => {
-                if (!existingAlert) {
-                    prisma.alert.create({
-                        data: {
-                            type: 'CONGESTION',
-                            severity: vehicleCount >= 12 ? 'CRITICAL' : 'HIGH',
-                            cameraId: camera.id,
-                            message: `Traffic Congestion Spike: ${vehicleCount} vehicles are currently active within camera zone.`,
-                            status: 'ACTIVE',
-                            createdAt: new Date(this.time)
-                        }
-                    }).catch(() => {});
-                }
-            }).catch(() => {});
+    // Keep congestion notifications synchronized with the actual live state.
+    await Promise.all(this.cameras.map(async (camera) => {
+      const vehicleCount = this.liveCameraCounts.get(camera.id) || 0;
+      const existing = await prisma.alert.findFirst({
+        where: { cameraId: camera.id, type: 'CONGESTION', status: 'ACTIVE' },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (vehicleCount >= 5) {
+        const severity = vehicleCount >= 10 ? 'CRITICAL' : 'HIGH';
+        const message = `Traffic congestion detected at ${camera.name}: ${vehicleCount} vehicles currently within the camera detection area.`;
+        if (existing) {
+          await prisma.alert.update({
+            where: { id: existing.id },
+            data: { severity, message, createdAt: new Date(this.time), resolvedAt: null },
+          });
+        } else {
+          await prisma.alert.create({
+            data: {
+              type: 'CONGESTION',
+              severity,
+              cameraId: camera.id,
+              message,
+              status: 'ACTIVE',
+              createdAt: new Date(this.time),
+            },
+          });
         }
-    }
-    
+      } else if (existing) {
+        await prisma.alert.update({
+          where: { id: existing.id },
+          data: { status: 'RESOLVED', resolvedAt: new Date(this.time) },
+        });
+      }
+    }));
+
     this.liveAlerts = []; // Deprecated in favor of DB alerts
   }
 

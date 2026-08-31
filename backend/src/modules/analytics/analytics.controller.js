@@ -18,23 +18,22 @@ exports.getOverview = async (req, res) => {
   try {
     const window = getAnalyticsWindow(req.query);
     if (!window) return res.status(400).json({ success: false, message: 'Invalid analytics date range' });
-    const [totalDetectionsCount, uniqueVehicles, activeCameras, activeAlerts, incidentsToday, observedSpeeds] = await Promise.all([
+    const [totalDetectionsCount, uniqueVehicles, activeCameras, activeAlerts, incidentsToday, observedTransitions] = await Promise.all([
       prisma.detection.count({ where: { timestamp: { gte: window.from, lte: window.to } } }),
       prisma.detection.findMany({
         where: { timestamp: { gte: window.from, lte: window.to } },
         distinct: ['vehicleId'],
         select: { vehicleId: true },
-        take: 2000,
       }),
       prisma.camera.count({ where: { status: 'ONLINE' } }),
       prisma.alert.count({ where: { status: 'ACTIVE' } }),
       prisma.incident.count({ where: { timestamp: { gte: window.from, lte: window.to } } }),
-      prisma.detection.findMany({
-        where: { timestamp: { gte: window.from, lte: window.to } },
-        select: { vehicle: { select: { speed: true } } },
+      prisma.cameraTransition.findMany({
+        where: { timestamp: { gte: window.from, lte: window.to }, averageSpeed: { gt: 0 } },
+        select: { averageSpeed: true },
       }),
     ]);
-    const speeds = observedSpeeds.map((detection) => detection.vehicle?.speed).filter((speed) => Number.isFinite(speed) && speed > 0);
+    const speeds = observedTransitions.map((transition) => transition.averageSpeed).filter((speed) => Number.isFinite(speed) && speed > 0);
 
     const overview = {
       totalVehiclesToday: uniqueVehicles.length || totalDetectionsCount,

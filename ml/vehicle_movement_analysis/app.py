@@ -40,18 +40,28 @@ analyzer_engine = None
 interceptor_engine = None
 raw_detections = None
 raw_cameras = None
+_data_mtimes = {}
+
+def reload_ml_data_if_changed():
+    global analyzer_engine, interceptor_engine, raw_detections, raw_cameras, _data_mtimes
+    det_mtime = os.path.getmtime(DETECTIONS_PATH) if os.path.exists(DETECTIONS_PATH) else None
+    cam_mtime = os.path.getmtime(CAMERAS_PATH) if os.path.exists(CAMERAS_PATH) else None
+
+    if _data_mtimes.get("detections") == det_mtime and _data_mtimes.get("cameras") == cam_mtime and analyzer_engine is not None:
+        return
+
+    raw_detections = pd.read_csv(DETECTIONS_PATH, low_memory=False) if det_mtime else None
+    raw_cameras = pd.read_csv(CAMERAS_PATH, low_memory=False) if cam_mtime else None
+    analyzer_engine = VehicleMovementAnalyzer(DETECTIONS_PATH, CAMERAS_PATH, ROADS_PATH, ZONES_PATH)
+    interceptor_engine = VehicleInterceptor(raw_detections, raw_cameras, BLACKLIST_PATH)
+    _data_mtimes = {"detections": det_mtime, "cameras": cam_mtime}
+    print("ML dataset loaded/refreshed.")
+
 
 @app.on_event("startup")
 def startup_event():
-    global analyzer_engine, interceptor_engine, raw_detections, raw_cameras
     try:
-        if os.path.exists(DETECTIONS_PATH):
-            raw_detections = pd.read_csv(DETECTIONS_PATH, low_memory=False)
-        if os.path.exists(CAMERAS_PATH):
-            raw_cameras = pd.read_csv(CAMERAS_PATH, low_memory=False)
-
-        analyzer_engine = VehicleMovementAnalyzer(DETECTIONS_PATH, CAMERAS_PATH, ROADS_PATH, ZONES_PATH)
-        interceptor_engine = VehicleInterceptor(raw_detections, raw_cameras, BLACKLIST_PATH)
+        reload_ml_data_if_changed()
         print("Successfully loaded Nagar-Drishti ML analysis modules.")
     except Exception as e:
         print(f"Startup Warning: {e}")
@@ -121,6 +131,7 @@ def get_trajectory(vehicle_id: str):
 @app.get("/api/vehicle/{vehicle_id}/ocr-analysis")
 def get_ocr_analysis(vehicle_id: str):
     try:
+        reload_ml_data_if_changed()
         if raw_detections is None:
             raise HTTPException(status_code=500, detail="Detections data not loaded.")
         res = analyze_ocr_movement(raw_detections, vehicle_id)
@@ -136,6 +147,7 @@ def get_ocr_analysis(vehicle_id: str):
 @app.get("/api/blacklisted/predict-next/{vehicle_id}")
 def predict_blacklisted_next(vehicle_id: str):
     try:
+        reload_ml_data_if_changed()
         if not interceptor_engine:
             raise HTTPException(status_code=500, detail="Interceptor engine not initialized.")
         res = interceptor_engine.predict_next_for_vehicle(vehicle_id)

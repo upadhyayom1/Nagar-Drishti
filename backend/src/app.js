@@ -25,6 +25,7 @@ const blacklistRoutes = require('./modules/blacklist/blacklist.routes');
 const analyticsRoutes = require('./modules/analytics/analytics.routes');
 const alertRoutes = require('./modules/alert/alert.routes');
 const { env } = require('./config/env');
+const { prisma } = require('./lib/prisma');
 const app = express();
 
 const allowedOrigins = env.CORS_ORIGINS.split(',')
@@ -50,7 +51,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/dev', devRoutes);
+if (env.NODE_ENV !== 'production') app.use('/api/dev', devRoutes);
 app.use('/api/roads', roadRoutes);
 app.use('/api/cameras', cameraRoutes);
 app.use('/api/vehicles', vehicleRoutes);
@@ -69,8 +70,18 @@ app.use('/api/incidents', incidentsRoutes);
 app.use('/api/complaints', complaintsRoutes);
 app.use('/api/admin', adminRoutes);
 
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ success: true, status: 'ok' });
+app.get('/api/health', async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.status(200).json({
+      success: true,
+      status: 'ok',
+      database: 'ok',
+      simulation: global.simulationEngine?.running ? 'running' : 'paused',
+    });
+  } catch (error) {
+    res.status(503).json({ success: false, status: 'degraded', database: 'unavailable' });
+  }
 });
 
 // Global Error Handler
