@@ -36,11 +36,13 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Badge }  from '@/components/ui/Badge';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { Logo } from '@/components/ui/Logo';
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 import { InteractivePipelineFlow } from '@/components/landing/InteractivePipelineFlow';
 import { StackingCapabilities } from '@/components/landing/StackingCapabilities';
 import { analyticsService } from '@/services/analyticsService';
 import { useUIStore } from '@/store/uiStore';
+import { useAuthStore } from '@/store/authStore';
 
 // Single Unified 3D Smart City Trajectory & Optical Constellation Background
 const HeroScene = dynamic(() => import('@/components/three/HeroScene'), {
@@ -63,16 +65,18 @@ const fadeUp = {
 
 export default function LandingPage() {
   const { theme, toggleTheme, setTheme } = useUIStore();
+  const { user, isAuthenticated, initializeAuthFromStorage } = useAuthStore();
   const { data: stats } = useQuery({ queryKey: ['trafficStats'], queryFn: () => analyticsService.getTrafficStats() });
   const { data: systemHealth } = useQuery({ queryKey: ['systemHealth'], queryFn: analyticsService.getSystemHealth });
 
   useEffect(() => {
+    initializeAuthFromStorage();
     const saved = localStorage.getItem('nagardrishti_theme') as 'dark' | 'light' | null;
     if (saved) {
       setTheme(saved);
       document.documentElement.setAttribute('data-theme', saved);
     }
-  }, [setTheme]);
+  }, [setTheme, initializeAuthFromStorage]);
 
   const rawVehicles = stats?.totalVehiclesToday ?? 0;
   const rawNodes = systemHealth?.summary?.total ?? 0;
@@ -142,14 +146,7 @@ export default function LandingPage() {
       {/* ── Floating Glass Header ── */}
       <header className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between p-3.5 px-5 sm:px-6 rounded-2xl bg-[var(--glass-surface)] backdrop-blur-2xl border border-[var(--glass-border)] border-top-[var(--glass-highlight)] shadow-[var(--glass-shadow)]">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-400/30 flex items-center justify-center shadow-[0_0_14px_rgba(0,240,255,0.3)]">
-              <ShieldCheck size={17} className="text-cyan-500 dark:text-cyan-400" />
-            </div>
-            <span className="font-display font-bold text-base text-[var(--text-primary)]">
-              Nagar<span className="text-gradient-spectral">Drishti</span>
-            </span>
-          </div>
+          <Logo size="sm" />
 
           <div className="hidden md:flex items-center gap-7 text-xs font-display uppercase tracking-wider font-semibold text-[var(--text-secondary)]">
             <a href="#dual-role" className="hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors duration-150">Portals</a>
@@ -168,16 +165,26 @@ export default function LandingPage() {
               {theme === 'dark' ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-violet-500" />}
             </button>
 
-            <Link href="/report">
-              <Button variant="ghost" size="sm" className="hidden sm:inline-flex text-xs cursor-pointer">
-                Citizen Portal
-              </Button>
-            </Link>
-            <Link href="/login">
-              <Button variant="primary" size="sm" className="cursor-pointer">
-                Login / Access <ArrowRight size={13} />
-              </Button>
-            </Link>
+            {isAuthenticated && user ? (
+              <Link href={user.role === 'ADMIN' ? '/dashboard' : '/report'}>
+                <Button variant="primary" size="sm" className="cursor-pointer">
+                  {user.role === 'ADMIN' ? 'Command Center' : 'Citizen Portal'} <ArrowRight size={13} />
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/report">
+                  <Button variant="ghost" size="sm" className="hidden sm:inline-flex text-xs cursor-pointer">
+                    Citizen Portal
+                  </Button>
+                </Link>
+                <Link href="/login">
+                  <Button variant="primary" size="sm" className="cursor-pointer">
+                    Login / Access <ArrowRight size={13} />
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>

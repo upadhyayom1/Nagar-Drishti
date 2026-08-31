@@ -8,3 +8,4 @@ export { StatCounter } from './StatCounter';
 export { SkeletonCard } from './SkeletonCard';
 export { PulseDot } from './PulseDot';
 export { EmptyState } from './EmptyState';
+export { Logo, NagarDrishtiIcon } from './Logo';
