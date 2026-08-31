@@ -100,10 +100,10 @@ async function evaluateCongestionAlert(cameraId, timestamp = new Date()) {
     orderBy: { createdAt: 'desc' },
   });
 
-  // Thresholds: 10 vehicles = HIGH, 15 vehicles = CRITICAL in the 5-minute window
+  // Thresholds: 20 vehicles = HIGH, 30 vehicles = CRITICAL in the 5-minute window
   const vehicleCount = camera ? camera.vehicleCount : 0;
   
-  if (!camera || vehicleCount < 10) {
+  if (!camera || vehicleCount < 20) {
     if (existingActiveAlert) {
       return prisma.alert.update({
         where: { id: existingActiveAlert.id },
@@ -113,7 +113,7 @@ async function evaluateCongestionAlert(cameraId, timestamp = new Date()) {
     return null;
   }
 
-  const severity = vehicleCount >= 15 ? 'CRITICAL' : 'HIGH';
+  const severity = vehicleCount >= 30 ? 'CRITICAL' : 'HIGH';
   const message = `Heavy traffic congestion detected at ${camera.name || camera.cameraCode} with ${vehicleCount} vehicles tracked in the last 5 minutes.`;
   
   if (existingActiveAlert) {
@@ -131,9 +131,9 @@ async function evaluateCongestionAlert(cameraId, timestamp = new Date()) {
 const calculateCongestionLevel = (vehicleCount, averageSpeed) => {
   if (vehicleCount === 0) return 'LOW';
 
-  if (vehicleCount > 10 && averageSpeed < 15) return 'SEVERE';
-  if (vehicleCount > 5 && averageSpeed < 30) return 'HIGH';
-  if (vehicleCount > 2 && averageSpeed < 45) return 'MEDIUM';
+  if (vehicleCount >= 30) return 'SEVERE';
+  if (vehicleCount >= 20) return 'HIGH';
+  if (vehicleCount >= 10) return 'MEDIUM';
   return 'LOW';
 };
 
