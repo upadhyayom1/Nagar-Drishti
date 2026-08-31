@@ -1,6 +1,5 @@
 const turf = require('@turf/turf');
 const { prisma } = require('../../lib/prisma');
-const { processDetectionForBlacklist } = require('../blacklist/blacklist.service');
 
 const VEHICLE_SPEED_RANGES = {
   AUTO: [22, 34],
@@ -50,14 +49,14 @@ class SimulationEngine {
     this.timer = null;
     this.tickInProgress = false;
     this.tickRateMs = 1000;
-    this.detectionRadiusMeters = 45;
+    this.detectionRadiusMeters = 150;
     this.maximumVehicles = Math.min(Math.max(Number(process.env.SIMULATION_VEHICLE_COUNT) || 250, 25), 1000);
     this.generatedDetectionCount = 0;
     this.lastPersistenceError = null;
     this.liveCameraCounts = new Map();
     this.liveAlerts = [];
     this.nextEventId = 1;
-    
+
     this.graph = new Map(); // Node -> Array of Edges
     this.nodesList = []; // Helper for picking random nodes
     this.lastHealthCheck = new Date(this.time);
@@ -67,9 +66,7 @@ class SimulationEngine {
   async init() {
     this.roads = await prisma.road.findMany();
     this.cameras = await prisma.camera.findMany();
-    const dbVehicles = await prisma.vehicle.findMany({
-      where: { status: { in: ['ACTIVE', 'BLACKLISTED'] } },
-    });
+    const dbVehicles = await prisma.vehicle.findMany({ where: { status: { in: ['ACTIVE', 'BLACKLISTED'] } } });
 
     this.buildGraph();
     if (this.nodesList.length === 0) {
@@ -77,228 +74,214 @@ class SimulationEngine {
       return;
     }
 
-    const vehicleIds = dbVehicles.map((vehicle) => vehicle.id);
-    const latestDetections = vehicleIds.length
-      ? await prisma.detection.findMany({
-          where: { vehicleId: { in: vehicleIds } },
-          orderBy: { timestamp: 'desc' },
-          distinct: ['vehicleId'],
-          select: { vehicleId: true, latitude: true, longitude: true, timestamp: true },
-        })
-      : [];
+    // Map DB vehicles to simulation state
+    this.vehicles = sampleVehicles(dbVehicles, this.maximumVehicles).map(v => {
+      const startNode = this.nodesList[Math.floor(Math.random() * this.nodesList.length)];
+      const destNode = this.selectDestination(startNode);
+      const route = this.calculateRoute(startNode, destNode);
 
-    const latestByVehicle = new Map(latestDetections.map((detection) => [detection.vehicleId, detection]));
-
-    this.vehicles = sampleVehicles(dbVehicles, this.maximumVehicles).map((dbVehicle) => {
-      const latest = latestByVehicle.get(dbVehicle.id);
-      const detectedNode = latest && Number.isFinite(latest.longitude) && Number.isFinite(latest.latitude)
-        ? this.findNearestNode([latest.longitude, latest.latitude], 250)
-        : null;
-      const startNode = detectedNode || this.nodesList[Math.floor(Math.random() * this.nodesList.length)];
-      const destination = this.findDestinationAndRoute(startNode);
       const parts = startNode.split(',').map(Number);
 
+      const hour = new Date().getHours();
+      let wakeProbability = 0.8;
+      if (hour >= 23 || hour <= 4) wakeProbability = 0.05;
+      else if (hour >= 5 && hour <= 7) wakeProbability = 0.3;
+
+      let initialState = 'MOVING';
+      let initialRestUntil = null;
+
+      // Randomly start some vehicles in a RESTING state to prevent all vehicles moving at once on startup
+      if (Math.random() > wakeProbability) {
+        initialState = 'RESTING';
+        const maxRestMins = 8 * 60;
+        const restMins = Math.random() * maxRestMins;
+        initialRestUntil = new Date(Date.now() + restMins * 60000);
+      } else {
+        // For vehicles that start moving, stagger their initial departure by up to 60 seconds
+        // so they don't all hit the road at the exact same millisecond.
+        initialState = 'RESTING';
+        initialRestUntil = new Date(Date.now() + Math.random() * 60000);
+      }
+
       return {
-        id: dbVehicle.id,
-        plateNumber: dbVehicle.plateNumber,
-        type: dbVehicle.vehicleType || 'CAR',
-        speed: getSimulationSpeed(dbVehicle),
-        status: dbVehicle.status,
-        state: 'RESTING',
-        restUntil: new Date(Date.now() + Math.random() * 60_000),
+        id: v.id,
+        plateNumber: v.plateNumber,
+        type: v.vehicleType || 'CAR',
+        speed: getSimulationSpeed(v),
+        status: v.status, // Needed for Blacklist checks
+
+        state: initialState,
+        restUntil: initialRestUntil,
+
         currentNode: startNode,
-        destinationNode: destination?.node || startNode,
-        currentRoute: destination?.route || [],
+        destinationNode: destNode,
+        currentRoute: route,
         routeIndex: 0,
         distanceTravelled: 0,
         coords: parts,
-        currentRoadId: destination?.route?.[0]?.roadId || null,
+        currentRoadId: route.length > 0 ? route[0].roadId : null,
+
         recentNodes: [startNode],
         activeCameras: new Set(),
         lastCameraId: null,
-        lastCameraTimestamp: latest?.timestamp || null,
+        lastCameraTimestamp: null
       };
     });
-  }  
+  }
+
   buildGraph() {
     this.graph.clear();
     this.nodesList = [];
     const nodeCounts = new Map();
-    
+
     // First pass: Count coordinate occurrences to find intersections
     for (const road of this.roads) {
-        if (!road.geometry || !road.geometry.coordinates) continue;
-        const coords = road.geometry.coordinates;
-        // Count unique coordinates in THIS road (prevent a winding road from counting its own coordinates as intersections if it crosses itself, though usually rare in basic OSM)
-        const uniqueInRoad = new Set();
-        coords.forEach(c => uniqueInRoad.add(c.join(',')));
-        uniqueInRoad.forEach(key => {
-            nodeCounts.set(key, (nodeCounts.get(key) || 0) + 1);
-        });
+      if (!road.geometry || !road.geometry.coordinates) continue;
+      const coords = road.geometry.coordinates;
+      // Count unique coordinates in THIS road (prevent a winding road from counting its own coordinates as intersections if it crosses itself, though usually rare in basic OSM)
+      const uniqueInRoad = new Set();
+      coords.forEach(c => uniqueInRoad.add(c.join(',')));
+      uniqueInRoad.forEach(key => {
+        nodeCounts.set(key, (nodeCounts.get(key) || 0) + 1);
+      });
     }
-    
+
     // Second pass: Form edges between intersections/endpoints
     for (const road of this.roads) {
-        if (!road.geometry || !road.geometry.coordinates) continue;
-        const coords = road.geometry.coordinates;
-        
-        let startIdx = 0;
-        let startKey = coords[0].join(',');
-        
-        for (let i = 1; i < coords.length; i++) {
-            const key = coords[i].join(',');
-            const isEndpoint = (i === coords.length - 1);
-            const isIntersection = nodeCounts.get(key) > 1;
-            
-            if (isEndpoint || isIntersection) {
-                const segmentCoords = coords.slice(startIdx, i + 1);
-                
-                // turf needs at least 2 coordinates
-                if (segmentCoords.length >= 2) {
-                    const line = turf.lineString(segmentCoords);
-                    const dist = turf.length(line, { units: 'meters' });
-                    
-                    if (!this.graph.has(startKey)) this.graph.set(startKey, []);
-                    if (!this.graph.has(key)) this.graph.set(key, []);
-                    
-                    // Add forward edge
-                    this.graph.get(startKey).push({
-                        target: key,
-                        distance: dist,
-                        geometry: segmentCoords,
-                        roadId: road.id
-                    });
-                    
-                    // Add reverse edge
-                    this.graph.get(key).push({
-                        target: startKey,
-                        distance: dist,
-                        geometry: [...segmentCoords].reverse(),
-                        roadId: road.id
-                    });
-                }
-                
-                startIdx = i;
-                startKey = key;
-            }
-        }
-    }
-    
-    this.nodesList = Array.from(this.graph.keys());
-    console.log(`Graph built: ${this.nodesList.length} nodes, ${Array.from(this.graph.values()).reduce((a,b)=>a+b.length,0)} edges.`);
-  }
-  
-  findNearestNode(coords, maxDistanceMeters = Infinity) {
-    if (!Array.isArray(coords) || coords.length < 2) return null;
-    let bestNode = null;
-    let bestDistance = Infinity;
-    const point = turf.point(coords);
+      if (!road.geometry || !road.geometry.coordinates) continue;
+      const coords = road.geometry.coordinates;
 
-    for (const node of this.nodesList) {
-      const distance = turf.distance(point, turf.point(node.split(',').map(Number)), { units: 'meters' });
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        bestNode = node;
+      let startIdx = 0;
+      let startKey = coords[0].join(',');
+
+      for (let i = 1; i < coords.length; i++) {
+        const key = coords[i].join(',');
+        const isEndpoint = (i === coords.length - 1);
+        const isIntersection = nodeCounts.get(key) > 1;
+
+        if (isEndpoint || isIntersection) {
+          const segmentCoords = coords.slice(startIdx, i + 1);
+
+          // turf needs at least 2 coordinates
+          if (segmentCoords.length >= 2) {
+            const line = turf.lineString(segmentCoords);
+            const dist = turf.length(line, { units: 'meters' });
+
+            if (!this.graph.has(startKey)) this.graph.set(startKey, []);
+            if (!this.graph.has(key)) this.graph.set(key, []);
+
+            // Add forward edge
+            this.graph.get(startKey).push({
+              target: key,
+              distance: dist,
+              geometry: segmentCoords,
+              roadId: road.id
+            });
+
+            // Add reverse edge
+            this.graph.get(key).push({
+              target: startKey,
+              distance: dist,
+              geometry: [...segmentCoords].reverse(),
+              roadId: road.id
+            });
+          }
+
+          startIdx = i;
+          startKey = key;
+        }
       }
     }
-    return bestDistance <= maxDistanceMeters ? bestNode : null;
-  }
 
-  findDestinationAndRoute(startNode) {
-    if (!startNode || !this.graph.has(startNode)) return null;
-
-    for (let attempt = 0; attempt < 25; attempt++) {
-      const candidate = this.selectDestination(startNode);
-      if (!candidate) continue;
-      const route = this.calculateRoute(startNode, candidate, []);
-      if (route.length) return { node: candidate, route };
-    }
-
-    const neighbors = this.graph.get(startNode) || [];
-    if (!neighbors.length) return null;
-    const edge = neighbors[Math.floor(Math.random() * neighbors.length)];
-    return { node: edge.target, route: [edge] };
+    this.nodesList = Array.from(this.graph.keys());
+    console.log(`Graph built: ${this.nodesList.length} nodes, ${Array.from(this.graph.values()).reduce((a, b) => a + b.length, 0)} edges.`);
   }
 
   selectDestination(startNode) {
-    if (!this.nodesList.length || !this.graph.has(startNode)) return null;
-    const start = turf.point(startNode.split(',').map(Number));
-    const candidates = this.nodesList.filter((node) => {
-      if (node === startNode) return false;
-      const distance = turf.distance(start, turf.point(node.split(',').map(Number)), { units: 'meters' });
-      return distance >= 500;
-    });
-    return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : null;
+    if (this.nodesList.length === 0) return startNode;
+    const startParts = startNode.split(',').map(Number);
+    const startPt = turf.point(startParts);
+
+    for (let i = 0; i < 20; i++) {
+      const candidate = this.nodesList[Math.floor(Math.random() * this.nodesList.length)];
+      const candParts = candidate.split(',').map(Number);
+      const candPt = turf.point(candParts);
+
+      if (turf.distance(startPt, candPt, { units: 'meters' }) >= 500) {
+        return candidate;
+      }
+    }
+    return this.nodesList[Math.floor(Math.random() * this.nodesList.length)];
   }
 
   calculateRoute(startNode, endNode, recentNodes = []) {
-      const cacheKey = `${startNode}->${endNode}`;
-      if (recentNodes.length === 0 && this.routeCache.has(cacheKey)) {
-          return [...this.routeCache.get(cacheKey)];
+    const cacheKey = `${startNode}->${endNode}`;
+    if (recentNodes.length === 0 && this.routeCache.has(cacheKey)) {
+      return [...this.routeCache.get(cacheKey)];
+    }
+
+    // Basic Dijkstra with penalty for recent nodes
+    const dist = new Map();
+    const prev = new Map();
+    const unvisited = new Set(this.nodesList);
+
+    // Initialize
+    for (const node of this.nodesList) {
+      dist.set(node, Infinity);
+    }
+    dist.set(startNode, 0);
+
+    const recentSet = new Set(recentNodes);
+
+    // Not perfectly optimized priority queue, but fast enough for 1300 nodes
+    while (unvisited.size > 0) {
+      let u = null;
+      let minDist = Infinity;
+
+      // Find min node
+      for (const node of unvisited) {
+        if (dist.get(node) < minDist) {
+          minDist = dist.get(node);
+          u = node;
+        }
       }
 
-      // Basic Dijkstra with penalty for recent nodes
-      const dist = new Map();
-      const prev = new Map();
-      const unvisited = new Set(this.nodesList);
-      
-      // Initialize
-      for (const node of this.nodesList) {
-          dist.set(node, Infinity);
+      if (u === null || u === endNode) break;
+      unvisited.delete(u);
+
+      const neighbors = this.graph.get(u) || [];
+      for (const edge of neighbors) {
+        if (!unvisited.has(edge.target)) continue;
+
+        let cost = edge.distance;
+        // Add massive penalty to absolutely avoid U-turns and short loops
+        if (recentSet.has(edge.target)) {
+          cost += 1000000;
+        }
+
+        const alt = dist.get(u) + cost;
+        if (alt < dist.get(edge.target)) {
+          dist.set(edge.target, alt);
+          prev.set(edge.target, { node: u, edge: edge });
+        }
       }
-      dist.set(startNode, 0);
-      
-      const recentSet = new Set(recentNodes);
-      
-      // Not perfectly optimized priority queue, but fast enough for 1300 nodes
-      while (unvisited.size > 0) {
-          let u = null;
-          let minDist = Infinity;
-          
-          // Find min node
-          for (const node of unvisited) {
-              if (dist.get(node) < minDist) {
-                  minDist = dist.get(node);
-                  u = node;
-              }
-          }
-          
-          if (u === null || u === endNode) break;
-          unvisited.delete(u);
-          
-          const neighbors = this.graph.get(u) || [];
-          for (const edge of neighbors) {
-              if (!unvisited.has(edge.target)) continue;
-              
-              let cost = edge.distance;
-              // Add massive penalty to absolutely avoid U-turns and short loops
-              if (recentSet.has(edge.target)) {
-                  cost += 1000000; 
-              }
-              
-              const alt = dist.get(u) + cost;
-              if (alt < dist.get(edge.target)) {
-                  dist.set(edge.target, alt);
-                  prev.set(edge.target, { node: u, edge: edge });
-              }
-          }
-      }
-      
-      // Reconstruct path
-      const route = [];
-      let curr = endNode;
-      while (prev.has(curr)) {
-          const step = prev.get(curr);
-          route.unshift(step.edge);
-          curr = step.node;
-      }
-      
-      if (recentNodes.length === 0 && route.length > 0) {
-          this.routeCache.set(cacheKey, [...route]);
-          if (this.routeCache.size > 5000) this.routeCache.delete(this.routeCache.keys().next().value);
-      }
-      
-      return route;
+    }
+
+    // Reconstruct path
+    const route = [];
+    let curr = endNode;
+    while (prev.has(curr)) {
+      const step = prev.get(curr);
+      route.unshift(step.edge);
+      curr = step.node;
+    }
+
+    if (recentNodes.length === 0 && route.length > 0) {
+      this.routeCache.set(cacheKey, [...route]);
+      if (this.routeCache.size > 5000) this.routeCache.delete(this.routeCache.keys().next().value);
+    }
+
+    return route;
   }
 
   start() {
@@ -337,7 +320,7 @@ class SimulationEngine {
     this.lastPersistenceError = null;
     this.liveCameraCounts.clear();
     this.liveAlerts = [];
-    await this.init(); 
+    await this.init();
   }
 
   setSpeed(speed) {
@@ -350,164 +333,189 @@ class SimulationEngine {
     this.lastTickTime = now;
 
     // Enforce true real-time sync, ignoring artificial speed multipliers
-    const simSpeed = Math.min(50, Math.max(0.1, Number(this.speed) || 1));
-    const simDeltaSec = realDeltaSec * simSpeed;
-    this.time = new Date(this.time.getTime() + simDeltaSec * 1000);
+    const simDeltaSec = realDeltaSec;
+    this.time = new Date(now);
 
     const liveDetections = [];
 
     // Move vehicles
     for (let v of this.vehicles) {
-        if (v.state === 'RESTING') {
-            if (v.restUntil && this.time < v.restUntil) continue;
-            
-            // Reached end of rest duration. Check time-of-day probability to wake up.
-            const hour = this.time.getHours();
-            let wakeProbability = 0.8; // Default day time
-            if (hour >= 23 || hour <= 4) wakeProbability = 0.05; // Very low at night
-            else if (hour >= 5 && hour <= 7) wakeProbability = 0.3; // Early morning
-            
-            if (Math.random() > wakeProbability) {
-                // Sleep for another 30 mins if probability check fails
-                v.restUntil = new Date(this.time.getTime() + 30 * 60000);
-                continue;
-            }
-            
-            v.state = 'MOVING';
-            v.restUntil = null;
+      if (v.state === 'RESTING') {
+        if (v.restUntil && this.time < v.restUntil) continue;
+
+        // Reached end of rest duration. Check time-of-day probability to wake up.
+        const hour = this.time.getHours();
+        let wakeProbability = 0.8; // Default day time
+        if (hour >= 23 || hour <= 4) wakeProbability = 0.05; // Very low at night
+        else if (hour >= 5 && hour <= 7) wakeProbability = 0.3; // Early morning
+
+        if (Math.random() > wakeProbability) {
+          // Sleep for another 30 mins if probability check fails
+          v.restUntil = new Date(this.time.getTime() + 30 * 60000);
+          continue;
         }
 
-        if (!v.currentRoute || v.routeIndex >= v.currentRoute.length) {
-            // Reached destination or has no valid route
-            
-            const minRestMins = 15;
-            const maxRestMins = 8 * 60; // Up to 8 hours resting at destination
-            const restMins = minRestMins + Math.random() * (maxRestMins - minRestMins);
-            
-            v.state = 'RESTING';
-            v.restUntil = new Date(this.time.getTime() + restMins * 60000);
+        v.state = 'MOVING';
+        v.restUntil = null;
+      }
 
-            const destination = this.findDestinationAndRoute(v.currentNode);
-            if (destination) {
-                v.destinationNode = destination.node;
-                v.currentRoute = destination.route;
-                v.routeIndex = 0;
-                v.distanceTravelled = 0;
-                v.currentRoadId = destination.route[0]?.roadId || null;
-                v.activeCameras.clear();
-            }
-            // No route: remain at the current node. Never teleport.
-            continue;
-        }
+      if (!v.currentRoute || v.routeIndex >= v.currentRoute.length) {
+        // Reached destination or has no valid route
 
-        const speedMs = v.speed * (1000 / 3600);
-        let remainingDistance = speedMs * simDeltaSec;
+        const minRestMins = 15;
+        const maxRestMins = 8 * 60; // Up to 8 hours resting at destination
+        const restMins = minRestMins + Math.random() * (maxRestMins - minRestMins);
 
-        // A vehicle can cross more than one short road segment in a tick. Carry
-        // the remaining distance forward so simulated time and position agree.
-        while (remainingDistance > 0 && v.currentRoute && v.routeIndex < v.currentRoute.length) {
-          const edge = v.currentRoute[v.routeIndex];
-          v.currentRoadId = edge.roadId;
-          const remainingOnEdge = Math.max(0, edge.distance - v.distanceTravelled);
+        v.state = 'RESTING';
+        v.restUntil = new Date(this.time.getTime() + restMins * 60000);
 
-          if (remainingDistance >= remainingOnEdge) {
-            remainingDistance -= remainingOnEdge;
-            v.currentNode = edge.target;
-            v.recentNodes.push(v.currentNode);
-            if (v.recentNodes.length > 5) v.recentNodes.shift();
-            v.routeIndex++;
-            v.distanceTravelled = 0;
-            v.coords = edge.geometry[edge.geometry.length - 1];
-            continue;
+        v.destinationNode = this.selectDestination(v.currentNode);
+        v.currentRoute = this.calculateRoute(v.currentNode, v.destinationNode, v.recentNodes);
+        v.routeIndex = 0;
+        v.distanceTravelled = 0;
+
+        // If still no route (e.g. disconnected component trap), just pick random neighbor and force step
+        if (v.currentRoute.length === 0) {
+          const neighbors = this.graph.get(v.currentNode);
+          if (neighbors && neighbors.length > 0) {
+            v.currentRoute = [neighbors[Math.floor(Math.random() * neighbors.length)]];
+            v.destinationNode = v.currentRoute[0].target;
+          } else {
+            // Truly stuck, teleport but rest first
+            v.currentNode = this.nodesList[Math.floor(Math.random() * this.nodesList.length)];
+            v.coords = v.currentNode.split(',').map(Number);
           }
+        }
+        // Skip moving this tick while it enters RESTING state
+        continue;
+      }
 
-          v.distanceTravelled += remainingDistance;
-          const line = turf.lineString(edge.geometry);
-          v.coords = turf.along(line, v.distanceTravelled, { units: 'meters' }).geometry.coordinates;
-          remainingDistance = 0;
+      const speedMs = v.speed * (1000 / 3600);
+      let remainingDistance = speedMs * simDeltaSec;
+
+      // A vehicle can cross more than one short road segment in a tick. Carry
+      // the remaining distance forward so simulated time and position agree.
+      while (remainingDistance > 0 && v.currentRoute && v.routeIndex < v.currentRoute.length) {
+        const edge = v.currentRoute[v.routeIndex];
+        v.currentRoadId = edge.roadId;
+        const remainingOnEdge = Math.max(0, edge.distance - v.distanceTravelled);
+
+        if (remainingDistance >= remainingOnEdge) {
+          remainingDistance -= remainingOnEdge;
+          v.currentNode = edge.target;
+          v.recentNodes.push(v.currentNode);
+          if (v.recentNodes.length > 5) v.recentNodes.shift();
+          v.routeIndex++;
+          v.distanceTravelled = 0;
+          v.coords = edge.geometry[edge.geometry.length - 1];
+          continue;
         }
 
-        // Check proximity to cameras
-        for (const cam of this.cameras) {
-            if (cam.status !== 'ONLINE') continue;
-            
-            const dist = calculateDistanceMeters(cam.longitude, cam.latitude, v.coords[0], v.coords[1]);
+        v.distanceTravelled += remainingDistance;
+        const line = turf.lineString(edge.geometry);
+        v.coords = turf.along(line, v.distanceTravelled, { units: 'meters' }).geometry.coordinates;
+        remainingDistance = 0;
+      }
 
-            if (dist <= this.detectionRadiusMeters) {
-                if (!v.activeCameras.has(cam.id)) {
-                    v.activeCameras.add(cam.id);
-                    
-                    // Add a random millisecond jitter (0-999ms) so detections in the same tick don't share the exact same timestamp
-                    const jitterMs = Math.floor(Math.random() * 1000);
-                    const detection = {
-                        id: `simulation-${this.nextEventId++}`,
-                        vehicleId: v.id,
-                        cameraId: cam.id,
-                        plateText: v.plateNumber,
-                        timestamp: new Date(this.time.getTime() - jitterMs),
-                        source: 'SIMULATION',
-                        speed: v.speed,
-                        vehicleConfidence: 0.95 + (Math.random() * 0.04),
-                        ocrConfidence: 0.90 + (Math.random() * 0.09),
-                        lane: Math.floor(Math.random() * 3) + 1,
-                        direction: cam.direction || 'UNKNOWN',
-                        latitude: v.coords[1],
-                        longitude: v.coords[0]
-                    };
-                    liveDetections.push(detection);
-                    v.lastCameraId = cam.id;
-                    v.lastCameraTimestamp = new Date(this.time);
-                }
-            } else {
-                if (v.activeCameras.has(cam.id)) {
-                    v.activeCameras.delete(cam.id);
-                }
-            }
+      // Check proximity to cameras
+      for (const cam of this.cameras) {
+        if (cam.status !== 'ONLINE') continue;
+
+        const dist = calculateDistanceMeters(cam.longitude, cam.latitude, v.coords[0], v.coords[1]);
+
+        if (dist <= this.detectionRadiusMeters) {
+          if (!v.activeCameras.has(cam.id)) {
+            v.activeCameras.add(cam.id);
+
+            // Add a random millisecond jitter (0-999ms) so detections in the same tick don't share the exact same timestamp
+            const jitterMs = Math.floor(Math.random() * 1000);
+            const detection = {
+              id: `simulation-${this.nextEventId++}`,
+              vehicleId: v.id,
+              cameraId: cam.id,
+              plateText: v.plateNumber,
+              timestamp: new Date(this.time.getTime() - jitterMs),
+              source: 'SIMULATION',
+              speed: v.speed,
+              vehicleConfidence: 0.95 + (Math.random() * 0.04),
+              ocrConfidence: 0.90 + (Math.random() * 0.09),
+              lane: Math.floor(Math.random() * 3) + 1,
+              direction: cam.direction || (Math.random() > 0.5 ? 'NORTHBOUND' : 'SOUTHBOUND'),
+              latitude: v.coords[1],
+              longitude: v.coords[0]
+            };
+            liveDetections.push(detection);
+            v.lastCameraId = cam.id;
+            v.lastCameraTimestamp = new Date(this.time);
+          }
+        } else {
+          if (v.activeCameras.has(cam.id)) {
+            v.activeCameras.delete(cam.id);
+          }
         }
+      }
     }
 
     if (liveDetections.length > 0) {
-      this.recentDetections = [...liveDetections].reverse().concat(this.recentDetections).slice(0, 100);
+      this.recentDetections = [...liveDetections.reverse(), ...this.recentDetections].slice(0, 100);
       this.generatedDetectionCount += liveDetections.length;
 
-      try {
-        const savedDetections = [];
-        for (const detection of liveDetections) {
-          const saved = await prisma.detection.create({
-            data: {
-              vehicleId: detection.vehicleId,
-              cameraId: detection.cameraId,
-              plateText: detection.plateText,
-              timestamp: detection.timestamp,
-              ocrConfidence: detection.ocrConfidence,
-              vehicleConfidence: detection.vehicleConfidence,
-              lane: detection.lane,
-              direction: detection.direction,
-              latitude: detection.latitude,
-              longitude: detection.longitude,
-              source: detection.source,
-            },
-          });
-          savedDetections.push(saved);
-        }
+      // Asynchronously persist realistic real-time detections to the database
+      prisma.detection.createMany({
+        data: liveDetections.map(d => ({
+          vehicleId: d.vehicleId,
+          cameraId: d.cameraId,
+          plateText: d.plateText,
+          timestamp: d.timestamp,
+          ocrConfidence: d.ocrConfidence,
+          vehicleConfidence: d.vehicleConfidence,
+          lane: d.lane,
+          direction: d.direction,
+          latitude: d.latitude,
+          longitude: d.longitude,
+          source: d.source
+        })),
+        skipDuplicates: true
+      }).catch(err => console.error('Failed to persist simulated detections:', err));
 
-        await Promise.all(savedDetections.map((detection) =>
-          prisma.vehicle.update({
-            where: { id: detection.vehicleId },
-            data: { lastSeen: detection.timestamp },
-          })
-        ));
+      // Also update vehicle lastSeen
+      const vehicleIds = liveDetections.map(d => d.vehicleId);
+      prisma.vehicle.updateMany({
+        where: { id: { in: vehicleIds } },
+        data: { lastSeen: new Date(this.time) }
+      }).catch(err => console.error('Failed to update vehicle lastSeen:', err));
 
-        for (const detection of savedDetections) {
-          const vehicle = this.vehicles.find((item) => item.id === detection.vehicleId);
-          if (vehicle?.status === 'BLACKLISTED') {
-            await processDetectionForBlacklist(detection);
+      // Generate Blacklist alerts
+      const blacklistedVehicles = this.vehicles.filter(v => v.status === 'BLACKLISTED' && liveDetections.some(d => d.vehicleId === v.id));
+      for (const bv of blacklistedVehicles) {
+        const detection = liveDetections.find(d => d.vehicleId === bv.id);
+        if (!detection) continue;
+        prisma.alert.findFirst({
+          where: { vehicleId: bv.id, type: 'BLACKLIST_MATCH', status: 'ACTIVE' }
+        }).then(existingAlert => {
+          if (!existingAlert) {
+            prisma.alert.create({
+              data: {
+                type: 'BLACKLIST_MATCH',
+                severity: 'CRITICAL',
+                vehicleId: bv.id,
+                cameraId: detection.cameraId,
+                message: `Blacklisted vehicle ${bv.plateNumber} detected on camera.`,
+                status: 'ACTIVE',
+                createdAt: detection.timestamp
+              }
+            }).catch(() => { });
+          } else {
+            // Bump the alert to the top if it already exists
+            prisma.alert.update({
+              where: { id: existingAlert.id },
+              data: {
+                createdAt: detection.timestamp,
+                cameraId: detection.cameraId
+              }
+            }).catch(() => { });
           }
-        }
-        this.lastPersistenceError = null;
-      } catch (error) {
-        this.lastPersistenceError = error.message;
-        console.error('Failed to persist simulated detections:', error);
+        }).catch(() => { });
       }
     }
 
@@ -519,68 +527,35 @@ class SimulationEngine {
       }
     }
 
-    // Keep congestion notifications synchronized with the actual live state.
-    await Promise.all(this.cameras.map(async (camera) => {
+    // Process Congestion Alerts directly to DB
+    for (const camera of this.cameras) {
       const vehicleCount = this.liveCameraCounts.get(camera.id) || 0;
-      const existing = await prisma.alert.findFirst({
-        where: { cameraId: camera.id, type: 'CONGESTION', status: 'ACTIVE' },
-        orderBy: { createdAt: 'desc' },
-      });
 
-      if (vehicleCount >= 5) {
-        const severity = vehicleCount >= 10 ? 'CRITICAL' : 'HIGH';
-        const message = `Traffic congestion detected at ${camera.name}: ${vehicleCount} vehicles currently within the camera detection area.`;
-        if (existing) {
-          await prisma.alert.update({
-            where: { id: existing.id },
-            data: { severity, message, createdAt: new Date(this.time), resolvedAt: null },
-          });
-        } else {
-          await prisma.alert.create({
-            data: {
-              type: 'CONGESTION',
-              severity,
-              cameraId: camera.id,
-              message,
-              status: 'ACTIVE',
-              createdAt: new Date(this.time),
-            },
-          });
-        }
-      } else if (existing) {
-        await prisma.alert.update({
-          where: { id: existing.id },
-          data: { status: 'RESOLVED', resolvedAt: new Date(this.time) },
-        });
+      if (vehicleCount >= 10) {
+        prisma.alert.findFirst({
+          where: { cameraId: camera.id, type: 'CONGESTION', status: 'ACTIVE' }
+        }).then(existingAlert => {
+          if (!existingAlert) {
+            prisma.alert.create({
+              data: {
+                type: 'CONGESTION',
+                severity: vehicleCount >= 12 ? 'CRITICAL' : 'HIGH',
+                cameraId: camera.id,
+                message: `Traffic Congestion Spike: ${vehicleCount} vehicles are currently active within camera zone.`,
+                status: 'ACTIVE',
+                createdAt: new Date(this.time)
+              }
+            }).catch(() => { });
+          }
+        }).catch(() => { });
       }
-    }));
+    }
 
     this.liveAlerts = []; // Deprecated in favor of DB alerts
   }
 
   getLiveCameraCounts() {
     return new Map(this.liveCameraCounts);
-  }
-
-  /**
-   * Vehicles currently within a camera's detection radius, from live
-   * simulation state only (never from historical Detection rows). This is
-   * what "click a camera, see who's there right now" must use — it answers
-   * "who is at this camera right now", not "who has ever been seen here".
-   */
-  getLiveVehiclesAtCamera(cameraId) {
-    if (!this.running) return [];
-    return this.vehicles
-      .filter((vehicle) => vehicle.state !== 'RESTING' && vehicle.activeCameras?.has(cameraId))
-      .map((vehicle) => ({
-        vehicleId: vehicle.id,
-        plateNumber: vehicle.plateNumber,
-        vehicleType: vehicle.type,
-        status: vehicle.status,
-        speed: Number.isFinite(vehicle.speed) ? Math.round(vehicle.speed * 10) / 10 : null,
-        latitude: vehicle.coords?.[1] ?? null,
-        longitude: vehicle.coords?.[0] ?? null,
-      }));
   }
 
   getLiveAlerts() {

@@ -13,7 +13,7 @@ function parseTrafficWindow({ from, to } = {}) {
 
 function getTrafficLevel({ detectionCount, vehicleCount, durationMinutes }) {
   const hourlyVehicleRate = (vehicleCount * 60) / durationMinutes;
-  
+
   if (hourlyVehicleRate >= 80) return 'congested';
   if (hourlyVehicleRate >= 35) return 'high';
   if (hourlyVehicleRate >= 12) return 'moderate';
@@ -29,7 +29,7 @@ async function getTrafficSnapshot(windowInput = {}, cameraId) {
 
   const window = parseTrafficWindow({ from, to });
   const where = { timestamp: { gte: window.from, lte: window.to }, ...(cameraId ? { cameraId } : {}) };
-  
+
   const [cameras, windowCounts, vehicleCameraPairs] = await Promise.all([
     prisma.camera.findMany({
       where: cameraId ? { id: cameraId } : undefined,
@@ -48,7 +48,7 @@ async function getTrafficSnapshot(windowInput = {}, cameraId) {
       _count: { _all: true },
     }),
   ]);
-  
+
   const countByCamera = new Map(windowCounts.map((item) => [item.cameraId, item._count._all]));
   const lastDetectionByCamera = new Map(windowCounts.map((item) => [item.cameraId, item._max.timestamp]));
   const uniqueVehiclesByCamera = new Map();
@@ -127,7 +127,7 @@ async function evaluateCongestionAlert(cameraId, timestamp = new Date()) {
 
 const calculateCongestionLevel = (vehicleCount, averageSpeed) => {
   if (vehicleCount === 0) return 'LOW';
-  
+
   if (vehicleCount > 10 && averageSpeed < 15) return 'SEVERE';
   if (vehicleCount > 5 && averageSpeed < 30) return 'HIGH';
   if (vehicleCount > 2 && averageSpeed < 45) return 'MEDIUM';
@@ -138,26 +138,26 @@ const getRoadTrafficData = async () => {
   const engine = global.simulationEngine;
   const state = engine && typeof engine.getState === 'function' ? engine.getState() : { vehicles: [] };
   const vehicles = state.vehicles || [];
-  
+
   const roadStats = {};
-  
+
   for (const v of vehicles) {
     if (!v.roadId) continue;
-    
+
     if (!roadStats[v.roadId]) {
       roadStats[v.roadId] = { count: 0, totalSpeed: 0 };
     }
-    
+
     roadStats[v.roadId].count++;
     roadStats[v.roadId].totalSpeed += v.speed || 0;
   }
-  
+
   const trafficByRoad = [];
-  
+
   for (const roadId of Object.keys(roadStats)) {
     const stats = roadStats[roadId];
     const avgSpeed = stats.count > 0 ? stats.totalSpeed / stats.count : 0;
-    
+
     trafficByRoad.push({
       roadId,
       vehicleCount: stats.count,
@@ -166,7 +166,7 @@ const getRoadTrafficData = async () => {
       timestamp: state.simulationTime || new Date(),
     });
   }
-  
+
   return trafficByRoad;
 };
 
@@ -183,7 +183,7 @@ const getRoadTraffic = async (roadId) => {
 
 const getTrafficSummary = async () => {
   const traffic = await getRoadTrafficData();
-  
+
   const summary = {
     totalRoads: traffic.length,
     lowCongestion: 0,
@@ -191,21 +191,21 @@ const getTrafficSummary = async () => {
     highCongestion: 0,
     severeCongestion: 0,
   };
-  
+
   for (const t of traffic) {
     if (t.congestionLevel === 'LOW') summary.lowCongestion++;
     else if (t.congestionLevel === 'MEDIUM') summary.mediumCongestion++;
     else if (t.congestionLevel === 'HIGH') summary.highCongestion++;
     else if (t.congestionLevel === 'SEVERE') summary.severeCongestion++;
   }
-  
+
   return summary;
 };
 
-module.exports = { 
-  parseTrafficWindow, 
-  getTrafficLevel, 
-  getTrafficSnapshot, 
+module.exports = {
+  parseTrafficWindow,
+  getTrafficLevel,
+  getTrafficSnapshot,
   evaluateCongestionAlert,
   getRoadTrafficData,
   getRoadTraffic,

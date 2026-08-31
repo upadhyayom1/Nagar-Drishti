@@ -50,7 +50,7 @@ function CameraCard({ camera }: { camera: Camera }) {
           </div>
           <div className="absolute top-2.5 right-2.5">
             <span className="text-[9px] font-mono bg-black/80 backdrop-blur-md px-2 py-0.5 rounded text-white font-bold border border-white/15">
-              {camera.detectionCount} detections
+              {camera.vehiclesDetected} vehicles
             </span>
           </div>
           <div className="absolute bottom-2.5 left-2.5">

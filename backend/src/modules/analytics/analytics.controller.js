@@ -1,4 +1,5 @@
 const { prisma } = require('../../lib/prisma');
+const { getRoadTrafficData } = require('../traffic/traffic.service');
 
 function getAnalyticsWindow(query = {}) {
   const now = new Date();
@@ -39,8 +40,12 @@ exports.getOverview = async (req, res) => {
     const hourlyUniqueVehicleRate = (uniqueVehicleRows.length * 60) / (durationHours * 60);
     const congestionIndex = Math.min(100, Math.round((hourlyUniqueVehicleRate / Math.max(activeCameras, 1)) * 10));
 
+    const engine = global.simulationEngine;
+    const running = Boolean(engine?.running);
+    const liveVehicleCount = running ? engine.vehicles.filter(v => v.state !== 'RESTING').length : uniqueVehicleRows.length;
+
     res.status(200).json({
-      totalVehiclesToday: uniqueVehicleRows.length,
+      totalVehiclesToday: liveVehicleCount,
       detectionCount: totalDetectionsCount,
       avgSpeed: round(speedStats._avg.averageSpeed),
       activeCameras,
@@ -91,7 +96,7 @@ exports.getCameras = async (req, res) => {
   try {
     const window = getAnalyticsWindow(req.query);
     if (!window) return res.status(400).json({ success: false, message: 'Invalid analytics date range' });
-    const [cameras, rows, uniqueVehicles] = await Promise.all([
+    const [cameras, rows] = await Promise.all([
       prisma.camera.findMany(),
       prisma.$queryRawUnsafe(`
         SELECT d."cameraId" AS "cameraId",
@@ -105,9 +110,15 @@ exports.getCameras = async (req, res) => {
       `, window.from, window.to),
     ]);
     const metrics = new Map(rows.map((r) => [r.cameraId, r]));
+
+    const engine = global.simulationEngine;
+    const simulationRunning = Boolean(engine?.running);
+    const liveEngineVehiclesByCam = simulationRunning ? engine.getLiveCameraCounts() : new Map();
+
     const mapped = cameras.map((camera) => {
       const metric = metrics.get(camera.id);
-      const vehicleCount = Number(metric?.vehicleCount || 0);
+      const liveVehicles = liveEngineVehiclesByCam.get(camera.id) || 0;
+      const vehicleCount = simulationRunning ? liveVehicles : Number(metric?.vehicleCount || 0);
       const detectionCount = Number(metric?.detectionCount || 0);
       const ratePerHour = vehicleCount * 60 / Math.max((window.to - window.from) / 60000, 1);
       return {
@@ -131,6 +142,15 @@ exports.getBusiestRoads = async (req, res) => {
     const window = getAnalyticsWindow(req.query);
     if (!window) return res.status(400).json({ success: false, message: 'Invalid analytics date range' });
     const roads = await prisma.road.findMany({ select: { id: true, name: true, cameras: { select: { id: true } } } });
+    
+    const engine = global.simulationEngine;
+    const simulationRunning = Boolean(engine?.running);
+    let liveTrafficByRoad = [];
+    if (simulationRunning) {
+      liveTrafficByRoad = await getRoadTrafficData();
+    }
+    const liveRoadMap = new Map(liveTrafficByRoad.map(t => [t.roadId, t]));
+
     const rows = await prisma.$queryRawUnsafe(`
       SELECT c."roadId" AS "roadId",
              COUNT(*)::int AS "detectionCount",
@@ -145,15 +165,28 @@ exports.getBusiestRoads = async (req, res) => {
     const byRoad = new Map(rows.map((r) => [r.roadId, r]));
     const mapped = roads.map((road) => {
       const metric = byRoad.get(road.id);
-      const vehicleCount = Number(metric?.vehicleCount || 0);
+      const liveMetric = liveRoadMap.get(road.id);
+      
+      const vehicleCount = simulationRunning ? (liveMetric?.vehicleCount || 0) : Number(metric?.vehicleCount || 0);
+      const detectionCount = Number(metric?.detectionCount || 0);
+      
+      let avgSpeed = metric?.avgSpeed != null ? round(Number(metric.avgSpeed)) : null;
+      if (simulationRunning && liveMetric) {
+        avgSpeed = liveMetric.averageSpeed;
+      }
+
       const ratePerHour = vehicleCount * 60 / Math.max((window.to - window.from) / 60000, 1);
+      const congestionLevel = simulationRunning && liveMetric 
+        ? liveMetric.congestionLevel.toLowerCase() 
+        : (ratePerHour >= 80 ? 'congested' : ratePerHour >= 35 ? 'high' : ratePerHour >= 12 ? 'moderate' : 'low');
+
       return {
         id: road.id,
         name: road.name,
         vehicleCount,
-        detectionCount: Number(metric?.detectionCount || 0),
-        avgSpeed: metric?.avgSpeed != null ? round(Number(metric.avgSpeed)) : null,
-        congestionLevel: ratePerHour >= 80 ? 'congested' : ratePerHour >= 35 ? 'high' : ratePerHour >= 12 ? 'moderate' : 'low',
+        detectionCount,
+        avgSpeed,
+        congestionLevel,
       };
     }).sort((a, b) => b.vehicleCount - a.vehicleCount).slice(0, 10);
     res.status(200).json(mapped);
