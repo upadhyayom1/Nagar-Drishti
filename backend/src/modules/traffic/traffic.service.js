@@ -30,24 +30,24 @@ async function getTrafficSnapshot(windowInput = {}, cameraId) {
   const window = parseTrafficWindow({ from, to });
   const where = { timestamp: { gte: window.from, lte: window.to }, ...(cameraId ? { cameraId } : {}) };
 
-  const [cameras, windowCounts, vehicleCameraPairs] = await Promise.all([
-    prisma.camera.findMany({
-      where: cameraId ? { id: cameraId } : undefined,
-      include: { zone: { select: { name: true } }, road: { select: { name: true } } },
-      orderBy: { cameraCode: 'asc' },
-    }),
-    prisma.detection.groupBy({
-      by: ['cameraId'],
-      where,
-      _count: { _all: true },
-      _max: { timestamp: true },
-    }),
-    prisma.detection.groupBy({
-      by: ['cameraId', 'vehicleId'],
-      where,
-      _count: { _all: true },
-    }),
-  ]);
+  const cameras = await prisma.camera.findMany({
+    where: cameraId ? { id: cameraId } : undefined,
+    include: { zone: { select: { name: true } }, road: { select: { name: true } } },
+    orderBy: { cameraCode: 'asc' },
+  });
+
+  const windowCounts = await prisma.detection.groupBy({
+    by: ['cameraId'],
+    where,
+    _count: { _all: true },
+    _max: { timestamp: true },
+  });
+
+  const vehicleCameraPairs = await prisma.detection.groupBy({
+    by: ['cameraId', 'vehicleId'],
+    where,
+    _count: { _all: true },
+  });
 
   const countByCamera = new Map(windowCounts.map((item) => [item.cameraId, item._count._all]));
   const lastDetectionByCamera = new Map(windowCounts.map((item) => [item.cameraId, item._max.timestamp]));

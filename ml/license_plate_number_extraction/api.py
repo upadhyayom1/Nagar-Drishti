@@ -42,7 +42,7 @@ def image_to_video(image_path: Path, destination: Path):
     writer = cv2.VideoWriter(str(destination), cv2.VideoWriter_fourcc(*"mp4v"), 5, (width, height))
     if not writer.isOpened():
         raise ValueError("Unable to prepare image for YOLO processing")
-    for _ in range(3):
+    for _ in range(15):
         writer.write(image)
     writer.release()
 
@@ -85,11 +85,17 @@ async def recognize(file: UploadFile = File(...)):
         except Exception as error:
             raise HTTPException(status_code=500, detail=f"Local ANPR inference failed: {error}") from error
 
+        try:
+            from main import enforce_indian_plate_constraints
+        except ImportError:
+            # Fallback if main.py can't be imported for some reason
+            enforce_indian_plate_constraints = lambda x: x
+
         return {
             "provider": "local-yolo-anpr",
             "results": [
                 {
-                    "plateNumber": result.plate_number,
+                    "plateNumber": enforce_indian_plate_constraints(result.plate_number) if result.plate_number else None,
                     "confidence": result.confidence,
                     "vehicleType": result.vehicle_type,
                     "status": result.status,

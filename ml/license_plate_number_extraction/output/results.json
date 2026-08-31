@@ -1,18 +1,3 @@
 {
-  "vehicles": [
-    {
-      "vehicle_id": 1,
-      "vehicle_type": "truck",
-      "plate_number": "TM87C5106",
-      "status": "LIKELY",
-      "confidence": 0.643,
-      "frames_used": 1,
-      "first_frame": 0,
-      "last_frame": 0,
-      "reason": null,
-      "plate_format": null,
-      "state_code": "TM",
-      "format_corrected": false
-    }
-  ]
+  "vehicles": []
 }

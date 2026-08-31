@@ -56,6 +56,7 @@ class SimulationEngine {
     this.liveCameraCounts = new Map();
     this.liveAlerts = [];
     this.nextEventId = 1;
+    this.congestionCheckInProgress = false;
 
     this.graph = new Map(); // Node -> Array of Edges
     this.nodesList = []; // Helper for picking random nodes
@@ -540,14 +541,26 @@ class SimulationEngine {
     }
 
     // Process Congestion Alerts using the single source of truth in traffic.service.js
-    // We throttle this to check at most once every 15 seconds per camera to avoid DB spam.
+    // We throttle this to check at most one camera per tick, and each camera at most once every 15s to avoid DB spam.
     const trafficService = require('../traffic/traffic.service');
-    for (const camera of this.cameras) {
-      const lastCheck = this.lastCongestionCheck.get(camera.id) || 0;
+    
+    // Pick one camera to check this tick based on simulation time
+    const tickSecond = Math.floor(this.time.getTime() / 1000);
+    const cameraIndex = tickSecond % this.cameras.length;
+    
+    if (this.cameras.length > 0 && !this.congestionCheckInProgress) {
+      const cameraToCheck = this.cameras[cameraIndex];
+      const lastCheck = this.lastCongestionCheck.get(cameraToCheck.id) || 0;
+      
       if (this.time.getTime() - lastCheck >= 15000) {
-        this.lastCongestionCheck.set(camera.id, this.time.getTime());
+        this.lastCongestionCheck.set(cameraToCheck.id, this.time.getTime());
+        this.congestionCheckInProgress = true;
         // Run asynchronously so we don't block the tick
-        trafficService.evaluateCongestionAlert(camera.id, this.time).catch(() => {});
+        trafficService.evaluateCongestionAlert(cameraToCheck.id, this.time).catch((err) => {
+          console.error(`Congestion check failed for ${cameraToCheck.id}:`, err.message);
+        }).finally(() => {
+          this.congestionCheckInProgress = false;
+        });
       }
     }
 

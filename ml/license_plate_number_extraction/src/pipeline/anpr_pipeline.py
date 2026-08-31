@@ -248,6 +248,10 @@ class ANPRPipeline:
             return
 
         fusion = fuse_readings(readings, min_supporting_frames=self.fusion_cfg["min_supporting_frames"])
+        import re
+        if fusion.text:
+            fusion.text = re.sub(r'[^A-Z0-9]', '', fusion.text.upper())
+            
         validation = validate_plate(fusion.text) if fusion.text else None
         format_corrected = False
 

@@ -1,2 +1,1 @@
 vehicle_id,vehicle_type,plate_number,status,confidence,frames_used,first_frame,last_frame,reason,plate_format,state_code,format_corrected
-1,truck,TM87C5106,LIKELY,0.643,1,0,0,,,TM,False
