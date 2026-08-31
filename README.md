@@ -289,11 +289,11 @@ Enable users to report traffic incidents/issues and help authorities incorporate
 
 | Team Member       | Role                   |
 | ----------------- | ---------------------- |
-| **Team Member 1** | System Core            |
-| **Team Member 2** | Interface Sculptor     |
-| **Team Member 3** | Neural Architect       |
-| **Team Member 4** | Data Pipeline Engineer |
-| **Team Member 5** | Backend Integration    |
-| **Team Member 6** | Documentation & QA     |
+| **Om Upadhyay** | Backend Engineer          |
+| **Pravesh Kumar** |Backend Engineer    |
+| **Nithaesh Raja** | Frontend Engineer    |
+| **Saksham Gupta** | ANPR Engineer      |
+| **Mudaliar Pradhyun Ravi** | Computer Vision Engineer |
+| **Adya Tripathi** | ML Engineer     |
 
 ---
