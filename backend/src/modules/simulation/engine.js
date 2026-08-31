@@ -61,6 +61,7 @@ class SimulationEngine {
     this.nodesList = []; // Helper for picking random nodes
     this.lastHealthCheck = new Date(this.time);
     this.routeCache = new Map();
+    this.lastCongestionCheck = new Map(); // cameraId -> timestamp
   }
 
   async init() {
@@ -90,17 +91,15 @@ class SimulationEngine {
       let initialState = 'MOVING';
       let initialRestUntil = null;
 
-      // Randomly start some vehicles in a RESTING state to prevent all vehicles moving at once on startup
+      // Start most vehicles moving immediately
       if (Math.random() > wakeProbability) {
         initialState = 'RESTING';
         const maxRestMins = 8 * 60;
         const restMins = Math.random() * maxRestMins;
         initialRestUntil = new Date(Date.now() + restMins * 60000);
       } else {
-        // For vehicles that start moving, stagger their initial departure by up to 60 seconds
-        // so they don't all hit the road at the exact same millisecond.
-        initialState = 'RESTING';
-        initialRestUntil = new Date(Date.now() + Math.random() * 60000);
+        initialState = 'MOVING';
+        initialRestUntil = null;
       }
 
       return {
@@ -393,6 +392,8 @@ class SimulationEngine {
       const speedMs = v.speed * (1000 / 3600);
       let remainingDistance = speedMs * simDeltaSec;
 
+      const previousCoords = [...v.coords];
+
       // A vehicle can cross more than one short road segment in a tick. Carry
       // the remaining distance forward so simulated time and position agree.
       while (remainingDistance > 0 && v.currentRoute && v.routeIndex < v.currentRoute.length) {
@@ -417,24 +418,35 @@ class SimulationEngine {
         remainingDistance = 0;
       }
 
-      // Check proximity to cameras
+      // Check proximity to cameras using a LineString to represent the exact movement path this tick
+      // to ensure fast vehicles don't "jump" over the camera bounding box between frames.
+      const movementLine = (previousCoords[0] !== v.coords[0] || previousCoords[1] !== v.coords[1])
+        ? turf.lineString([previousCoords, v.coords])
+        : turf.point(v.coords);
+
       for (const cam of this.cameras) {
         if (cam.status !== 'ONLINE') continue;
 
-        const dist = calculateDistanceMeters(cam.longitude, cam.latitude, v.coords[0], v.coords[1]);
+        const camPoint = turf.point([cam.longitude, cam.latitude]);
+        
+        let dist;
+        if (movementLine.geometry.type === 'LineString') {
+           const nearest = turf.nearestPointOnLine(movementLine, camPoint);
+           dist = turf.distance(camPoint, nearest, { units: 'meters' });
+        } else {
+           dist = turf.distance(camPoint, movementLine, { units: 'meters' });
+        }
 
         if (dist <= this.detectionRadiusMeters) {
           if (!v.activeCameras.has(cam.id)) {
             v.activeCameras.add(cam.id);
 
-            // Add a random millisecond jitter (0-999ms) so detections in the same tick don't share the exact same timestamp
-            const jitterMs = Math.floor(Math.random() * 1000);
             const detection = {
               id: `simulation-${this.nextEventId++}`,
               vehicleId: v.id,
               cameraId: cam.id,
               plateText: v.plateNumber,
-              timestamp: new Date(this.time.getTime() - jitterMs),
+              timestamp: new Date(this.time),
               source: 'SIMULATION',
               speed: v.speed,
               vehicleConfidence: 0.95 + (Math.random() * 0.04),
@@ -527,27 +539,15 @@ class SimulationEngine {
       }
     }
 
-    // Process Congestion Alerts directly to DB
+    // Process Congestion Alerts using the single source of truth in traffic.service.js
+    // We throttle this to check at most once every 15 seconds per camera to avoid DB spam.
+    const trafficService = require('../traffic/traffic.service');
     for (const camera of this.cameras) {
-      const vehicleCount = this.liveCameraCounts.get(camera.id) || 0;
-
-      if (vehicleCount >= 10) {
-        prisma.alert.findFirst({
-          where: { cameraId: camera.id, type: 'CONGESTION', status: 'ACTIVE' }
-        }).then(existingAlert => {
-          if (!existingAlert) {
-            prisma.alert.create({
-              data: {
-                type: 'CONGESTION',
-                severity: vehicleCount >= 12 ? 'CRITICAL' : 'HIGH',
-                cameraId: camera.id,
-                message: `Traffic Congestion Spike: ${vehicleCount} vehicles are currently active within camera zone.`,
-                status: 'ACTIVE',
-                createdAt: new Date(this.time)
-              }
-            }).catch(() => { });
-          }
-        }).catch(() => { });
+      const lastCheck = this.lastCongestionCheck.get(camera.id) || 0;
+      if (this.time.getTime() - lastCheck >= 15000) {
+        this.lastCongestionCheck.set(camera.id, this.time.getTime());
+        // Run asynchronously so we don't block the tick
+        trafficService.evaluateCongestionAlert(camera.id, this.time).catch(() => {});
       }
     }
 

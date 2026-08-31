@@ -139,29 +139,14 @@ exports.getCameraDetections = async (req, res) => {
     const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 100);
     const live = String(req.query.live || '').toLowerCase() === 'true' || req.query.live === '1';
     
-    if (live && global.simulationEngine?.running) {
-      const liveVehicles = global.simulationEngine.getLiveVehiclesAtCamera(cameraId);
-      // Format to match serialized detection
-      const formatted = liveVehicles.slice(0, limit).map(v => ({
-        id: `sim-${v.vehicleId}-${Date.now()}`,
-        vehiclePlate: v.plateNumber,
-        cameraId: cameraId,
-        cameraCode: 'CAM', // or fetch from camera cache
-        cameraName: 'Live Simulation Node',
-        timestamp: new Date(),
-        confidence: 99.9,
-        vehicleType: v.vehicleType || 'CAR',
-        speed: v.speed,
-        direction: 'UNKNOWN',
-        imageUrl: null,
-      }));
-      return res.status(200).json({ success: true, data: formatted });
-    }
+    const engine = global.simulationEngine;
+    const running = Boolean(engine?.running);
+    const currentTime = running ? engine.getState().simulationTime : new Date();
 
     const windowMinutes = Math.min(Math.max(Number(req.query.windowMinutes) || 2, 1), 60);
     const where = { cameraId };
     if (live) {
-      where.timestamp = { gte: new Date(Date.now() - windowMinutes * 60 * 1000), lte: new Date() };
+      where.timestamp = { gte: new Date(currentTime.getTime() - windowMinutes * 60 * 1000), lte: currentTime };
     }
     const detections = await prisma.detection.findMany({
       where,
@@ -172,7 +157,7 @@ exports.getCameraDetections = async (req, res) => {
     res.status(200).json({ success: true, data: detections.map(serializeDetection) });
   } catch (error) {
     console.error('Error fetching camera detections:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    res.status(500).json({ success: false, message: 'Server error: ' + error.message, stack: error.stack });
   }
 };
 

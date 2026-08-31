@@ -42,10 +42,11 @@ exports.getOverview = async (req, res) => {
 
     const engine = global.simulationEngine;
     const running = Boolean(engine?.running);
-    const liveVehicleCount = running ? engine.vehicles.filter(v => v.state !== 'RESTING').length : uniqueVehicleRows.length;
+    const activeVehiclesCount = running ? engine.vehicles.filter(v => v.state !== 'RESTING').length : 0;
 
     res.status(200).json({
-      totalVehiclesToday: liveVehicleCount,
+      totalVehiclesToday: uniqueVehicleRows.length,
+      activeVehicles: activeVehiclesCount,
       detectionCount: totalDetectionsCount,
       avgSpeed: round(speedStats._avg.averageSpeed),
       activeCameras,
@@ -111,14 +112,9 @@ exports.getCameras = async (req, res) => {
     ]);
     const metrics = new Map(rows.map((r) => [r.cameraId, r]));
 
-    const engine = global.simulationEngine;
-    const simulationRunning = Boolean(engine?.running);
-    const liveEngineVehiclesByCam = simulationRunning ? engine.getLiveCameraCounts() : new Map();
-
     const mapped = cameras.map((camera) => {
       const metric = metrics.get(camera.id);
-      const liveVehicles = liveEngineVehiclesByCam.get(camera.id) || 0;
-      const vehicleCount = simulationRunning ? liveVehicles : Number(metric?.vehicleCount || 0);
+      const vehicleCount = Number(metric?.vehicleCount || 0);
       const detectionCount = Number(metric?.detectionCount || 0);
       const ratePerHour = vehicleCount * 60 / Math.max((window.to - window.from) / 60000, 1);
       return {
@@ -143,14 +139,6 @@ exports.getBusiestRoads = async (req, res) => {
     if (!window) return res.status(400).json({ success: false, message: 'Invalid analytics date range' });
     const roads = await prisma.road.findMany({ select: { id: true, name: true, cameras: { select: { id: true } } } });
     
-    const engine = global.simulationEngine;
-    const simulationRunning = Boolean(engine?.running);
-    let liveTrafficByRoad = [];
-    if (simulationRunning) {
-      liveTrafficByRoad = await getRoadTrafficData();
-    }
-    const liveRoadMap = new Map(liveTrafficByRoad.map(t => [t.roadId, t]));
-
     const rows = await prisma.$queryRawUnsafe(`
       SELECT c."roadId" AS "roadId",
              COUNT(*)::int AS "detectionCount",
@@ -165,20 +153,13 @@ exports.getBusiestRoads = async (req, res) => {
     const byRoad = new Map(rows.map((r) => [r.roadId, r]));
     const mapped = roads.map((road) => {
       const metric = byRoad.get(road.id);
-      const liveMetric = liveRoadMap.get(road.id);
       
-      const vehicleCount = simulationRunning ? (liveMetric?.vehicleCount || 0) : Number(metric?.vehicleCount || 0);
+      const vehicleCount = Number(metric?.vehicleCount || 0);
       const detectionCount = Number(metric?.detectionCount || 0);
-      
-      let avgSpeed = metric?.avgSpeed != null ? round(Number(metric.avgSpeed)) : null;
-      if (simulationRunning && liveMetric) {
-        avgSpeed = liveMetric.averageSpeed;
-      }
+      const avgSpeed = metric?.avgSpeed != null ? round(Number(metric.avgSpeed)) : null;
 
       const ratePerHour = vehicleCount * 60 / Math.max((window.to - window.from) / 60000, 1);
-      const congestionLevel = simulationRunning && liveMetric 
-        ? liveMetric.congestionLevel.toLowerCase() 
-        : (ratePerHour >= 80 ? 'congested' : ratePerHour >= 35 ? 'high' : ratePerHour >= 12 ? 'moderate' : 'low');
+      const congestionLevel = ratePerHour >= 80 ? 'congested' : ratePerHour >= 35 ? 'high' : ratePerHour >= 12 ? 'moderate' : 'low';
 
       return {
         id: road.id,

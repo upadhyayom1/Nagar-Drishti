@@ -1,6 +1,6 @@
 const { prisma } = require('../../lib/prisma');
 
-const DEFAULT_WINDOW_MINUTES = 60;
+const DEFAULT_WINDOW_MINUTES = 5;
 
 function parseTrafficWindow({ from, to } = {}) {
   const end = to ? new Date(to) : new Date();
@@ -71,13 +71,11 @@ async function getTrafficSnapshot(windowInput = {}, cameraId) {
     cameras: cameras.map((camera) => {
       const windowDetectionCount = countByCamera.get(camera.id) || 0;
       const liveVehicles = liveEngineVehiclesByCam.get(camera.id) || 0;
-      const vehiclesDetected = simulationRunning ? liveVehicles : (uniqueVehiclesByCamera.get(camera.id) || 0);
+      const vehiclesDetected = uniqueVehiclesByCamera.get(camera.id) || 0;
       // The simulation count represents currently tracked vehicles, not database detections.
       // Keep historical detectionCount separate so the API never relabels vehicles as detections.
       const detectionCount = windowDetectionCount;
-      const lastDetectionTime = simulationRunning
-        ? (liveVehicles > 0 ? liveSimulationTime : camera.updatedAt)
-        : (lastDetectionByCamera.get(camera.id) || camera.updatedAt);
+      const lastDetectionTime = lastDetectionByCamera.get(camera.id) || camera.updatedAt;
 
       return {
         ...camera,
@@ -102,7 +100,10 @@ async function evaluateCongestionAlert(cameraId, timestamp = new Date()) {
     orderBy: { createdAt: 'desc' },
   });
 
-  if (!camera || !['high', 'congested'].includes(camera.trafficLevel)) {
+  // Thresholds: 10 vehicles = HIGH, 15 vehicles = CRITICAL in the 5-minute window
+  const vehicleCount = camera ? camera.vehicleCount : 0;
+  
+  if (!camera || vehicleCount < 10) {
     if (existingActiveAlert) {
       return prisma.alert.update({
         where: { id: existingActiveAlert.id },
@@ -112,9 +113,11 @@ async function evaluateCongestionAlert(cameraId, timestamp = new Date()) {
     return null;
   }
 
-  const severity = camera.trafficLevel === 'congested' ? 'CRITICAL' : 'HIGH';
-  const message = `Heavy traffic congestion detected at ${camera.name || camera.cameraCode} with ${camera.vehiclesDetected || camera.vehicleCount} vehicles tracked in the selected window.`;
+  const severity = vehicleCount >= 15 ? 'CRITICAL' : 'HIGH';
+  const message = `Heavy traffic congestion detected at ${camera.name || camera.cameraCode} with ${vehicleCount} vehicles tracked in the last 5 minutes.`;
+  
   if (existingActiveAlert) {
+    // Only update if severity changed or to bump the timestamp
     return prisma.alert.update({
       where: { id: existingActiveAlert.id },
       data: { severity, message, createdAt: new Date(timestamp), resolvedAt: null },
