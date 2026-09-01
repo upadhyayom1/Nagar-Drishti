@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Video, MapPin, Clock, Activity, Maximize2, Minimize2, Car, Radio, Zap } from 'lucide-react';
 import { GlassCard }   from '@/components/ui/GlassCard';
 import { Badge }       from '@/components/ui/Badge';
+import { Input }       from '@/components/ui/Input';
 import { PageWrapper } from '@/components/layout/PageWrapper';
 import { cameraService } from '@/services/cameraService';
 import { formatTime } from '@/lib/utils';
@@ -14,12 +15,17 @@ import type { Detection } from '@/types';
 export default function CameraDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { data: camera }          = useQuery({ queryKey: ['camera', id],     queryFn: () => cameraService.getCameraById(id), refetchInterval: 3000 });
-  const { data: detections = [] } = useQuery({ queryKey: ['detections', id], queryFn: () => cameraService.getDetectionsByCamera(id, { live: true, windowMinutes: 5 }), refetchInterval: 3000 });
+  const { data: detections = [] } = useQuery({ queryKey: ['detections', id], queryFn: () => cameraService.getDetectionsByCamera(id), refetchInterval: 3000 });
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const toggleFullscreen = useCallback(() => {
     setIsFullscreen(prev => !prev);
   }, []);
+
+  const filteredDetections = detections.filter(d => 
+    d.vehiclePlate.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (!camera) return (
     <PageWrapper className="flex items-center justify-center min-h-[450px]">
@@ -140,11 +146,21 @@ export default function CameraDetailPage({ params }: { params: Promise<{ id: str
               <h3 className="text-xs font-bold font-display uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
                 <Zap size={14} className="text-cyan-400" /> Recent Sighting Events
               </h3>
-              <Badge variant="info" size="sm">{detections.length}</Badge>
+              <Badge variant="info" size="sm">{filteredDetections.length}</Badge>
+            </div>
+
+            <div className="mb-3">
+              <Input
+                placeholder="Search vehicle plate..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                showSearchIcon
+                className="h-9 text-xs font-mono"
+              />
             </div>
 
             <div className="space-y-2 overflow-y-auto flex-1 pr-1">
-              {detections.map((d: Detection) => (
+              {filteredDetections.map((d: Detection) => (
                 <Link
                   key={d.id}
                   href={`/vehicles/${d.vehiclePlate}`}
@@ -164,7 +180,7 @@ export default function CameraDetailPage({ params }: { params: Promise<{ id: str
                 </Link>
               ))}
 
-              {detections.length === 0 && (
+              {filteredDetections.length === 0 && (
                 <p className="text-center text-xs font-mono text-[var(--text-tertiary)] py-12">No recent detection events</p>
               )}
             </div>

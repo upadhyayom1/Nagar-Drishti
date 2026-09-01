@@ -66,7 +66,7 @@ exports.getHourly = async (req, res) => {
     if (!window) return res.status(400).json({ success: false, message: 'Invalid analytics date range' });
     const rows = await prisma.$queryRawUnsafe(`
       SELECT
-        EXTRACT(HOUR FROM (d."timestamp" AT TIME ZONE 'Asia/Kolkata'))::int AS hour,
+        EXTRACT(HOUR FROM (d."timestamp" AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'))::int AS hour,
         COUNT(*)::int AS "detectionCount",
         COUNT(DISTINCT d."vehicleId")::int AS "uniqueVehicleCount",
         AVG(CASE WHEN v."speed" > 0 THEN v."speed" END) AS "avgSpeed"
