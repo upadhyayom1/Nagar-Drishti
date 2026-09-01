@@ -20,6 +20,7 @@ import {
   ScanLine,
   TrendingUp,
 } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo';
 import { useUIStore } from '@/store/uiStore';
 
 interface NavItem {
@@ -159,13 +160,13 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         name: 'Threat Watchlist',
         href: '/blacklist',
         icon: Shield,
-        color: '#fb7185',
-        bgActive: 'bg-rose-500/15',
-        borderActive: 'border-rose-400/60',
-        glowShadow: 'shadow-[0_0_22px_rgba(251,113,133,0.35)]',
-        leftPillColor: 'bg-[#fb7185] shadow-[0_0_10px_#fb7185]',
-        iconColor: 'text-rose-400 drop-shadow-[0_0_8px_rgba(251,113,133,0.7)]',
-        hoverClass: 'hover:border-rose-400/50 hover:bg-rose-500/10 hover:shadow-[0_0_16px_rgba(251,113,133,0.2)] hover:text-rose-400',
+        color: '#d946ef',
+        bgActive: 'bg-fuchsia-500/15',
+        borderActive: 'border-fuchsia-400/60',
+        glowShadow: 'shadow-[0_0_22px_rgba(217,70,239,0.35)]',
+        leftPillColor: 'bg-[#d946ef] shadow-[0_0_10px_#d946ef]',
+        iconColor: 'text-fuchsia-400 drop-shadow-[0_0_8px_rgba(217,70,239,0.7)]',
+        hoverClass: 'hover:border-fuchsia-400/50 hover:bg-fuchsia-500/10 hover:shadow-[0_0_16px_rgba(217,70,239,0.2)] hover:text-fuchsia-400',
       },
       {
         name: 'System Diagnostics',
@@ -192,26 +193,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     <div className="flex flex-col h-full py-3.5 select-none font-body overflow-hidden">
 
       {/* Brand Mark Header */}
-      <div
-        className={cn(
-          'flex items-center gap-3 mb-4 shrink-0',
-          sidebarCollapsed ? 'px-2 justify-center' : 'px-3.5'
-        )}
-      >
-        <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-400/40 flex items-center justify-center shadow-[0_0_18px_rgba(0,240,255,0.35)] shrink-0">
-          <ShieldCheck size={19} className="text-cyan-400" />
-        </div>
-
-        {!sidebarCollapsed && (
-          <div className="min-w-0">
-            <h1 className="text-sm font-bold tracking-tight text-[var(--text-primary)] leading-none font-display">
-              Nagar<span className="text-gradient-spectral">Drishti</span>
-            </h1>
-            <span className="text-[9px] font-mono text-[var(--text-secondary)] tracking-[0.16em] uppercase mt-1 block">
-              AI Command OS
-            </span>
-          </div>
-        )}
+      <div className={cn('mb-4 shrink-0', sidebarCollapsed ? 'px-2 flex justify-center' : 'px-3.5')}>
+        <Logo size="sm" showText={!sidebarCollapsed} />
       </div>
 
       {/* Navigation Links */}
@@ -219,7 +202,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         {navGroups.map((group) => (
           <div key={group.label}>
             {!sidebarCollapsed && (
-              <p className="text-[9px] font-display font-semibold text-[var(--text-tertiary)] uppercase tracking-wider px-2.5 mb-1.5">
+              <p className="text-[10px] font-mono font-bold text-cyan-500 dark:text-cyan-400/90 uppercase tracking-[0.18em] px-2.5 mb-2 flex items-center gap-1.5">
+                <span className="w-1 h-1 rounded-full bg-cyan-400 shadow-[0_0_6px_#00f0ff] shrink-0" />
                 {group.label}
               </p>
             )}

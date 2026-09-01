@@ -1,10 +1,11 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, UserCheck, KeyRound, ArrowRight, Shield, Radio, CheckCircle2, Lock, Zap, Sparkles, Activity } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { Logo } from '@/components/ui/Logo';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -15,9 +16,17 @@ function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialRole = searchParams.get('role') === 'user' ? 'user' : 'admin';
-  const setUser = useAuthStore((state) => state.setUser);
+  const { user, setUser, initializeAuthFromStorage } = useAuthStore();
 
   const [role, setRole] = useState<'admin' | 'user'>(initialRole);
+
+  // Auto-redirect if user is already authenticated without signing out
+  useEffect(() => {
+    const activeUser = user || initializeAuthFromStorage();
+    if (activeUser) {
+      router.push(activeUser.role === 'ADMIN' ? '/dashboard' : '/report');
+    }
+  }, [user, initializeAuthFromStorage, router]);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
@@ -102,15 +111,8 @@ function LoginFormContent() {
       >
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <Link href="/" className="inline-flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-400/40 flex items-center justify-center shadow-[0_0_18px_rgba(0,240,255,0.35)] group-hover:scale-105 transition-transform">
-              <ShieldCheck size={20} className="text-cyan-400" />
-            </div>
-            <span className="font-display font-bold text-xl text-[var(--text-primary)]">
-              Nagar<span className="text-gradient-spectral">Drishti</span>
-            </span>
-          </Link>
-          <p className="text-xs text-[var(--text-secondary)] font-mono uppercase tracking-wider">
+          <Logo size="md" className="justify-center" />
+          <p className="text-xs text-[var(--text-secondary)] font-mono uppercase tracking-wider mt-1">
             Municipal AI Intelligence &amp; Citizen Dispatch Gateway
           </p>
         </div>

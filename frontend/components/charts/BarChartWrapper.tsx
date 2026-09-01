@@ -62,24 +62,27 @@ export function BarChartWrapper({
   const axisColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)';
   const tickFill  = isDark ? '#94a3b8' : '#64748b';
 
+  // Show at most ~10 labels regardless of how many bars there are
+  const labelInterval = data.length > 12 ? Math.ceil(data.length / 10) : 0;
+
   return (
     <div className="w-full" style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 10, right: 15, left: -10, bottom: 55 }}>
+        <BarChart data={data} margin={{ top: 10, right: 15, left: -10, bottom: 72 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
           <XAxis
             dataKey={xAxisKey}
-            tickFormatter={(v) => formatLabel(String(v ?? ''), 10)}
+            tickFormatter={(v) => formatLabel(String(v ?? ''), 9)}
             tick={{
               fill: tickFill,
-              fontSize: 10,
+              fontSize: 9,
               fontFamily: 'var(--font-mono), monospace',
             }}
             axisLine={{ stroke: axisColor }}
             tickLine={false}
-            dy={8}
-            interval={0}
-            angle={-42}
+            dy={6}
+            interval={labelInterval}
+            angle={-65}
             textAnchor="end"
           />
           <YAxis

@@ -167,7 +167,7 @@ export default function AnalyticsPage() {
           {cameraLoading ? (
             <SkeletonCard variant="chart" height={280} />
           ) : (
-            <BarChartWrapper data={cameraTraffic} dataKey="vehicleCount" xAxisKey="cameraName" color="#00f0ff" />
+            <BarChartWrapper data={cameraTraffic} dataKey="vehicleCount" xAxisKey="cameraName" color="#00f0ff" height={320} />
           )}
         </GlassCard>
       </div>

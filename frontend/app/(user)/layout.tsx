@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ShieldCheck, ArrowLeft, Sun, Moon } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { Button } from '@/components/ui/Button';
+import { Logo } from '@/components/ui/Logo';
 import { AuthGuard } from '@/components/layout/AuthGuard';
 
 export default function UserPortalLayout({ children }: { children: React.ReactNode }) {
@@ -22,19 +23,7 @@ export default function UserPortalLayout({ children }: { children: React.ReactNo
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
           
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-8 h-8 rounded-xl bg-[var(--glass-surface)] border border-[var(--brand-teal)]/40 flex items-center justify-center shadow-[0_0_12px_rgba(31,217,168,0.2)] group-hover:scale-105 transition-transform">
-                <ShieldCheck size={17} className="text-[var(--brand-teal)]" />
-              </div>
-              <div>
-                <span className="font-display font-bold text-sm text-[var(--text-primary)]">
-                  Nagar<span className="text-gradient-brand">Drishti</span>
-                </span>
-                <span className="text-[9px] font-mono text-[var(--text-secondary)] block -mt-0.5">
-                  Citizen Reporting Portal
-                </span>
-              </div>
-            </Link>
+            <Logo size="sm" />
           </div>
 
           <div className="flex items-center gap-2.5">
