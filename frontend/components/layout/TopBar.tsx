@@ -249,7 +249,11 @@ export function TopBar() {
                         </div>
                       ) : (
                         recentAlerts.map((alert: any) => (
-                          <div key={alert.id} className="px-4 py-3 hover:bg-white/[0.03] transition-colors">
+                          <div 
+                            key={alert.id} 
+                            onClick={() => { setNotificationsOpen(false); router.push('/alerts'); }}
+                            className="px-4 py-3 hover:bg-white/[0.03] transition-colors cursor-pointer"
+                          >
                             <div className="flex items-start justify-between gap-2">
                               <div className="flex items-start gap-2 flex-1 min-w-0">
                                 <AlertCircle size={13} className={`shrink-0 mt-0.5 ${severityColor(alert.severity)}`} />
