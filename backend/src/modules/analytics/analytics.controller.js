@@ -116,14 +116,13 @@ exports.getCameras = async (req, res) => {
       const metric = metrics.get(camera.id);
       const vehicleCount = Number(metric?.vehicleCount || 0);
       const detectionCount = Number(metric?.detectionCount || 0);
-      const ratePerHour = vehicleCount * 60 / Math.max((window.to - window.from) / 60000, 1);
       return {
         cameraId: camera.id,
         cameraName: camera.name || camera.cameraCode || camera.id,
         vehicleCount,
         detectionCount,
         avgSpeed: metric?.avgSpeed != null ? round(Number(metric.avgSpeed)) : null,
-        congestionLevel: ratePerHour >= 80 ? 'congested' : ratePerHour >= 35 ? 'high' : ratePerHour >= 12 ? 'moderate' : 'low',
+        congestionLevel: vehicleCount >= 30 ? 'congested' : vehicleCount >= 20 ? 'high' : vehicleCount >= 10 ? 'moderate' : 'low',
       };
     });
     res.status(200).json(mapped);
@@ -158,8 +157,7 @@ exports.getBusiestRoads = async (req, res) => {
       const detectionCount = Number(metric?.detectionCount || 0);
       const avgSpeed = metric?.avgSpeed != null ? round(Number(metric.avgSpeed)) : null;
 
-      const ratePerHour = vehicleCount * 60 / Math.max((window.to - window.from) / 60000, 1);
-      const congestionLevel = ratePerHour >= 80 ? 'congested' : ratePerHour >= 35 ? 'high' : ratePerHour >= 12 ? 'moderate' : 'low';
+      const congestionLevel = vehicleCount >= 30 ? 'congested' : vehicleCount >= 20 ? 'high' : vehicleCount >= 10 ? 'moderate' : 'low';
 
       return {
         id: road.id,

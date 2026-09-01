@@ -12,11 +12,9 @@ function parseTrafficWindow({ from, to } = {}) {
 }
 
 function getTrafficLevel({ detectionCount, vehicleCount, durationMinutes }) {
-  const hourlyVehicleRate = (vehicleCount * 60) / durationMinutes;
-
-  if (hourlyVehicleRate >= 80) return 'congested';
-  if (hourlyVehicleRate >= 35) return 'high';
-  if (hourlyVehicleRate >= 12) return 'moderate';
+  if (vehicleCount >= 30) return 'congested';
+  if (vehicleCount >= 20) return 'high';
+  if (vehicleCount >= 10) return 'moderate';
   return 'low';
 }
 
