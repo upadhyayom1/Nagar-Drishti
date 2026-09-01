@@ -97,9 +97,9 @@ export function MapView({
     ? [cameras.reduce((sum, camera) => sum + camera.lat, 0) / cameras.length, cameras.reduce((sum, camera) => sum + camera.lng, 0) / cameras.length]
     : center;
 
-  // Fastly SSL URLs for clean tiles without "API KEY REQUIRED" watermark
-  const darkTileUrl = 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png';
-  const lightTileUrl = 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/rastertiles/voyager/{z}/{x}/{y}.png';
+  // Use standard CartoCDN URLs to avoid the "API KEY REQUIRED" watermark from the old Fastly CDN
+  const darkTileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+  const lightTileUrl = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 
   const tileUrl = theme === 'light' ? lightTileUrl : darkTileUrl;
 
