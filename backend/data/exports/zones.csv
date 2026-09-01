@@ -1,10 +1,10 @@
-id,zoneCode,name,createdAt,updatedAt
-cmtbiuze400003girkbkc65s3,PRY-CENTRAL,Civil Lines and Railway Core,2026-08-27T12:51:44.428Z,2026-08-27T12:51:44.428Z
-cmtbiuze600013girmeldkyia,PRY-KATRA,"Katra, University and Allapur",2026-08-27T12:51:44.428Z,2026-08-27T12:51:44.428Z
-cmtbiuze600023girqimspnvl,PRY-SANGAM,Sangam and Daraganj,2026-08-27T12:51:44.428Z,2026-08-27T12:51:44.428Z
-cmtbiuze600033girvcvm8d3z,PRY-NAINI,Naini and Yamuna Crossing,2026-08-27T12:51:44.428Z,2026-08-27T12:51:44.428Z
-cmtbiuze600043girmxeb5wtt,PRY-NORTH,Teliarganj and Phaphamau,2026-08-27T12:51:44.428Z,2026-08-27T12:51:44.428Z
-cmtbiuze600053girr76axjpt,PRY-JHUNSI,Shastri Bridge and Jhunsi,2026-08-27T12:51:44.428Z,2026-08-27T12:51:44.428Z
-cmtbiuze600063girihe22541,PRY-WEST,"Subedarganj, Jhalwa, Bamrauli",2026-08-27T12:51:44.428Z,2026-08-27T12:51:44.428Z
-cmtbiuze600073girtzoqqx1u,PRY-SOUTH,"Dandi, Ghoorpur, Industrial",2026-08-27T12:51:44.428Z,2026-08-27T12:51:44.428Z
-cmtbiuze600083girp0e55dto,PRY-OLD_CITY,"Chowk, Meerapur, Rambagh",2026-08-27T12:51:44.428Z,2026-08-27T12:51:44.428Z
+id,zoneCode,name
+cmth961cq0003nyir7mf86cbw,PRY-CENTRAL,Civil Lines and Railway Core
+cmth961cq0008nyir8spqdzk7,PRY-JHUNSI,Shastri Bridge and Jhunsi
+cmth961cq0004nyir9yv8yynw,PRY-KATRA,"Katra, University and Allapur"
+cmth961cq0006nyiryghpj9n2,PRY-NAINI,Naini and Yamuna Crossing
+cmth961cq0007nyircbx63svh,PRY-NORTH,Teliarganj and Phaphamau
+cmth961cq000bnyir8o86y6q2,PRY-OLD_CITY,"Chowk, Meerapur, Rambagh"
+cmth961cq0005nyir13mdrn12,PRY-SANGAM,Sangam and Daraganj
+cmth961cq000anyirdamdf4vh,PRY-SOUTH,"Dandi, Ghoorpur, Industrial"
+cmth961cq0009nyir0n9l65tf,PRY-WEST,"Subedarganj, Jhalwa, Bamrauli"

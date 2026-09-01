@@ -1,0 +1,18 @@
+{
+  "vehicles": [
+    {
+      "vehicle_id": 1,
+      "vehicle_type": "bus",
+      "plate_number": null,
+      "status": "UNKNOWN",
+      "confidence": 0.0,
+      "frames_used": 0,
+      "first_frame": 0,
+      "last_frame": 14,
+      "reason": "No plate candidates of sufficient quality were detected.",
+      "plate_format": null,
+      "state_code": null,
+      "format_corrected": false
+    }
+  ]
+}

@@ -21,7 +21,7 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
   const decodedPlate = decodeURIComponent(plate).toUpperCase();
 
   const { data: vehicle, isLoading: vehicleLoading }   = useQuery({ queryKey: ['vehicle', decodedPlate],           queryFn: () => vehicleService.getVehicleByPlate(decodedPlate) });
-  const { data: detections = [], isLoading: detectionsLoading } = useQuery({ queryKey: ['vehicleDetections', decodedPlate], queryFn: () => vehicleService.getVehicleDetections(decodedPlate) });
+  const { data: detections = { items: [] }, isLoading: detectionsLoading } = useQuery({ queryKey: ['vehicleDetections', decodedPlate], queryFn: () => vehicleService.getVehicleDetections(decodedPlate) });
   const { data: journey }                              = useQuery({ queryKey: ['vehicleJourney', decodedPlate],    queryFn: () => vehicleService.getVehicleJourney(decodedPlate) });
   const { data: intelligence, refetch: fetchIntelligence, isFetching: isAnalyzing } = useQuery({
     queryKey: ['vehicleIntelligence', decodedPlate],
@@ -51,10 +51,10 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
     day.setDate(day.getDate() - (27 - index));
     const nextDay = new Date(day);
     nextDay.setDate(nextDay.getDate() + 1);
-    return detections.filter((detection) => {
+    return detections?.items?.filter((detection) => {
       const timestamp = new Date(detection.timestamp);
       return timestamp >= day && timestamp < nextDay;
-    }).length;
+    }).length || 0;
   });
   const maxActivity = Math.max(...activityDays, 1);
 
@@ -103,7 +103,7 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
 
           {detectionsLoading ? (
             <SkeletonCard variant="list" rows={5} />
-          ) : detections.length === 0 ? (
+          ) : !detections?.items || detections.items.length === 0 ? (
             <EmptyState icon={Eye} title="No Detection Events" subtitle="No detection events recorded for this vehicle yet." />
           ) : (
             <div className="relative">
@@ -111,7 +111,7 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
               <div className="absolute left-[11px] top-3 bottom-3 w-[2px] bg-[var(--bg-elevated-2)]" />
 
               <div className="space-y-4">
-                {detections.map((d: Detection, i: number) => (
+                {detections.items.map((d: Detection, i: number) => (
                   <motion.div
                     key={d.id}
                     initial={{ opacity: 0, x: -10 }}

@@ -33,7 +33,7 @@ export default function SystemDiagnosticsPage() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight font-display">System Diagnostics</h1>
-          <p className="text-xs font-mono text-[var(--text-secondary)] mt-0.5 uppercase tracking-wider">Persisted camera health and backend telemetry</p>
+          <p className="text-xs font-mono text-[var(--text-secondary)] mt-0.5 uppercase tracking-wider">Persisted optical core and neural subsystem telemetry</p>
         </div>
         <button onClick={() => refetch()} disabled={isFetching} className="px-3.5 py-1.5 rounded-xl border border-cyan-500/30 text-xs font-display font-bold text-cyan-500 dark:text-cyan-400 hover:bg-cyan-500/10 disabled:opacity-50 transition-all cursor-pointer">
           {isFetching ? 'Refreshing…' : 'Refresh Telemetry'}
@@ -41,10 +41,10 @@ export default function SystemDiagnosticsPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Online Nodes" value={`${summary?.online ?? 10}/${summary?.total ?? 10}`} subtitle={`${summary?.warning ?? 0} maintenance`} icon={Server} colorTheme="emerald" />
-        <StatCard label="Offline Nodes" value={summary?.offline ?? 0} subtitle="Camera dropouts" icon={WifiOff} colorTheme="rose" />
-        <StatCard label="Average Response" value={averageLatency === null ? '18 ms' : `${averageLatency} ms`} subtitle="Roundtrip latency" icon={Activity} colorTheme="cyan" />
-        <StatCard label="Active Alerts" value={summary?.activeAlerts ?? 4} subtitle="Alert queue" icon={AlertTriangle} colorTheme="amber" />
+        <StatCard label="Online Nodes" value={`${summary?.online ?? 0}/${summary?.total ?? 0}`} subtitle={`${summary?.warning ?? 0} maintenance`} isLoading={isLoading} icon={Server} colorTheme="emerald" />
+        <StatCard label="Offline Nodes" value={(summary?.offline ?? 0)} subtitle="Camera dropouts" isLoading={isLoading} icon={WifiOff} colorTheme="rose" />
+        <StatCard label="Average Response" value={(averageLatency === null ? '0 ms' : `${averageLatency} ms`)} subtitle="Roundtrip latency" isLoading={isLoading} icon={Activity} colorTheme="cyan" />
+        <StatCard label="Active Alerts" value={(summary?.activeAlerts ?? 0)} subtitle="Alert queue" isLoading={isLoading} icon={AlertTriangle} colorTheme="amber" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -101,7 +101,7 @@ export default function SystemDiagnosticsPage() {
                 <CheckCircle size={22} className="text-emerald-500 dark:text-emerald-400" />
               </div>
               <p className="text-sm font-bold text-[var(--text-primary)] font-display mt-3">All Systems Operational</p>
-              <p className="text-xs text-[var(--text-secondary)] mt-1.5 font-body">{summary?.online ?? 10} optical nodes streaming nominal telemetry.</p>
+              <p className="text-xs text-[var(--text-secondary)] mt-1.5 font-body">{summary?.online ?? 0} optical nodes streaming nominal telemetry.</p>
             </>
           )}
         </GlassCard>

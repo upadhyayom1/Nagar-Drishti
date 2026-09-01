@@ -10,8 +10,10 @@ export interface User {
 }
 
 export const authService = {
-  login: async (username: string, password: string): Promise<{ user: User; message: string }> => {
-    const response = await apiClient.post('/auth/login', { username, password });
+  login: async (identifier: string, password: string): Promise<{ user: User; message: string }> => {
+    // Send the legacy field too so this frontend can talk to an API that has
+    // not yet been restarted/deployed with identifier-based login support.
+    const response = await apiClient.post('/auth/login', { identifier, username: identifier, password });
     return response.data as { user: User; message: string };
   },
 

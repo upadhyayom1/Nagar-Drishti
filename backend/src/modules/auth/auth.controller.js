@@ -12,20 +12,34 @@ const serializeUser = (user) => ({
 });
 
 const loginSchema = z.object({
-  username: z.string().min(1, 'Username is required'),
+  // `username` is kept for compatibility with existing API clients.
+  identifier: z.string().trim().min(1, 'Username, email, or phone is required').optional(),
+  username: z.string().trim().min(1, 'Username is required').optional(),
   password: z.string().min(1, 'Password is required'),
+}).refine((data) => Boolean(data.identifier || data.username), {
+  message: 'Username, email, or phone is required',
+  path: ['identifier'],
 });
+
+const tokenCookieOptions = () => {
+  const isProduction = env.NODE_ENV === 'production';
+
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+    path: '/',
+  };
+};
 
 const login = async (req, res) => {
   try {
-    const { username, password } = loginSchema.parse(req.body);
+    const { identifier, username, password } = loginSchema.parse(req.body);
 
-    const { user, token } = await authService.login(username, password);
+    const { user, token } = await authService.login(identifier || username, password);
 
     res.cookie('token', token, {
-      httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      ...tokenCookieOptions(),
       maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
 
@@ -47,7 +61,7 @@ const login = async (req, res) => {
 };
 
 const logout = (req, res) => {
-  res.clearCookie('token');
+  res.clearCookie('token', tokenCookieOptions());
   res.status(200).json({
     success: true,
     message: 'Logout successful',
@@ -69,9 +83,7 @@ const register = async (req, res) => {
     const { user, token } = await authService.register(data);
 
     res.cookie('token', token, {
-      httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      ...tokenCookieOptions(),
       maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
 
@@ -83,8 +95,8 @@ const register = async (req, res) => {
   } catch (error) {
     if (error instanceof z.ZodError) {
       res.status(400).json({ success: false, message: 'Validation error', errors: error.errors });
-    } else if (error.message === 'Username already in use') {
-      res.status(409).json({ success: false, message: error.message });
+    } else if (error.message === 'Username already in use' || error.code === 'P2002') {
+      res.status(409).json({ success: false, message: 'Username or email is already in use' });
     } else {
       console.error(error);
       res.status(500).json({ success: false, message: 'Internal server error' });

@@ -1,6 +1,9 @@
 import axios, { type AxiosResponse } from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+// `/api` is rewritten by next.config.ts to the configured Express API. Keeping
+// requests same-origin makes the httpOnly login cookie reliable on localhost
+// and after deployment to Vercel.
+const API_URL = '/api';
 
 export const apiClient = axios.create({
   baseURL: API_URL,

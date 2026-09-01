@@ -9,6 +9,8 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   ML_SERVICE_URL: z.string().url().default('http://127.0.0.1:8001/ml'),
   ANPR_SERVICE_URL: z.string().url().default('http://127.0.0.1:8001/anpr'),
+  CORS_ORIGINS: z.string().default('http://localhost:3000,http://localhost:3001,http://localhost:5173,https://nagardrishti.vercel.app'),
+  RENDER_EXTERNAL_URL: z.string().url().optional(),
 });
 
 const _env = envSchema.safeParse(process.env);

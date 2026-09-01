@@ -3,9 +3,15 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { env } = require('../../config/env');
 
-const login = async (username, passwordPlain) => {
-  const user = await prisma.user.findUnique({
-    where: { username },
+const login = async (identifier, passwordPlain) => {
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { username: identifier },
+        { email: identifier },
+        { phone: identifier },
+      ],
+    },
   });
 
   if (!user) {

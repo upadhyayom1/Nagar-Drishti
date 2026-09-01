@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRightLeft, Route, Activity, Zap, TrendingUp, Radio } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -11,7 +12,12 @@ import { analyticsService } from '@/services/analyticsService';
 const formatDuration = (seconds: number) => seconds ? `${Math.floor(seconds / 60)}m ${seconds % 60}s` : 'No observations';
 
 export default function MovementNetworkPage() {
-  const { data: network, isLoading } = useQuery({ queryKey: ['network'], queryFn: analyticsService.getNetwork, refetchInterval: 30_000 });
+  const analyticsWindow = useMemo(() => {
+    const to = new Date();
+    const from = new Date(to.getTime() - 24 * 60 * 60 * 1000);
+    return { from: from.toISOString(), to: to.toISOString() };
+  }, []);
+  const { data: network, isLoading } = useQuery({ queryKey: ['network', analyticsWindow], queryFn: () => analyticsService.getNetwork(analyticsWindow), refetchInterval: 30_000 });
   const routes = network?.corridors ?? [];
   const summary = network?.summary;
   const totalFlow = routes.reduce((total, route) => total + route.volume, 0);
@@ -25,10 +31,10 @@ export default function MovementNetworkPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Observed Corridors" value={summary?.corridorCount ?? 6} icon={Route} colorTheme="cyan" />
-        <StatCard label="Avg Transit Time" value={formatDuration(summary?.averageTravelSeconds ?? 340)} icon={Activity} colorTheme="violet" />
-        <StatCard label="Peak Corridor Volume" value={summary?.peakVolume ?? 142} subtitle={peak ? `${peak.origin.code} → ${peak.destination.code}` : 'Civil Lines → Sangam'} icon={Zap} colorTheme="amber" />
-        <StatCard label="Recorded Flow" value={totalFlow || 842} subtitle="Stored transitions" icon={TrendingUp} colorTheme="emerald" />
+        <StatCard label="Observed Corridors" value={(summary?.corridorCount ?? 0)} isLoading={isLoading} icon={Route} colorTheme="cyan" />
+        <StatCard label="Avg Transit Time" value={formatDuration(summary?.averageTravelSeconds ?? 0)} isLoading={isLoading} icon={Activity} colorTheme="violet" />
+        <StatCard label="Peak Corridor Volume" value={(summary?.peakVolume ?? 0)} subtitle={(peak ? `${peak.origin.code} → ${peak.destination.code}` : 'No active corridors')} isLoading={isLoading} icon={Zap} colorTheme="amber" />
+        <StatCard label="Recorded Flow" value={(totalFlow || 0)} subtitle="Stored transitions" isLoading={isLoading} icon={TrendingUp} colorTheme="emerald" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -54,8 +60,8 @@ export default function MovementNetworkPage() {
                   </div>
                   <div className="flex items-center gap-5 justify-between sm:justify-end">
                     <div className="text-right">
-                      <div className="font-mono text-xs font-bold text-[var(--text-primary)]">{route.volume.toLocaleString()} transitions</div>
-                      <div className="text-[10px] text-[var(--text-secondary)] font-mono">Avg: {formatDuration(route.averageTravelSeconds)} · {route.averageSpeed} km/h</div>
+                      <div className="font-mono text-xs font-bold text-[var(--text-primary)]">{route.volume.toLocaleString()} transitions · {route.uniqueVehicleCount.toLocaleString()} vehicles</div>
+                      <div className="text-[10px] text-[var(--text-secondary)] font-mono">Avg: {route.averageTravelSeconds != null ? formatDuration(route.averageTravelSeconds) : 'Travel time unavailable'} · {route.averageSpeed != null ? `${route.averageSpeed} km/h` : 'Speed unavailable'}</div>
                     </div>
                     <Badge variant="ok" size="sm" dot>Observed</Badge>
                   </div>

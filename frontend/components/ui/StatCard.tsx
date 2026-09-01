@@ -14,6 +14,7 @@ export interface StatCardProps {
   icon: LucideIcon;
   trend?: { value: number; isPositive: boolean };
   subtitle?: string;
+  isLoading?: boolean;
   accentColor?: string;
   colorTheme?: StatCardColorTheme;
   className?: string;

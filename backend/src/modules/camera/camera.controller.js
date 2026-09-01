@@ -3,37 +3,8 @@ const { getTrafficSnapshot } = require('../traffic/traffic.service');
 
 exports.getCameras = async (req, res) => {
   try {
-    const cameras = await prisma.camera.findMany({
-      include: { zone: { select: { name: true } }, road: { select: { name: true } } },
-      orderBy: { cameraCode: 'asc' },
-    });
-
-    // Check live simulation engine if active
-    let liveEngineVehiclesByCam = new Map();
-    if (global.simulationEngine && global.simulationEngine.running && Array.isArray(global.simulationEngine.vehicles)) {
-      for (const v of global.simulationEngine.vehicles) {
-        if (v.activeCameras && v.activeCameras.size > 0) {
-          for (const camId of v.activeCameras) {
-            liveEngineVehiclesByCam.set(camId, (liveEngineVehiclesByCam.get(camId) || 0) + 1);
-          }
-        }
-      }
-    }
-
-    const enriched = cameras.map((camera) => {
-      const liveVehicles = liveEngineVehiclesByCam.get(camera.id) || 0;
-      return enrichCamera({
-        ...camera,
-        vehicleCount: liveVehicles > 0 ? liveVehicles : 2,
-        vehiclesDetected: liveVehicles > 0 ? liveVehicles : 2,
-        detectionCount: liveVehicles > 0 ? liveVehicles * 8 : 15,
-        trafficLevel: liveVehicles > 5 ? 'congested' : liveVehicles > 2 ? 'high' : 'low',
-        zone: camera.zone?.name || 'Prayagraj Zone',
-        road: camera.road?.name || 'Main Corridor',
-      });
-    });
-
-    res.status(200).json({ success: true, data: enriched });
+    const snapshot = await getTrafficSnapshot(req.query);
+    res.status(200).json({ success: true, data: snapshot.cameras.map(enrichCamera) });
   } catch (error) {
     console.error('Error fetching cameras:', error);
     res.status(500).json({ success: false, message: 'Server error fetching cameras' });
@@ -59,6 +30,30 @@ exports.getTraffic = async (req, res) => {
     res.status(200).json({ success: true, data: { ...snapshot, cameras: snapshot.cameras.map(enrichCamera) } });
   } catch (error) {
     res.status(error.statusCode || 500).json({ success: false, message: error.message || 'Unable to fetch camera traffic' });
+  }
+};
+
+// Live simulation state only — "who is at this camera right now", never a
+// count of historical Detection rows. The frontend should not calculate
+// this itself; it just requests and renders this endpoint's result.
+exports.getLiveDetections = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const engine = global.simulationEngine;
+    const running = Boolean(engine?.running);
+    const vehicles = running ? engine.getLiveVehiclesAtCamera(id) : [];
+    res.status(200).json({
+      success: true,
+      data: {
+        cameraId: id,
+        simulationRunning: running,
+        vehicleCount: vehicles.length,
+        vehicles,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching live camera detections:', error);
+    res.status(500).json({ success: false, message: 'Server error fetching live detections' });
   }
 };
 

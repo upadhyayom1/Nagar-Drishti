@@ -11,8 +11,13 @@ export const vehicleService = {
     return unwrapApiResponse(await apiClient.get<Vehicle>(`/vehicles/${encodeURIComponent(plate)}`));
   },
 
-  async getVehicleDetections(plate: string): Promise<Detection[]> {
-    return unwrapApiResponse(await apiClient.get<Detection[]>(`/detections/vehicle/${encodeURIComponent(plate)}?limit=100`));
+  async getVehicleDetections(plate: string, pageParam?: string): Promise<{ items: Detection[], nextCursor: string | null }> {
+    const url = `/detections/vehicle/${encodeURIComponent(plate)}?limit=15${pageParam ? `&cursor=${pageParam}` : ''}`;
+    return unwrapApiResponse(await apiClient.get<{ items: Detection[], nextCursor: string | null }>(url));
+  },
+
+  async getVehicleHeatmap(plate: string): Promise<number[]> {
+    return unwrapApiResponse(await apiClient.get<number[]>(`/detections/vehicle/${encodeURIComponent(plate)}/heatmap`));
   },
 
   async getVehicleJourney(plate: string): Promise<VehicleJourney | undefined> {

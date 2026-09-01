@@ -2,16 +2,18 @@
 
 import { ChangeEvent, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AlertCircle, CheckCircle2, FileVideo, ImageIcon, Loader2, ScanLine, ShieldAlert, Upload, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, FileVideo, ImageIcon, Loader2, ScanLine, ShieldAlert, Upload, X, History, Search, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { PageWrapper } from '@/components/layout/PageWrapper';
 import { cameraService } from '@/services/cameraService';
-import { ocrService, type PlateRecognitionResult } from '@/services/ocrService';
+import { ocrService, type PlateRecognitionResult, type PlateDetectionHistoryItem } from '@/services/ocrService';
+import { DetectionHistoryModal } from '@/components/ocr/DetectionHistoryModal';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const MAX_VIDEO_FRAMES = 6;
+const HIGH_CONFIDENCE_THRESHOLD = 85;
 
 function waitForEvent(target: HTMLMediaElement, event: 'loadedmetadata' | 'seeked') {
   return new Promise<void>((resolve, reject) => {
@@ -75,6 +77,16 @@ export default function PlateDetectionPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
 
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historySearch, setHistorySearch] = useState('');
+  const [historyCameraId, setHistoryCameraId] = useState('');
+  const [selectedHistory, setSelectedHistory] = useState<PlateDetectionHistoryItem | null>(null);
+
+  const { data: historyData, isLoading: historyLoading } = useQuery({
+    queryKey: ['ocrHistory', historyPage, historySearch, historyCameraId],
+    queryFn: () => ocrService.getHistory({ page: historyPage, limit: 10, search: historySearch, cameraId: historyCameraId }),
+  });
+
   useEffect(() => {
     if (!cameraId && cameras[0]) setCameraId(cameras[0].id);
   }, [cameraId, cameras]);
@@ -119,6 +131,7 @@ export default function PlateDetectionPage() {
       queryClient.invalidateQueries({ queryKey: ['alerts'] });
       queryClient.invalidateQueries({ queryKey: ['recentVehicles'] });
       queryClient.invalidateQueries({ queryKey: ['trafficStats'] });
+      queryClient.invalidateQueries({ queryKey: ['ocrHistory'] });
     } catch (recognitionError) {
       setError(recognitionError instanceof Error ? recognitionError.message : 'Plate recognition failed. Check the backend recognition service and try again.');
     } finally {
@@ -280,6 +293,127 @@ export default function PlateDetectionPage() {
           </div>
         </GlassCard>
       </div>
+
+      <GlassCard padding="lg" glow="cyan">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-[var(--glass-border)] pb-4">
+          <div>
+            <h2 className="text-lg font-bold font-display text-[var(--text-primary)] flex items-center gap-2">
+              <History size={18} className="text-cyan-400" /> Detection History
+            </h2>
+            <p className="text-xs text-[var(--text-secondary)] mt-1">Browse past manual AI plate detections</p>
+          </div>
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <div className="relative flex-1 md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+              <input
+                type="text"
+                placeholder="Search plate..."
+                value={historySearch}
+                onChange={(e) => { setHistorySearch(e.target.value); setHistoryPage(1); }}
+                className="w-full h-9 rounded-lg border border-[var(--glass-border)] bg-black/20 pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-cyan-400/60"
+              />
+            </div>
+            <select
+              value={historyCameraId}
+              onChange={(e) => { setHistoryCameraId(e.target.value); setHistoryPage(1); }}
+              className="h-9 rounded-lg border border-[var(--glass-border)] bg-black/20 px-3 text-sm text-[var(--text-primary)] outline-none focus:border-cyan-400/60"
+            >
+              <option value="">All Cameras</option>
+              {cameras.map((camera) => (
+                <option key={camera.id} value={camera.id}>{camera.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto min-h-[300px]">
+          {historyLoading ? (
+            <div className="flex items-center justify-center h-48 text-cyan-400"><Loader2 size={24} className="animate-spin" /></div>
+          ) : historyData?.items.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-48 text-[var(--text-secondary)]">
+              <History size={32} className="opacity-20 mb-3" />
+              <p className="text-sm">No historical detections found.</p>
+            </div>
+          ) : (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-white/10 text-xs uppercase tracking-wider text-gray-400">
+                  <th className="pb-3 pr-4 font-bold">Plate Number</th>
+                  <th className="pb-3 pr-4 font-bold">Confidence</th>
+                  <th className="pb-3 pr-4 font-bold">Camera</th>
+                  <th className="pb-3 pr-4 font-bold">Date & Time</th>
+                  <th className="pb-3 pr-4 font-bold">Source</th>
+                  <th className="pb-3 font-bold text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {historyData?.items.map((item) => (
+                  <tr key={item.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group">
+                    <td className="py-3 pr-4">
+                      <Link href={`/vehicles/${item.plateNumber}`} className="font-mono font-bold text-cyan-300 hover:text-white">
+                        {item.plateNumber}
+                      </Link>
+                    </td>
+                    <td className="py-3 pr-4">
+                      <span className={`text-xs ${item.confidenceScore >= HIGH_CONFIDENCE_THRESHOLD ? 'text-emerald-400' : 'text-amber-400'}`}>
+                        {item.confidenceScore}%
+                      </span>
+                    </td>
+                    <td className="py-3 pr-4 text-xs text-gray-300">
+                      {item.camera.name}
+                    </td>
+                    <td className="py-3 pr-4 text-xs font-mono text-gray-400">
+                      {new Date(item.timestamp).toLocaleString()}
+                    </td>
+                    <td className="py-3 pr-4">
+                      <Badge variant="cyan" size="sm">{item.sourceType}</Badge>
+                    </td>
+                    <td className="py-3 text-right">
+                      <button
+                        onClick={() => setSelectedHistory(item)}
+                        className="p-2 rounded-lg bg-white/5 text-cyan-400 hover:bg-cyan-500/20 hover:text-cyan-300 transition-colors inline-flex items-center gap-1 opacity-0 group-hover:opacity-100"
+                      >
+                        <Eye size={14} /> <span className="text-xs">View</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {historyData && historyData.pagination.totalPages > 1 && (
+          <div className="flex items-center justify-between mt-6 pt-4 border-t border-[var(--glass-border)]">
+            <p className="text-xs text-gray-400">
+              Showing page {historyData.pagination.page} of {historyData.pagination.totalPages}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={historyPage === 1}
+                onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
+              >
+                <ChevronLeft size={16} />
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={historyPage === historyData.pagination.totalPages}
+                onClick={() => setHistoryPage((p) => p + 1)}
+              >
+                <ChevronRight size={16} />
+              </Button>
+            </div>
+          </div>
+        )}
+      </GlassCard>
+
+      <DetectionHistoryModal
+        item={selectedHistory}
+        onClose={() => setSelectedHistory(null)}
+      />
     </PageWrapper>
   );
 }

@@ -1,46 +1,59 @@
 const { prisma } = require('../../lib/prisma');
+const { getRoadTrafficData } = require('../traffic/traffic.service');
 
 function getAnalyticsWindow(query = {}) {
   const now = new Date();
-  const startOfToday = new Date(now);
-  startOfToday.setHours(0, 0, 0, 0);
-  const from = query.from ? new Date(query.from) : startOfToday;
+  const from = query.from ? new Date(query.from) : new Date(now.getTime() - 24 * 60 * 60 * 1000);
   const to = query.to ? new Date(query.to) : now;
-
-  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || from > to) {
-    return null;
-  }
-
+  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || from > to) return null;
   return { from, to };
 }
+
+const round = (value, digits = 1) => {
+  if (!Number.isFinite(value)) return null;
+  const factor = 10 ** digits;
+  return Math.round(value * factor) / factor;
+};
 
 exports.getOverview = async (req, res) => {
   try {
     const window = getAnalyticsWindow(req.query);
     if (!window) return res.status(400).json({ success: false, message: 'Invalid analytics date range' });
-    const [totalDetectionsCount, uniqueVehicles, activeCameras, activeAlerts, incidentsToday] = await Promise.all([
+    const [totalDetectionsCount, uniqueVehicleRows, activeCameras, activeAlerts, incidentsToday, speedStats] = await Promise.all([
       prisma.detection.count({ where: { timestamp: { gte: window.from, lte: window.to } } }),
       prisma.detection.findMany({
         where: { timestamp: { gte: window.from, lte: window.to } },
         distinct: ['vehicleId'],
         select: { vehicleId: true },
-        take: 2000,
       }),
       prisma.camera.count({ where: { status: 'ONLINE' } }),
       prisma.alert.count({ where: { status: 'ACTIVE' } }),
       prisma.incident.count({ where: { timestamp: { gte: window.from, lte: window.to } } }),
+      prisma.cameraTransition.aggregate({
+        where: { timestamp: { gte: window.from, lte: window.to }, averageSpeed: { gt: 0 } },
+        _avg: { averageSpeed: true },
+      }),
     ]);
 
-    const overview = {
-      totalVehiclesToday: uniqueVehicles.length || totalDetectionsCount,
-      avgSpeed: 42,
+    // This is deliberately a normalized observation index, not a physical road-capacity claim.
+    const durationHours = Math.max((window.to - window.from) / 3600000, 1 / 60);
+    const hourlyUniqueVehicleRate = (uniqueVehicleRows.length * 60) / (durationHours * 60);
+    const congestionIndex = Math.min(100, Math.round((hourlyUniqueVehicleRate / Math.max(activeCameras, 1)) * 10));
+
+    const engine = global.simulationEngine;
+    const running = Boolean(engine?.running);
+    const activeVehiclesCount = running ? engine.vehicles.filter(v => v.state !== 'RESTING').length : 0;
+
+    res.status(200).json({
+      totalVehiclesToday: uniqueVehicleRows.length,
+      activeVehicles: activeVehiclesCount,
+      detectionCount: totalDetectionsCount,
+      avgSpeed: round(speedStats._avg.averageSpeed),
       activeCameras,
       activeAlerts,
-      congestionIndex: activeCameras ? Math.round((totalDetectionsCount / activeCameras) * 10) : 0,
+      congestionIndex,
       incidentsToday,
-    };
-
-    res.status(200).json(overview);
+    });
   } catch (error) {
     console.error('Error fetching analytics overview:', error);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -51,17 +64,29 @@ exports.getHourly = async (req, res) => {
   try {
     const window = getAnalyticsWindow(req.query);
     if (!window) return res.status(400).json({ success: false, message: 'Invalid analytics date range' });
-    const detections = await prisma.detection.findMany({
-      where: { timestamp: { gte: window.from, lte: window.to } },
-      select: { timestamp: true },
-      take: 5000,
-    });
-    const buckets = Array.from({ length: 24 }, (_, hour) => ({ hour: `${String(hour).padStart(2, '0')}:00`, vehicles: 0, avgSpeed: 38 + Math.floor(Math.random() * 12) }));
-    detections.forEach((d) => {
-      const h = d.timestamp.getHours();
-      if (buckets[h]) buckets[h].vehicles += 1;
-    });
-    res.status(200).json(buckets);
+    const rows = await prisma.$queryRawUnsafe(`
+      SELECT
+        EXTRACT(HOUR FROM (d."timestamp" AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'))::int AS hour,
+        COUNT(*)::int AS "detectionCount",
+        COUNT(DISTINCT d."vehicleId")::int AS "uniqueVehicleCount",
+        AVG(CASE WHEN v."speed" > 0 THEN v."speed" END) AS "avgSpeed"
+      FROM "Detection" d
+      LEFT JOIN "Vehicle" v ON v.id = d."vehicleId"
+      WHERE d."timestamp" >= $1 AND d."timestamp" <= $2
+      GROUP BY 1
+      ORDER BY 1
+    `, window.from, window.to);
+    const byHour = new Map(rows.map((row) => [Number(row.hour), row]));
+    res.status(200).json(Array.from({ length: 24 }, (_, hour) => {
+      const row = byHour.get(hour);
+      return {
+        hour: `${String(hour).padStart(2, '0')}:00`,
+        vehicles: row ? Number(row.uniqueVehicleCount) : 0,
+        uniqueVehicleCount: row ? Number(row.uniqueVehicleCount) : 0,
+        detectionCount: row ? Number(row.detectionCount) : 0,
+        avgSpeed: row?.avgSpeed != null ? round(Number(row.avgSpeed)) : null,
+      };
+    }));
   } catch (error) {
     console.error('Error fetching hourly analytics:', error);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -72,23 +97,34 @@ exports.getCameras = async (req, res) => {
   try {
     const window = getAnalyticsWindow(req.query);
     if (!window) return res.status(400).json({ success: false, message: 'Invalid analytics date range' });
-    const [cameras, detectionCounts] = await Promise.all([
+    const [cameras, rows] = await Promise.all([
       prisma.camera.findMany(),
-      prisma.detection.groupBy({ by: ['cameraId'], where: { timestamp: { gte: window.from, lte: window.to } }, _count: { _all: true } }),
+      prisma.$queryRawUnsafe(`
+        SELECT d."cameraId" AS "cameraId",
+               COUNT(*)::int AS "detectionCount",
+               COUNT(DISTINCT d."vehicleId")::int AS "vehicleCount",
+               AVG(CASE WHEN v."speed" > 0 THEN v."speed" END) AS "avgSpeed"
+        FROM "Detection" d
+        LEFT JOIN "Vehicle" v ON v.id = d."vehicleId"
+        WHERE d."timestamp" >= $1 AND d."timestamp" <= $2
+        GROUP BY d."cameraId"
+      `, window.from, window.to),
     ]);
-    const countByCamera = new Map(detectionCounts.map((item) => [item.cameraId, item._count._all]));
-    const mapped = cameras.map(c => {
-      const count = countByCamera.get(c.id) || 0;
+    const metrics = new Map(rows.map((r) => [r.cameraId, r]));
+
+    const mapped = cameras.map((camera) => {
+      const metric = metrics.get(camera.id);
+      const vehicleCount = Number(metric?.vehicleCount || 0);
+      const detectionCount = Number(metric?.detectionCount || 0);
       return {
-        cameraId: c.id,
-        cameraName: c.name || c.cameraCode || c.id,
-        vehicleCount: Math.round(count * 0.75),
-        detectionCount: count,
-        avgSpeed: 42,
-        congestionLevel: count > 100 ? 'high' : count > 30 ? 'moderate' : 'low'
+        cameraId: camera.id,
+        cameraName: camera.name || camera.cameraCode || camera.id,
+        vehicleCount,
+        detectionCount,
+        avgSpeed: metric?.avgSpeed != null ? round(Number(metric.avgSpeed)) : null,
+        congestionLevel: vehicleCount >= 30 ? 'congested' : vehicleCount >= 20 ? 'high' : vehicleCount >= 10 ? 'moderate' : 'low',
       };
     });
-
     res.status(200).json(mapped);
   } catch (error) {
     console.error('Error fetching camera analytics:', error);
@@ -100,14 +136,37 @@ exports.getBusiestRoads = async (req, res) => {
   try {
     const window = getAnalyticsWindow(req.query);
     if (!window) return res.status(400).json({ success: false, message: 'Invalid analytics date range' });
-    const [roads, cameraCounts] = await Promise.all([
-      prisma.road.findMany({ include: { cameras: { select: { id: true } } } }),
-      prisma.detection.groupBy({ by: ['cameraId'], where: { timestamp: { gte: window.from, lte: window.to } }, _count: { _all: true } }),
-    ]);
-    const countByCamera = new Map(cameraCounts.map((item) => [item.cameraId, item._count._all]));
+    const roads = await prisma.road.findMany({ select: { id: true, name: true, cameras: { select: { id: true } } } });
+    
+    const rows = await prisma.$queryRawUnsafe(`
+      SELECT c."roadId" AS "roadId",
+             COUNT(*)::int AS "detectionCount",
+             COUNT(DISTINCT d."vehicleId")::int AS "vehicleCount",
+             AVG(CASE WHEN v."speed" > 0 THEN v."speed" END) AS "avgSpeed"
+      FROM "Detection" d
+      INNER JOIN "Camera" c ON c.id = d."cameraId"
+      WHERE d."timestamp" >= $1 AND d."timestamp" <= $2
+        AND c."roadId" IS NOT NULL
+      GROUP BY c."roadId"
+    `, window.from, window.to);
+    const byRoad = new Map(rows.map((r) => [r.roadId, r]));
     const mapped = roads.map((road) => {
-      const vehicleCount = road.cameras.reduce((total, camera) => total + (countByCamera.get(camera.id) || 0), 0);
-      return { id: road.id, name: road.name, vehicleCount, avgSpeed: 0, congestionLevel: vehicleCount > 100 ? 'congested' : vehicleCount > 30 ? 'high' : 'low' };
+      const metric = byRoad.get(road.id);
+      
+      const vehicleCount = Number(metric?.vehicleCount || 0);
+      const detectionCount = Number(metric?.detectionCount || 0);
+      const avgSpeed = metric?.avgSpeed != null ? round(Number(metric.avgSpeed)) : null;
+
+      const congestionLevel = vehicleCount >= 30 ? 'congested' : vehicleCount >= 20 ? 'high' : vehicleCount >= 10 ? 'moderate' : 'low';
+
+      return {
+        id: road.id,
+        name: road.name,
+        vehicleCount,
+        detectionCount,
+        avgSpeed,
+        congestionLevel,
+      };
     }).sort((a, b) => b.vehicleCount - a.vehicleCount).slice(0, 10);
     res.status(200).json(mapped);
   } catch (error) {
@@ -118,31 +177,54 @@ exports.getBusiestRoads = async (req, res) => {
 
 exports.getNetwork = async (req, res) => {
   try {
-    const transitions = await prisma.cameraTransition.findMany({
-      include: { sourceCamera: true, destinationCamera: true },
-      orderBy: { timestamp: 'desc' },
-      take: 1000,
+    const window = getAnalyticsWindow(req.query);
+    if (!window) return res.status(400).json({ success: false, message: 'Invalid analytics date range' });
+    const [cameras, rows, uniqueVehicles] = await Promise.all([
+      prisma.camera.findMany({ select: { id: true, name: true, cameraCode: true } }),
+      prisma.$queryRawUnsafe(`
+        SELECT "sourceCameraId", "destinationCameraId",
+               COUNT(*)::int AS "transitionCount",
+               COUNT(DISTINCT "vehicleId")::int AS "uniqueVehicleCount",
+               AVG("travelTimeSeconds") AS "averageTravelSeconds",
+               AVG("averageSpeed") AS "averageSpeed"
+        FROM "CameraTransition"
+        WHERE "timestamp" >= $1 AND "timestamp" <= $2
+          AND "sourceCameraId" <> "destinationCameraId"
+        GROUP BY "sourceCameraId", "destinationCameraId"
+        ORDER BY COUNT(*) DESC
+      `, window.from, window.to),
+      prisma.cameraTransition.findMany({ where: { timestamp: { gte: window.from, lte: window.to } }, distinct: ['vehicleId'], select: { vehicleId: true } }),
+    ]);
+    const cameraMap = new Map(cameras.map((camera) => [camera.id, camera]));
+    const corridors = rows.map((row) => {
+      const origin = cameraMap.get(row.sourceCameraId);
+      const destination = cameraMap.get(row.destinationCameraId);
+      if (!origin || !destination) return null;
+      return {
+        origin: { id: origin.id, name: origin.name || 'Unknown', code: origin.cameraCode || 'UNKNOWN' },
+        destination: { id: destination.id, name: destination.name || 'Unknown', code: destination.cameraCode || 'UNKNOWN' },
+        volume: Number(row.transitionCount),
+        uniqueVehicleCount: Number(row.uniqueVehicleCount),
+        averageTravelSeconds: row.averageTravelSeconds != null ? Math.round(Number(row.averageTravelSeconds)) : null,
+        averageSpeed: row.averageSpeed != null ? Math.round(Number(row.averageSpeed)) : null,
+      };
+    }).filter(Boolean);
+    const totalTransitions = corridors.reduce((sum, c) => sum + c.volume, 0);
+    const weightedTravel = corridors.reduce((sum, c) => sum + (c.averageTravelSeconds || 0) * c.volume, 0);
+    res.json({
+      corridors,
+      summary: {
+        corridorCount: corridors.length,
+        averageTravelSeconds: totalTransitions ? Math.round(weightedTravel / totalTransitions) : null,
+        peakVolume: corridors[0]?.volume || 0,
+        transitionCount: totalTransitions,
+        uniqueVehicleCount: uniqueVehicles.length,
+      },
     });
-    const groups = new Map();
-    transitions.forEach((transition) => {
-      const key = `${transition.sourceCameraId}:${transition.destinationCameraId}`;
-      const item = groups.get(key) || { origin: transition.sourceCamera, destination: transition.destinationCamera, volume: 0, travelTimes: [], speeds: [] };
-      item.volume += 1;
-      if (Number.isFinite(transition.travelTimeSeconds)) item.travelTimes.push(transition.travelTimeSeconds);
-      if (Number.isFinite(transition.averageSpeed)) item.speeds.push(transition.averageSpeed);
-      groups.set(key, item);
-    });
-    const corridors = [...groups.values()]
-      .filter((item) => item.origin && item.destination)
-      .map((item) => ({
-      origin: { id: item.origin.id, name: item.origin.name || 'Unknown', code: item.origin.cameraCode || 'UNKNOWN' },
-      destination: { id: item.destination.id, name: item.destination.name || 'Unknown', code: item.destination.cameraCode || 'UNKNOWN' },
-      volume: item.volume,
-      averageTravelSeconds: item.travelTimes.length ? Math.round(item.travelTimes.reduce((a, b) => a + b, 0) / item.travelTimes.length) : 0,
-      averageSpeed: item.speeds.length ? Math.round(item.speeds.reduce((a, b) => a + b, 0) / item.speeds.length) : 0,
-    })).sort((a, b) => b.volume - a.volume);
-    res.json({ corridors, summary: { corridorCount: corridors.length, averageTravelSeconds: corridors.length ? Math.round(corridors.reduce((sum, c) => sum + c.averageTravelSeconds, 0) / corridors.length) : 0, peakVolume: corridors[0]?.volume || 0 } });
-  } catch (error) { console.error('Error fetching network analytics:', error); res.status(500).json({ success: false, message: 'Server error' }); }
+  } catch (error) {
+    console.error('Error fetching network analytics:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
 };
 
 exports.getAnomalies = async (req, res) => {

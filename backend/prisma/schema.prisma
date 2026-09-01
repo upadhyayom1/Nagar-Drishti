@@ -6,6 +6,416 @@ datasource db {
   provider = "postgresql"
 }
 
+model User {
+  id           String      @id @default(cuid())
+  name         String?
+  email        String?     @unique
+  phone        String?
+  passwordHash String
+  role         UserRole    @default(USER)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  username     String      @unique
+  complaints   Complaint[]
+  plateDetectionHistories PlateDetectionHistory[]
+}
+
+model Vehicle {
+  id               String             @id @default(cuid())
+  plateNumber      String             @unique
+  vehicleType      VehicleType?
+  color            String?
+  currentRoadId    String?
+  speed            Float?
+  status           String?            @default("ACTIVE")
+  firstSeen        DateTime           @default(now())
+  lastSeen         DateTime           @default(now())
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  detections       Detection[]
+  transitions      CameraTransition[]
+  trajectories     Trajectory[]
+  predictions      Prediction[]
+  anomalies        AnomalyEvent[]
+  alerts           Alert[]
+  vehicleIncidents VehicleIncident[]
+  blacklistAlerts  BlacklistAlert[]
+  incidents        Incident[]
+}
+
+model Camera {
+  id                     String             @id @default(cuid())
+  cameraCode             String             @unique
+  name                   String
+  latitude               Float
+  longitude              Float
+  direction              String?
+  roadId                 String?
+  zoneId                 String?
+  status                 CameraStatus       @default(ONLINE)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  road                   Road?              @relation(fields: [roadId], references: [id])
+  zone                   Zone?              @relation(fields: [zoneId], references: [id])
+  detections             Detection[]
+  sourceTransitions      CameraTransition[] @relation("SourceCamera")
+  destinationTransitions CameraTransition[] @relation("DestinationCamera")
+  trajectoriesStart      Trajectory[]       @relation("StartCamera")
+  trajectoriesEnd        Trajectory[]       @relation("EndCamera")
+  predictionsCurrent     Prediction[]       @relation("CurrentCamera")
+  predictionsPredicted   Prediction[]       @relation("PredictedCamera")
+  anomalies              AnomalyEvent[]
+  alerts                 Alert[]
+  cameraHealth           CameraHealth[]
+  trafficAggregates      TrafficAggregate[]
+  trafficEvents          TrafficEvent[]
+  vehicleIncidents       VehicleIncident[]
+  blacklistAlerts        BlacklistAlert[]
+  incidents              Incident[]
+  complaints             Complaint[]
+  plateDetectionHistories PlateDetectionHistory[]
+
+  @@index([roadId])
+  @@index([zoneId])
+}
+
+model Road {
+  id            String         @id @default(cuid())
+  roadCode      String         @unique
+  name          String
+  speedLimit    Float?
+  geometry      Json?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  cameras       Camera[]
+  trafficEvents TrafficEvent[]
+  incidents     Incident[]
+  complaints    Complaint[]
+}
+
+model Zone {
+  id                String             @id @default(cuid())
+  zoneCode          String             @unique
+  name              String
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  cameras           Camera[]
+  trafficAggregates TrafficAggregate[]
+  trafficEvents     TrafficEvent[]
+}
+
+model Detection {
+  id                String              @id @default(cuid())
+  vehicleId         String
+  cameraId          String
+  plateText         String
+  ocrConfidence     Float?
+  vehicleConfidence Float?
+  timestamp         DateTime
+  latitude          Float?
+  longitude         Float?
+  direction         String?
+  lane              Int?
+  imageUrl          String?
+  source            DetectionSource     @default(SIMULATION)
+  isBlacklisted     Boolean             @default(false)
+  blacklistId       String?
+  createdAt         DateTime            @default(now())
+  vehicle           Vehicle             @relation(fields: [vehicleId], references: [id])
+  camera            Camera              @relation(fields: [cameraId], references: [id])
+  blacklist         BlacklistedVehicle? @relation(fields: [blacklistId], references: [id])
+  blacklistAlerts   BlacklistAlert[]
+
+  @@index([vehicleId, timestamp])
+  @@index([cameraId, timestamp])
+  @@index([plateText])
+  @@index([timestamp])
+}
+
+model CameraTransition {
+  id                  String   @id @default(cuid())
+  sourceCameraId      String
+  destinationCameraId String
+  vehicleId           String
+  timestamp           DateTime
+  travelTimeSeconds   Int?
+  distanceMeters      Float?
+  averageSpeed        Float?
+  createdAt           DateTime @default(now())
+  vehicle             Vehicle  @relation(fields: [vehicleId], references: [id])
+  sourceCamera        Camera   @relation("SourceCamera", fields: [sourceCameraId], references: [id])
+  destinationCamera   Camera   @relation("DestinationCamera", fields: [destinationCameraId], references: [id])
+
+  @@index([vehicleId, timestamp])
+  @@index([sourceCameraId, timestamp])
+  @@index([destinationCameraId, timestamp])
+}
+
+model Trajectory {
+  id             String   @id @default(cuid())
+  vehicleId      String
+  startTime      DateTime
+  endTime        DateTime
+  startCameraId  String
+  endCameraId    String
+  distanceMeters Float?
+  averageSpeed   Float?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  vehicle        Vehicle  @relation(fields: [vehicleId], references: [id])
+  startCamera    Camera   @relation("StartCamera", fields: [startCameraId], references: [id])
+  endCamera      Camera   @relation("EndCamera", fields: [endCameraId], references: [id])
+
+  @@index([vehicleId, startTime])
+  @@index([startCameraId, startTime])
+  @@index([endCameraId, endTime])
+}
+
+model Prediction {
+  id                String   @id @default(cuid())
+  vehicleId         String
+  currentCameraId   String
+  predictedCameraId String
+  probability       Float
+  predictionTime    DateTime @default(now())
+  createdAt         DateTime @default(now())
+  vehicle           Vehicle  @relation(fields: [vehicleId], references: [id])
+  currentCamera     Camera   @relation("CurrentCamera", fields: [currentCameraId], references: [id])
+  predictedCamera   Camera   @relation("PredictedCamera", fields: [predictedCameraId], references: [id])
+
+  @@index([vehicleId, predictionTime])
+}
+
+model AnomalyEvent {
+  id            String      @id @default(cuid())
+  vehicleId     String
+  cameraId      String
+  type          AnomalyType
+  score         Float?
+  expectedRoute Json?
+  observedRoute Json?
+  timestamp     DateTime
+  createdAt     DateTime    @default(now())
+  vehicle       Vehicle     @relation(fields: [vehicleId], references: [id])
+  camera        Camera      @relation(fields: [cameraId], references: [id])
+}
+
+model Alert {
+  id             String        @id @default(cuid())
+  type           AlertType
+  severity       AlertSeverity
+  vehicleId      String?
+  cameraId       String?
+  anomalyEventId String?
+  message        String
+  status         AlertStatus   @default(ACTIVE)
+  createdAt      DateTime      @default(now())
+  resolvedAt     DateTime?
+  vehicle        Vehicle?      @relation(fields: [vehicleId], references: [id])
+  camera         Camera?       @relation(fields: [cameraId], references: [id])
+}
+
+model BlacklistedVehicle {
+  id              String            @id @default(cuid())
+  plateNumber     String            @unique
+  reason          String
+  severity        BlacklistSeverity
+  status          BlacklistStatus   @default(ACTIVE)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  detections      Detection[]
+  blacklistAlerts BlacklistAlert[]
+
+  @@index([plateNumber, status])
+}
+
+model TrafficAggregate {
+  id             String   @id @default(cuid())
+  cameraId       String
+  zoneId         String?
+  timeBucket     DateTime
+  vehicleCount   Int      @default(0)
+  averageSpeed   Float?
+  trafficDensity Float?
+  createdAt      DateTime @default(now())
+  camera         Camera   @relation(fields: [cameraId], references: [id])
+  zone           Zone?    @relation(fields: [zoneId], references: [id])
+
+  @@index([cameraId, timeBucket])
+  @@index([zoneId, timeBucket])
+}
+
+model CameraHealth {
+  id           String       @id @default(cuid())
+  cameraId     String
+  status       CameraStatus
+  recordedAt   DateTime     @default(now())
+  responseMs   Int?
+  errorMessage String?
+  camera       Camera       @relation(fields: [cameraId], references: [id])
+
+  @@index([cameraId, recordedAt])
+}
+
+model TrafficEvent {
+  id          String             @id @default(cuid())
+  type        TrafficEventType
+  severity    AlertSeverity
+  cameraId    String?
+  roadId      String?
+  zoneId      String?
+  latitude    Float?
+  longitude   Float?
+  description String?
+  status      TrafficEventStatus @default(ACTIVE)
+  startedAt   DateTime
+  resolvedAt  DateTime?
+  createdAt   DateTime           @default(now())
+  camera      Camera?            @relation(fields: [cameraId], references: [id])
+  road        Road?              @relation(fields: [roadId], references: [id])
+  zone        Zone?              @relation(fields: [zoneId], references: [id])
+
+  @@index([cameraId, startedAt])
+  @@index([roadId, startedAt])
+  @@index([zoneId, startedAt])
+  @@index([status])
+}
+
+model SystemMetric {
+  id              String   @id @default(cuid())
+  timestamp       DateTime @default(now())
+  activeCameras   Int      @default(0)
+  activeVehicles  Int      @default(0)
+  totalDetections Int      @default(0)
+  activeAlerts    Int      @default(0)
+  averageSpeed    Float?
+  trafficDensity  Float?
+}
+
+model BlacklistAlert {
+  id               String               @id @default(cuid())
+  detectionEventId String
+  blacklistId      String
+  cameraId         String
+  vehicleId        String
+  plateNumber      String
+  timestamp        DateTime
+  status           BlacklistAlertStatus @default(NEW)
+  createdAt        DateTime             @default(now())
+  detection        Detection            @relation(fields: [detectionEventId], references: [id])
+  blacklist        BlacklistedVehicle   @relation(fields: [blacklistId], references: [id])
+  camera           Camera               @relation(fields: [cameraId], references: [id])
+  vehicle          Vehicle              @relation(fields: [vehicleId], references: [id])
+
+  @@index([plateNumber, timestamp])
+  @@index([cameraId, timestamp])
+  @@index([blacklistId])
+}
+
+model VehicleIncident {
+  id          String                  @id @default(cuid())
+  vehicleId   String
+  cameraId    String?
+  type        VehicleIncidentType
+  severity    VehicleIncidentSeverity @default(MEDIUM)
+  status      VehicleIncidentStatus   @default(OPEN)
+  description String?
+  timestamp   DateTime                @default(now())
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+  vehicle     Vehicle                 @relation(fields: [vehicleId], references: [id])
+  camera      Camera?                 @relation(fields: [cameraId], references: [id])
+
+  @@index([vehicleId, timestamp])
+}
+
+model Complaint {
+  id              String            @id @default(cuid())
+  userId          String
+  title           String
+  description     String?
+  category        ComplaintCategory
+  priority        ComplaintPriority @default(LOW)
+  latitude        Float
+  longitude       Float
+  status          ComplaintStatus   @default(SUBMITTED)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  resolvedAt      DateTime?
+  roadId          String?
+  nearestCameraId String?
+  incidentId      String?
+  user            User              @relation(fields: [userId], references: [id])
+  road            Road?             @relation(fields: [roadId], references: [id])
+  nearestCamera   Camera?           @relation(fields: [nearestCameraId], references: [id])
+  incident        Incident?         @relation(fields: [incidentId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([category])
+}
+
+model Incident {
+  id          String           @id @default(cuid())
+  type        IncidentType
+  title       String
+  description String?
+  latitude    Float
+  longitude   Float
+  roadId      String?
+  cameraId    String?
+  vehicleId   String?
+  severity    IncidentSeverity @default(MEDIUM)
+  status      IncidentStatus   @default(ACTIVE)
+  source      IncidentSource   @default(SIMULATION)
+  timestamp   DateTime         @default(now())
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  road        Road?            @relation(fields: [roadId], references: [id])
+  camera      Camera?          @relation(fields: [cameraId], references: [id])
+  vehicle     Vehicle?         @relation(fields: [vehicleId], references: [id])
+  complaints  Complaint[]
+
+  @@index([status])
+  @@index([type])
+  @@index([timestamp])
+}
+
+model Trip {
+  id                   String   @id @default(cuid())
+  userId               String
+  name                 String?
+  startLatitude        Float
+  startLongitude       Float
+  destinationLatitude  Float
+  destinationLongitude Float
+  distance             Float?
+  estimatedTime        Float?
+  routeGeometry        Json?
+  createdAt            DateTime @default(now())
+
+  @@index([userId])
+}
+
+model PlateDetectionHistory {
+  id                String   @id @default(cuid())
+  plateNumber       String
+  confidenceScore   Float
+  cameraId          String
+  timestamp         DateTime
+  sourceType        String
+  evidenceImage     String?
+  croppedPlateImage String?
+  userId            String?
+  createdAt         DateTime @default(now())
+
+  camera            Camera   @relation(fields: [cameraId], references: [id])
+  user              User?    @relation(fields: [userId], references: [id])
+
+  @@index([cameraId, timestamp])
+  @@index([plateNumber, timestamp])
+}
+
 enum UserRole {
   USER
   ADMIN
@@ -27,203 +437,10 @@ enum DetectionSource {
   AI
 }
 
-model User {
-  id           String    @id @default(cuid())
-  username     String    @unique
-  email        String?   @unique
-  passwordHash String
-  name         String?
-  phone        String?
-  role         UserRole  @default(USER)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  
-  complaints   Complaint[]
-  trips        Trip[]
-}
-
-model Vehicle {
-  id            String       @id @default(cuid())
-  plateNumber   String       @unique
-  vehicleType   VehicleType?
-  color         String?
-  currentRoadId String?
-  speed         Float?
-  status        String?      @default("ACTIVE")
-  firstSeen     DateTime     @default(now())
-  lastSeen      DateTime     @default(now())
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-
-  detections        Detection[]
-  cameraTransitions CameraTransition[]
-  trajectories      Trajectory[]
-  predictions       Prediction[]
-  anomalyEvents     AnomalyEvent[]
-  alerts            Alert[]
-  vehicleIncidents  VehicleIncident[]
-  systemIncidents   Incident[]
-}
-
 enum CameraStatus {
   ONLINE
   OFFLINE
   MAINTENANCE
-}
-
-model Camera {
-  id         String @id @default(cuid())
-  cameraCode String @unique
-  name       String
-
-  latitude  Float
-  longitude Float
-
-  direction String?
-  roadId    String?
-  zoneId    String?
-
-  status    CameraStatus @default(ONLINE)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-
-  road Road? @relation(fields: [roadId], references: [id])
-  zone Zone? @relation(fields: [zoneId], references: [id])
-
-  cameraHealth                 CameraHealth[]
-  trafficEvents                TrafficEvent[]
-  detections                   Detection[]
-  sourceCameraTransitions      CameraTransition[] @relation("SourceCamera")
-  destinationCameraTransitions CameraTransition[] @relation("DestinationCamera")
-  startTrajectories            Trajectory[]       @relation("StartCamera")
-  endTrajectories              Trajectory[]       @relation("EndCamera")
-
-  currentPredictions   Prediction[] @relation("CurrentCameraPrediction")
-  predictedPredictions Prediction[] @relation("PredictedCamera")
-
-  anomalyEvents     AnomalyEvent[]
-  alerts            Alert[]
-  trafficAggregates TrafficAggregate[]
-  vehicleIncidents  VehicleIncident[]
-  complaints        Complaint[]
-  systemIncidents   Incident[]
-
-  @@index([roadId])
-  @@index([zoneId])
-}
-
-model Road {
-  id            String         @id @default(cuid())
-  roadCode      String         @unique
-  name          String
-  speedLimit    Float?
-  geometry      Json?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  trafficEvents TrafficEvent[]
-  cameras       Camera[]
-  complaints    Complaint[]
-  incidents     Incident[]
-}
-
-model Zone {
-  id                String             @id @default(cuid())
-  zoneCode          String             @unique
-  name              String
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  trafficEvents     TrafficEvent[]
-  cameras           Camera[]
-  trafficAggregates TrafficAggregate[]
-}
-
-model Detection {
-  id                String   @id @default(cuid())
-  vehicleId         String
-  cameraId          String
-  plateText         String
-  ocrConfidence     Float?
-  vehicleConfidence Float?
-  timestamp         DateTime
-  latitude          Float?
-  longitude         Float?
-  direction         String?
-  lane              Int?
-  imageUrl          String?
-  source            DetectionSource @default(SIMULATION)
-  isBlacklisted     Boolean         @default(false)
-  blacklistId       String?
-  createdAt         DateTime @default(now())
-
-  vehicle         Vehicle             @relation(fields: [vehicleId], references: [id])
-  camera          Camera              @relation(fields: [cameraId], references: [id])
-  blacklistRecord BlacklistedVehicle? @relation(fields: [blacklistId], references: [id])
-
-  blacklistAlerts BlacklistAlert[]
-
-  @@index([vehicleId, timestamp])
-  @@index([cameraId, timestamp])
-  @@index([plateText])
-  @@index([timestamp])
-}
-
-model CameraTransition {
-  id                  String   @id @default(cuid())
-  sourceCameraId      String
-  destinationCameraId String
-  vehicleId           String
-  timestamp           DateTime
-  travelTimeSeconds   Int?
-  distanceMeters      Float?
-  averageSpeed        Float?
-  createdAt           DateTime @default(now())
-
-  sourceCamera      Camera  @relation("SourceCamera", fields: [sourceCameraId], references: [id])
-  destinationCamera Camera  @relation("DestinationCamera", fields: [destinationCameraId], references: [id])
-  vehicle           Vehicle @relation(fields: [vehicleId], references: [id])
-
-  @@index([vehicleId, timestamp])
-  @@index([sourceCameraId, timestamp])
-  @@index([destinationCameraId, timestamp])
-}
-
-model Trajectory {
-  id             String   @id @default(cuid())
-  vehicleId      String
-  startTime      DateTime
-  endTime        DateTime
-  startCameraId  String
-  endCameraId    String
-  distanceMeters Float?
-  averageSpeed   Float?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  vehicle     Vehicle @relation(fields: [vehicleId], references: [id])
-  startCamera Camera  @relation("StartCamera", fields: [startCameraId], references: [id])
-  endCamera   Camera  @relation("EndCamera", fields: [endCameraId], references: [id])
-
-  @@index([vehicleId, startTime])
-  @@index([startCameraId, startTime])
-  @@index([endCameraId, endTime])
-}
-
-model Prediction {
-  id                String   @id @default(cuid())
-  vehicleId         String
-  currentCameraId   String
-  predictedCameraId String
-  probability       Float
-  predictionTime    DateTime @default(now())
-  createdAt         DateTime @default(now())
-
-  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
-
-  currentCamera Camera @relation("CurrentCameraPrediction", fields: [currentCameraId], references: [id])
-
-  predictedCamera Camera @relation("PredictedCamera", fields: [predictedCameraId], references: [id])
-
-  @@index([vehicleId, predictionTime])
 }
 
 enum AnomalyType {
@@ -242,22 +459,6 @@ enum BlacklistSeverity {
 enum BlacklistStatus {
   ACTIVE
   INACTIVE
-}
-
-model AnomalyEvent {
-  id            String      @id @default(cuid())
-  vehicleId     String
-  cameraId      String
-  type          AnomalyType
-  score         Float?
-  expectedRoute Json?
-  observedRoute Json?
-  timestamp     DateTime
-  createdAt     DateTime    @default(now())
-
-  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
-  camera  Camera  @relation(fields: [cameraId], references: [id])
-  alerts  Alert[]
 }
 
 enum AlertType {
@@ -279,55 +480,6 @@ enum AlertStatus {
   RESOLVED
 }
 
-model Alert {
-  id             String        @id @default(cuid())
-  type           AlertType
-  severity       AlertSeverity
-  vehicleId      String?
-  cameraId       String?
-  anomalyEventId String?
-  message        String
-  status         AlertStatus   @default(ACTIVE)
-  createdAt      DateTime      @default(now())
-  resolvedAt     DateTime?
-
-  vehicle      Vehicle?      @relation(fields: [vehicleId], references: [id])
-  camera       Camera?       @relation(fields: [cameraId], references: [id])
-  anomalyEvent AnomalyEvent? @relation(fields: [anomalyEventId], references: [id])
-}
-
-model BlacklistedVehicle {
-  id          String            @id @default(cuid())
-  plateNumber String            @unique
-  reason      String
-  severity    BlacklistSeverity
-  status      BlacklistStatus   @default(ACTIVE)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-
-  detections      Detection[]
-  blacklistAlerts BlacklistAlert[]
-
-  @@index([plateNumber, status])
-}
-
-model TrafficAggregate {
-  id             String   @id @default(cuid())
-  cameraId       String
-  zoneId         String?
-  timeBucket     DateTime
-  vehicleCount   Int      @default(0)
-  averageSpeed   Float?
-  trafficDensity Float?
-  createdAt      DateTime @default(now())
-
-  camera Camera @relation(fields: [cameraId], references: [id])
-  zone   Zone?  @relation(fields: [zoneId], references: [id])
-
-  @@index([cameraId, timeBucket])
-  @@index([zoneId, timeBucket])
-}
-
 enum TrafficEventType {
   ACCIDENT
   ROAD_BLOCK
@@ -340,85 +492,10 @@ enum TrafficEventStatus {
   RESOLVED
 }
 
-model CameraHealth {
-  id           String       @id @default(cuid())
-  cameraId     String
-  status       CameraStatus
-  recordedAt   DateTime     @default(now())
-  responseMs   Int?
-  errorMessage String?
-
-  camera Camera @relation(fields: [cameraId], references: [id])
-
-  @@index([cameraId, recordedAt])
-}
-
-model TrafficEvent {
-  id       String           @id @default(cuid())
-  type     TrafficEventType
-  severity AlertSeverity
-
-  cameraId String?
-  roadId   String?
-  zoneId   String?
-
-  latitude  Float?
-  longitude Float?
-
-  description String?
-  status      TrafficEventStatus @default(ACTIVE)
-
-  startedAt  DateTime
-  resolvedAt DateTime?
-
-  createdAt DateTime @default(now())
-
-  camera Camera? @relation(fields: [cameraId], references: [id])
-  road   Road?   @relation(fields: [roadId], references: [id])
-  zone   Zone?   @relation(fields: [zoneId], references: [id])
-
-  @@index([cameraId, startedAt])
-  @@index([roadId, startedAt])
-  @@index([zoneId, startedAt])
-  @@index([status])
-}
-
-model SystemMetric {
-  id        String   @id @default(cuid())
-  timestamp DateTime @default(now())
-
-  activeCameras   Int @default(0)
-  activeVehicles  Int @default(0)
-  totalDetections Int @default(0)
-  activeAlerts    Int @default(0)
-
-  averageSpeed   Float?
-  trafficDensity Float?
-}
-
 enum BlacklistAlertStatus {
   NEW
   ACKNOWLEDGED
   RESOLVED
-}
-
-model BlacklistAlert {
-  id               String               @id @default(cuid())
-  detectionEventId String
-  blacklistId      String
-  cameraId         String
-  vehicleId        String
-  plateNumber      String
-  timestamp        DateTime
-  status           BlacklistAlertStatus @default(NEW)
-  createdAt        DateTime             @default(now())
-
-  detectionEvent Detection          @relation(fields: [detectionEventId], references: [id])
-  blacklist      BlacklistedVehicle @relation(fields: [blacklistId], references: [id])
-
-  @@index([plateNumber, timestamp])
-  @@index([cameraId, timestamp])
-  @@index([blacklistId])
 }
 
 enum VehicleIncidentType {
@@ -438,24 +515,6 @@ enum VehicleIncidentSeverity {
 enum VehicleIncidentStatus {
   OPEN
   RESOLVED
-}
-
-model VehicleIncident {
-  id          String   @id @default(cuid())
-  vehicleId   String
-  cameraId    String?
-  type        VehicleIncidentType
-  severity    VehicleIncidentSeverity @default(MEDIUM)
-  status      VehicleIncidentStatus @default(OPEN)
-  description String?
-  timestamp   DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
-  camera  Camera? @relation(fields: [cameraId], references: [id])
-
-  @@index([vehicleId, timestamp])
 }
 
 enum ComplaintCategory {
@@ -482,34 +541,6 @@ enum ComplaintStatus {
   IN_PROGRESS
   RESOLVED
   REJECTED
-}
-
-model Complaint {
-  id              String            @id @default(cuid())
-  userId          String
-  title           String
-  description     String?
-  category        ComplaintCategory
-  priority        ComplaintPriority @default(LOW)
-  latitude        Float
-  longitude       Float
-  status          ComplaintStatus   @default(SUBMITTED)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  resolvedAt      DateTime?
-
-  roadId          String?
-  nearestCameraId String?
-  incidentId      String?
-
-  user            User     @relation(fields: [userId], references: [id])
-  road            Road?    @relation(fields: [roadId], references: [id])
-  camera          Camera?  @relation(fields: [nearestCameraId], references: [id])
-  incident        Incident? @relation(fields: [incidentId], references: [id])
-
-  @@index([userId])
-  @@index([status])
-  @@index([category])
 }
 
 enum IncidentType {
@@ -540,49 +571,4 @@ enum IncidentSource {
   USER
   ADMIN
   AI
-}
-
-model Incident {
-  id          String           @id @default(cuid())
-  type        IncidentType
-  title       String
-  description String?
-  latitude    Float
-  longitude   Float
-  roadId      String?
-  cameraId    String?
-  vehicleId   String?
-  severity    IncidentSeverity @default(MEDIUM)
-  status      IncidentStatus   @default(ACTIVE)
-  source      IncidentSource   @default(SIMULATION)
-  timestamp   DateTime         @default(now())
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-
-  road        Road?    @relation(fields: [roadId], references: [id])
-  camera      Camera?  @relation(fields: [cameraId], references: [id])
-  vehicle     Vehicle? @relation(fields: [vehicleId], references: [id])
-  complaints  Complaint[]
-
-  @@index([status])
-  @@index([type])
-  @@index([timestamp])
-}
-
-model Trip {
-  id                    String   @id @default(cuid())
-  userId                String
-  name                  String?
-  startLatitude         Float
-  startLongitude        Float
-  destinationLatitude   Float
-  destinationLongitude  Float
-  distance              Float?
-  estimatedTime         Float?
-  routeGeometry         Json?
-  createdAt             DateTime @default(now())
-
-  user                  User     @relation(fields: [userId], references: [id])
-
-  @@index([userId])
 }

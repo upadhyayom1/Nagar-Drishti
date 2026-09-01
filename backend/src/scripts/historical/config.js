@@ -13,7 +13,7 @@ module.exports = {
   // Database volume
   vehicleCount: 2000,
   cameraCount: 52,
-  historicalDays: positiveIntegerFromEnv('HISTORICAL_DAYS', 180),
+  historicalDays: positiveIntegerFromEnv('HISTORICAL_DAYS', 90),
 
   // Temporal range: endDate null means generate up to the current local date.
   endDate: process.env.HISTORICAL_END_DATE || null,
@@ -62,4 +62,7 @@ module.exports = {
   minCameraSpacingMeters: 100,
   dailyActiveVehicleRate: 0.08,
   blacklistedVehicleCount: 8,
+  batchSize: 5000,
+  congestionAlertVehicleThreshold: 5,
+  criticalCongestionVehicleThreshold: 10,
 };

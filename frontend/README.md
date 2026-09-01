@@ -45,16 +45,23 @@ npm install
 
 ```
 
-### 4. Run the backend
+### 4. Configure and run the backend
 
-Configure `backend/.env` with `DATABASE_URL` and `JWT_SECRET`, then start the API:
+Create the local environment files from the examples:
+
+```bash
+cp ../backend/.env.example ../backend/.env
+cp .env.example .env.local
+```
+
+Set a reachable PostgreSQL/Neon `DATABASE_URL` and a long `JWT_SECRET` in `backend/.env`, then start the API:
 
 ```bash
 cd ../backend
 npm run dev
 ```
 
-The API defaults to `http://localhost:8000/api`.
+The API defaults to `http://localhost:8000/api`. The frontend sends every request to its own `/api` path and Next.js proxies it to `BACKEND_API_URL`, so the login cookie remains first-party.
 
 ### 5. Run the Development Server
 
@@ -71,6 +78,21 @@ Open your browser and navigate to:
 👉 **[http://localhost:3000](http://localhost:3000)**
 
 You should see the 3D animated landing page. Click **"Explore Command Center"** to enter the main dashboard.
+
+### Login smoke test
+
+After `npm run seed` succeeds in `backend`, use either seeded account:
+
+* Admin: `admin` / `admin123`
+* Citizen: `citizen.user` / `user123`
+
+Login accepts a username, email, or phone number. The API health check is available at `http://localhost:8000/api/health`.
+
+### Vercel + Render environment variables
+
+* In Vercel, set `BACKEND_API_URL` to `https://YOUR-RENDER-API.onrender.com/api`. Redeploy after changing it because rewrites are evaluated during the build.
+* In Render (backend), set `NODE_ENV=production`, `DATABASE_URL`, `JWT_SECRET`, and `CORS_ORIGINS=https://YOUR-VERCEL-APP.vercel.app`.
+* Do not use `NEXT_PUBLIC_API_URL` in new deployments; the proxy configuration avoids cross-site cookie issues. It remains supported as a fallback for existing deployments.
 
 ---
 

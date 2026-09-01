@@ -36,7 +36,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable}`} data-scroll-behavior="smooth">
       <body className="antialiased font-body bg-[var(--bg-void)] text-[var(--text-primary)] min-h-screen">
         <Providers>
           {children}
