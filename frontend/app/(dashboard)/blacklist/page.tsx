@@ -242,83 +242,164 @@ export default function BlacklistPage() {
                 transition={{ duration: 0.25, delay: index * 0.03 }}
               >
                 <GlassCard
-                  padding="md"
+                  padding="none"
                   glow={isCritical ? 'rose' : isHigh ? 'amber' : 'violet'}
                   accent={isCritical ? 'rose' : isHigh ? 'amber' : 'violet'}
-                  className="p-5"
+                  className="p-5 flex flex-col gap-5 border-white/5"
                 >
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-                    {/* Left Column: Plate & Reason */}
-                    <div className="space-y-2 max-w-xl">
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <Link
-                          href={`/vehicles/${vehicle.plateNumber}`}
-                          className="text-2xl font-mono font-bold text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-2"
-                        >
-                          {vehicle.plateNumber}
-                          <ExternalLink size={15} className="opacity-70" />
-                        </Link>
-
-                        <Badge variant={isCritical ? 'danger' : isHigh ? 'warning' : 'info'} size="sm">
-                          {vehicle.severity} THREAT
-                        </Badge>
-
-                        <span className="text-xs font-mono text-[var(--text-secondary)] px-2.5 py-0.5 rounded-md bg-[var(--glass-surface)] border border-[var(--glass-border)]">
-                          {vehicle.vehicleIntelligence.vehicleType} · {vehicle.vehicleIntelligence.color}
-                        </span>
+                  {/* Header Section */}
+                  <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                    <div className="flex gap-4 items-start">
+                      <div className="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-500 shrink-0 border border-rose-500/20">
+                        <Car size={24} />
                       </div>
-
-                      <p className="text-xs text-[var(--text-secondary)] leading-relaxed font-body">
-                        <span className="font-semibold text-[var(--text-primary)]">Docket Reason:</span> {vehicle.reason}
-                      </p>
-
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-mono text-[var(--text-tertiary)] pt-1">
-                        <span className="flex items-center gap-1">
-                          <Clock size={12} className="text-rose-400" /> Flagged: {formatDateTime(vehicle.flaggedAt)}
-                        </span>
-                        <span>Flagged by: <span className="text-[var(--text-secondary)]">Municipal Operator</span></span>
-                      </div>
-                    </div>
-
-                    {/* Middle Column: Last Sighting Intelligence */}
-                    {vehicle.lastSighting ? (
-                      <div className="p-3.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--glass-border)] space-y-1.5 min-w-[240px]">
-                        <div className="flex items-center justify-between text-[10px] font-mono uppercase text-[var(--text-tertiary)]">
-                          <span className="flex items-center gap-1 font-bold text-cyan-400">
-                            <Navigation size={11} /> Last Sight Telemetry
-                          </span>
-                          <span>{formatTime(vehicle.lastSighting.timestamp)}</span>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <span className="text-xl font-bold font-mono text-white tracking-wider">{vehicle.plateNumber}</span>
+                          <Badge variant={isCritical ? 'danger' : isHigh ? 'warning' : 'info'} size="sm">
+                            ● {vehicle.severity} THREAT
+                          </Badge>
+                          <Badge variant="outline" size="sm" className="border-white/10 text-[var(--text-secondary)] bg-white/5">
+                            {vehicle.vehicleIntelligence.vehicleType}
+                          </Badge>
                         </div>
-                        <p className="text-xs font-semibold text-[var(--text-primary)] font-display truncate">
-                          {vehicle.lastSighting.cameraName}
+                        <p className="text-xs text-[var(--text-secondary)] flex items-center gap-2">
+                          <ShieldAlert size={12} className="text-rose-400 shrink-0" />
+                          {vehicle.reason}
                         </p>
-                        <div className="flex justify-between text-[10px] font-mono text-[var(--text-secondary)]">
-                          <span>Node: {vehicle.lastSighting.cameraId}</span>
-                          <span>Speed: <span className="text-cyan-400 font-bold">{vehicle.lastSighting.speed} km/h</span></span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <Button variant="outline" size="sm" className="gap-2 rounded-full border-white/10 bg-white/5 hover:bg-white/10 text-[var(--text-secondary)] font-mono text-[11px] h-8 cursor-pointer">
+                        <Navigation size={12} /> Track Trajectory
+                      </Button>
+                      <Link href={`/vehicles/${vehicle.plateNumber}`} className="text-[11px] font-mono text-[var(--text-secondary)] hover:text-white flex items-center gap-1.5 transition-colors">
+                        <ExternalLink size={12} /> Full Profile
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Main Panels */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {/* Left Panel: Last Sighted Location */}
+                    <div className="rounded-2xl bg-[#0B0F19]/60 border border-white/5 p-5 flex flex-col justify-between relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 blur-2xl rounded-full translate-x-1/2 -translate-y-1/2" />
+                      <div className="relative z-10">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2 text-cyan-400 text-[10px] font-bold tracking-wider font-mono">
+                            <MapPin size={12} /> LAST SIGHTED LOCATION
+                          </div>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                            {vehicle.lastSighting?.cameraCode || vehicle.lastSighting?.cameraId || 'UNKNOWN'}
+                          </span>
+                        </div>
+                        <h3 className="text-lg font-bold text-white mb-1 font-display tracking-tight">{vehicle.lastSighting?.cameraName || 'Unknown Location'}</h3>
+                        <p className="text-[11px] text-[var(--text-secondary)] font-mono">Sector: {vehicle.lastSighting?.zone || 'Unknown'} • {vehicle.lastSighting?.road || 'Unknown'}</p>
+                        
+                        <div className="mt-5 p-3 rounded-xl bg-black/40 border border-white/5 grid grid-cols-3 gap-4">
+                          <div>
+                            <span className="block text-[9px] text-[var(--text-tertiary)] font-bold mb-1 uppercase tracking-wider font-mono">Time</span>
+                            <span className="text-xs font-mono text-white font-bold">{vehicle.lastSighting ? formatTime(vehicle.lastSighting.timestamp) : '--:--:--'}</span>
+                          </div>
+                          <div>
+                            <span className="block text-[9px] text-[var(--text-tertiary)] font-bold mb-1 uppercase tracking-wider font-mono">Velocity</span>
+                            <span className="text-xs font-mono text-cyan-400 font-bold">{vehicle.lastSighting?.speed || '--'} km/h</span>
+                          </div>
+                          <div>
+                            <span className="block text-[9px] text-[var(--text-tertiary)] font-bold mb-1 uppercase tracking-wider font-mono">Heading</span>
+                            <span className="text-xs font-mono text-violet-400 font-bold uppercase">{vehicle.lastSighting?.direction || 'UNKNOWN'}</span>
+                          </div>
                         </div>
                       </div>
-                    ) : (
-                      <div className="p-3.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--glass-border)] text-center text-xs font-mono text-[var(--text-tertiary)] min-w-[240px]">
-                        No active sightings today
+                      
+                      <div className="mt-4 relative z-10">
+                        <button className="text-[11px] font-mono text-cyan-400 hover:text-cyan-300 flex items-center gap-1.5 transition-colors cursor-pointer">
+                          <Camera size={12} /> Open Optical Feed ({vehicle.lastSighting?.cameraCode || vehicle.lastSighting?.cameraId || 'CAM'}) →
+                        </button>
                       </div>
-                    )}
-
-                    {/* Right Column: Actions */}
-                    <div className="flex lg:flex-col items-center lg:items-end justify-between gap-3 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-[var(--glass-border)]">
-                      <div className="text-right hidden lg:block">
-                        <span className="text-[10px] font-mono text-[var(--text-tertiary)] block">OPTICAL HITS TODAY</span>
-                        <span className="text-lg font-bold font-data text-rose-400">{vehicle.vehicleIntelligence.totalDetections}</span>
-                      </div>
-
-                      <button
-                        onClick={() => deactivateMutation.mutate(vehicle.id)}
-                        disabled={deactivateMutation.isPending}
-                        className="text-xs text-rose-400 hover:text-rose-300 font-mono flex items-center gap-1.5 transition-colors cursor-pointer"
-                      >
-                        <Trash2 size={13} />
-                        Deactivate Watchlist Flag
-                      </button>
                     </div>
+
+                    {/* Right Panel: Next Probable Camera Location */}
+                    <div className="rounded-2xl bg-[#0B0F19]/60 border border-white/5 p-5 flex flex-col justify-between relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/5 blur-2xl rounded-full translate-x-1/2 -translate-y-1/2" />
+                      <div className="relative z-10 h-full flex flex-col justify-between">
+                        {vehicle.nextProbableCamera ? (
+                          <>
+                            <div>
+                              <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2 text-violet-400 text-[10px] font-bold tracking-wider font-mono">
+                                  <Sparkles size={12} /> NEXT PROBABLE CAMERA LOCATION
+                                </div>
+                                <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                                  ML Sentry
+                                </span>
+                              </div>
+                              <h3 className="text-lg font-bold text-white mb-1 font-display tracking-tight">
+                                {vehicle.nextProbableCamera.cameraName} <span className="text-[var(--text-secondary)] font-normal text-sm">({vehicle.nextProbableCamera.cameraCode || vehicle.nextProbableCamera.cameraId})</span>
+                              </h3>
+                              <p className="text-[11px] text-[var(--text-secondary)] font-mono">Sector: {vehicle.nextProbableCamera.zone || 'Unknown'} • {vehicle.nextProbableCamera.road || 'Unknown'}</p>
+                              
+                              <div className="mt-5 grid grid-cols-2 gap-4">
+                                <div>
+                                  <span className="block text-[9px] text-[var(--text-tertiary)] font-bold mb-1 uppercase tracking-wider font-mono">Estimated Arrival</span>
+                                  <span className="text-xs font-mono text-emerald-400 font-bold">~{vehicle.nextProbableCamera.etaMinutes || (vehicle.nextProbableCamera as any).estimatedTimeMins || '--'} min</span>
+                                </div>
+                                <div>
+                                  <span className="block text-[9px] text-[var(--text-tertiary)] font-bold mb-1 uppercase tracking-wider font-mono">Confidence</span>
+                                  <span className="text-xs font-mono text-white font-bold">{vehicle.nextProbableCamera.confidence || (vehicle.nextProbableCamera.probability > 0.7 ? 'HIGH' : vehicle.nextProbableCamera.probability > 0.4 ? 'MEDIUM' : 'LOW')}</span>
+                                </div>
+                              </div>
+
+                              <div className="mt-4 space-y-2">
+                                <div className="flex items-center justify-between text-[9px] font-mono uppercase tracking-wider text-[var(--text-secondary)]">
+                                  <span>Transition Probability</span>
+                                  <span className="text-white font-bold">{Math.round(vehicle.nextProbableCamera.probability * 100)}%</span>
+                                </div>
+                                <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+                                  <div 
+                                    className="h-full rounded-full bg-gradient-to-r from-violet-500 to-cyan-400"
+                                    style={{ width: `${Math.round(vehicle.nextProbableCamera.probability * 100)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="mt-4 space-y-2">
+                              <button className="text-[11px] font-mono text-[var(--text-secondary)] hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer">
+                                <Camera size={12} /> Open predicted camera feed ({vehicle.nextProbableCamera.cameraCode || vehicle.nextProbableCamera.cameraId}) →
+                              </button>
+                              {vehicle.nextProbableCamera.alternativeCameras && vehicle.nextProbableCamera.alternativeCameras.length > 0 && (
+                                <p className="text-[10px] font-mono text-[var(--text-tertiary)] truncate">
+                                  Alternatives: {vehicle.nextProbableCamera.alternativeCameras.map((c: any) => `${c.cameraCode || c.cameraId} (${Math.round(c.probability * 100)}%)`).join(' • ')}
+                                </p>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-xs font-mono text-[var(--text-tertiary)]">
+                            Insufficient telemetry for prediction
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer Section */}
+                  <div className="flex flex-col sm:flex-row items-center justify-between pt-1 mt-1 border-t border-white/5 gap-4">
+                    <div className="flex items-center gap-4 sm:gap-6 text-[10px] font-mono text-[var(--text-secondary)] flex-wrap">
+                      <span>Detections: <span className="text-white font-bold">{vehicle.vehicleIntelligence.totalDetections}</span></span>
+                      <span>Cameras Visited: <span className="text-cyan-400 font-bold">{vehicle.vehicleIntelligence.camerasVisited}</span></span>
+                      <span>First Sighted: <span className="text-white font-bold">{formatDateTime(vehicle.vehicleIntelligence.firstSeen)}</span></span>
+                      <span>Avg Speed: <span className="text-emerald-400 font-bold">{vehicle.vehicleIntelligence.averageSpeed ? `${Math.round(vehicle.vehicleIntelligence.averageSpeed)} km/h` : '--'}</span></span>
+                    </div>
+                    
+                    <button
+                      onClick={() => deactivateMutation.mutate(vehicle.id)}
+                      disabled={deactivateMutation.isPending}
+                      className="text-[11px] font-mono text-rose-500 hover:text-rose-400 flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+                    >
+                      <Trash2 size={12} /> Deactivate Watchlist Flag
+                    </button>
                   </div>
                 </GlassCard>
               </motion.div>

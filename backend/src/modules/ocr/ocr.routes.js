@@ -23,4 +23,7 @@ router.post(
   ocrController.recognizePlates
 );
 
+router.get('/history', ocrController.getHistory);
+router.get('/history/:id', ocrController.getHistoryById);
+
 module.exports = router;

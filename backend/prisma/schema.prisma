@@ -17,6 +17,7 @@ model User {
   updatedAt    DateTime    @updatedAt
   username     String      @unique
   complaints   Complaint[]
+  plateDetectionHistories PlateDetectionHistory[]
 }
 
 model Vehicle {
@@ -72,6 +73,7 @@ model Camera {
   blacklistAlerts        BlacklistAlert[]
   incidents              Incident[]
   complaints             Complaint[]
+  plateDetectionHistories PlateDetectionHistory[]
 
   @@index([roadId])
   @@index([zoneId])
@@ -393,6 +395,25 @@ model Trip {
   createdAt            DateTime @default(now())
 
   @@index([userId])
+}
+
+model PlateDetectionHistory {
+  id                String   @id @default(cuid())
+  plateNumber       String
+  confidenceScore   Float
+  cameraId          String
+  timestamp         DateTime
+  sourceType        String
+  evidenceImage     String?
+  croppedPlateImage String?
+  userId            String?
+  createdAt         DateTime @default(now())
+
+  camera            Camera   @relation(fields: [cameraId], references: [id])
+  user              User?    @relation(fields: [userId], references: [id])
+
+  @@index([cameraId, timestamp])
+  @@index([plateNumber, timestamp])
 }
 
 enum UserRole {

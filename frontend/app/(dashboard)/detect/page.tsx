@@ -13,6 +13,7 @@ import { DetectionHistoryModal } from '@/components/ocr/DetectionHistoryModal';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const MAX_VIDEO_FRAMES = 6;
+const HIGH_CONFIDENCE_THRESHOLD = 85;
 
 function waitForEvent(target: HTMLMediaElement, event: 'loadedmetadata' | 'seeked') {
   return new Promise<void>((resolve, reject) => {

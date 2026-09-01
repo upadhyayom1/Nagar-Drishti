@@ -55,3 +55,11 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+# ML Test Files
+ml/crop.jpg
+ml/test_car.mp4
+ml/test_fallback.py
+ml/test_image_anpr.py
+ml/test_results.csv
+ml/test_results.json
+
