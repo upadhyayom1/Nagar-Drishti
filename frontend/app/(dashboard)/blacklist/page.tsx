@@ -259,7 +259,7 @@ export default function BlacklistPage() {
                           <Badge variant={isCritical ? 'danger' : isHigh ? 'warning' : 'info'} size="sm">
                             ● {vehicle.severity} THREAT
                           </Badge>
-                          <Badge variant="outline" size="sm" className="border-white/10 text-[var(--text-secondary)] bg-white/5">
+                          <Badge variant="default" size="sm" className="border-white/10 text-[var(--text-secondary)] bg-white/5">
                             {vehicle.vehicleIntelligence.vehicleType}
                           </Badge>
                         </div>
@@ -270,7 +270,7 @@ export default function BlacklistPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
-                      <Button variant="outline" size="sm" className="gap-2 rounded-full border-white/10 bg-white/5 hover:bg-white/10 text-[var(--text-secondary)] font-mono text-[11px] h-8 cursor-pointer">
+                      <Button variant="secondary" size="sm" className="gap-2 rounded-full border-white/10 bg-white/5 hover:bg-white/10 text-[var(--text-secondary)] font-mono text-[11px] h-8 cursor-pointer">
                         <Navigation size={12} /> Track Trajectory
                       </Button>
                       <Link href={`/vehicles/${vehicle.plateNumber}`} className="text-[11px] font-mono text-[var(--text-secondary)] hover:text-white flex items-center gap-1.5 transition-colors">

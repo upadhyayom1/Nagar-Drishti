@@ -64,7 +64,7 @@ export function DetectionHistoryModal({ item, onClose }: DetectionHistoryModalPr
             <div className="space-y-1">
               <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Source Type</span>
               <div>
-                <Badge variant="primary" size="sm">{item.sourceType}</Badge>
+                <Badge variant="cyan" size="sm">{item.sourceType}</Badge>
               </div>
             </div>
             {item.user && (

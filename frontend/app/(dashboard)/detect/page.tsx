@@ -366,7 +366,7 @@ export default function PlateDetectionPage() {
                       {new Date(item.timestamp).toLocaleString()}
                     </td>
                     <td className="py-3 pr-4">
-                      <Badge variant="primary" size="sm">{item.sourceType}</Badge>
+                      <Badge variant="cyan" size="sm">{item.sourceType}</Badge>
                     </td>
                     <td className="py-3 text-right">
                       <button
@@ -390,7 +390,7 @@ export default function PlateDetectionPage() {
             </p>
             <div className="flex items-center gap-2">
               <Button
-                variant="outline"
+                variant="secondary"
                 size="sm"
                 disabled={historyPage === 1}
                 onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
@@ -398,7 +398,7 @@ export default function PlateDetectionPage() {
                 <ChevronLeft size={16} />
               </Button>
               <Button
-                variant="outline"
+                variant="secondary"
                 size="sm"
                 disabled={historyPage === historyData.pagination.totalPages}
                 onClick={() => setHistoryPage((p) => p + 1)}
