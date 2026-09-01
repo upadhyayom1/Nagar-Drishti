@@ -10,6 +10,68 @@ const getStatus = async (req, res) => {
   });
 };
 
+const getHistory = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, cameraId, search } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const take = parseInt(limit);
+
+    const where = {};
+    if (cameraId) where.cameraId = cameraId;
+    if (search) where.plateNumber = { contains: search, mode: 'insensitive' };
+
+    const [total, history] = await Promise.all([
+      prisma.plateDetectionHistory.count({ where }),
+      prisma.plateDetectionHistory.findMany({
+        where,
+        include: {
+          camera: { select: { name: true, cameraCode: true } },
+          user: { select: { username: true, name: true } },
+        },
+        orderBy: { timestamp: 'desc' },
+        skip,
+        take,
+      }),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        items: history,
+        pagination: {
+          total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          totalPages: Math.ceil(total / take),
+        },
+      },
+    });
+  } catch (error) {
+    console.error('OCR History Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch detection history' });
+  }
+};
+
+const getHistoryById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const history = await prisma.plateDetectionHistory.findUnique({
+      where: { id },
+      include: {
+        camera: true,
+        user: { select: { id: true, username: true, name: true } },
+      },
+    });
+
+    if (!history) return res.status(404).json({ success: false, message: 'History record not found' });
+
+    res.status(200).json({ success: true, data: history });
+  } catch (error) {
+    console.error('OCR History Detail Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch detection details' });
+  }
+};
+
 const recognizePlates = async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
@@ -67,6 +129,18 @@ const recognizePlates = async (req, res) => {
             source: 'AI',
           });
           
+          const sourceType = file.mimetype.startsWith('video/') ? 'VIDEO' : 'IMAGE';
+          const historyRecord = await prisma.plateDetectionHistory.create({
+            data: {
+              plateNumber,
+              confidenceScore: Math.round(plateResult.confidence * 1000) / 10,
+              cameraId: camera.id,
+              timestamp: new Date(timestamp),
+              sourceType,
+              userId: req.user?.id || null,
+            }
+          });
+          
           results.push({
             sourceFile: file.originalname,
             detected: true,
@@ -76,6 +150,7 @@ const recognizePlates = async (req, res) => {
             framesUsed: plateResult.framesUsed || 1,
             reason: plateResult.reason || null,
             detectionId: recorded.detection.id,
+            historyId: historyRecord.id,
             timestamp: recorded.detection.timestamp,
             isBlacklisted: recorded.detection.isBlacklisted,
           });
@@ -111,4 +186,6 @@ const recognizePlates = async (req, res) => {
 module.exports = {
   getStatus,
   recognizePlates,
+  getHistory,
+  getHistoryById,
 };
