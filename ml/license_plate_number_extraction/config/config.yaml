@@ -50,6 +50,10 @@ quality:
   min_sharpness: 25.0          # Laplacian-variance threshold below which a crop is rejected outright
   max_observations_per_vehicle: 40   # cap stored observations to bound memory
   top_k_for_ocr: 8             # only the K best-quality observations are sent to OCR
+  skip_detection_quality: 0.75 # once a track has `top_k_for_ocr` observations at/above this
+                                # quality, stop running the plate detector on further frames of
+                                # that track -- a long-lived vehicle gains nothing from re-detecting
+                                # a plate it has already been seen sharply many times.
 
 # -----------------------------------------------------------------------------
 # Preprocessing
@@ -67,6 +71,8 @@ ocr:
   allowlist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
   min_text_length: 4
   max_text_length: 13
+  early_stop_confidence: 0.90  # stop trying further preprocessing variants once a variant's
+                                # reading reaches this confidence (main OCR-side speedup lever)
 
 # -----------------------------------------------------------------------------
 # Multi-frame fusion

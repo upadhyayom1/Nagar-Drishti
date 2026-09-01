@@ -1,53 +1,53 @@
 id,cameraCode,name,latitude,longitude,direction,roadId,zoneId
-cmtg9af0h000vjyir3fiucv1z,PRY-CAM-001,High Court — MG Marg,25.4509,81.8321,EASTBOUND,cmtg9adtt000cjyir4hgxm12e,cmtg9acrl0003jyir8vwjhhtd
-cmtg9af0h000wjyirga9lj8v8,PRY-CAM-002,MG Marg — Civil Lines,25.4501,81.8407,EASTBOUND,cmtg9adtt000cjyir4hgxm12e,cmtg9acrl0003jyir8vwjhhtd
-cmtg9af0h000xjyiro7sn6xk9,PRY-CAM-003,Civil Lines Bus Stand,25.4516,81.8468,EASTBOUND,cmtg9adtt000cjyir4hgxm12e,cmtg9acrl0003jyir8vwjhhtd
-cmtg9af0h000yjyira3etjpe4,PRY-CAM-004,Lohia Marg — Station Approach,25.4468,81.8382,SOUTHBOUND,cmtg9adtt000djyirunxfdvpe,cmtg9acrl0003jyir8vwjhhtd
-cmtg9af0h000zjyirsa3ejbs2,PRY-CAM-005,Prayagraj Junction Entry,25.443,81.8265,WESTBOUND,cmtg9adtt000djyirunxfdvpe,cmtg9acrl0003jyir8vwjhhtd
-cmtg9af0h0010jyirqtnkw8me,PRY-CAM-006,Zero Road Junction,25.4376,81.8299,SOUTHBOUND,cmtg9adtt000djyirunxfdvpe,cmtg9acrl0003jyir8vwjhhtd
-cmtg9af0h0011jyirzmkz39ob,PRY-CAM-007,Katra Crossing,25.4655,81.8565,NORTHBOUND,cmtg9adtt000cjyir4hgxm12e,cmtg9acrl0004jyir748sdwf5
-cmtg9af0h0012jyirv4l5t2c5,PRY-CAM-008,Allahabad University Gate,25.4586,81.8644,EASTBOUND,cmtg9adtt000ejyir3tegcaf6,cmtg9acrl0004jyir748sdwf5
-cmtg9af0h0013jyir3p5077w0,PRY-CAM-009,George Town Junction,25.4624,81.8716,SOUTHBOUND,cmtg9adtt000ejyir3tegcaf6,cmtg9acrl0004jyir748sdwf5
-cmtg9af0h0014jyirwb37tfin,PRY-CAM-010,Allapur Junction,25.447,81.8707,SOUTHBOUND,cmtg9adtt000ejyir3tegcaf6,cmtg9acrl0004jyir748sdwf5
-cmtg9af0h0015jyirjt5ewnva,PRY-CAM-011,Bairhana Junction,25.4408,81.8778,EASTBOUND,cmtg9adtt000gjyir9sxh8tlm,cmtg9acrl0005jyir6i0skj7f
-cmtg9af0h0016jyir1i7qnu2o,PRY-CAM-012,Daraganj Junction,25.431,81.8862,SOUTHBOUND,cmtg9adtt000gjyir9sxh8tlm,cmtg9acrl0005jyir6i0skj7f
-cmtg9af0h0017jyir2oothhuo,PRY-CAM-013,Sangam Parade Approach,25.4165,81.8822,SOUTHBOUND,cmtg9adtt000hjyira8t5pbdw,cmtg9acrl0005jyir6i0skj7f
-cmtg9af0h0018jyirdp2h5ryp,PRY-CAM-014,Minto Park Approach,25.4271,81.85,SOUTHEASTBOUND,cmtg9adtt000ijyirrrk3zfwx,cmtg9acrl0005jyir6i0skj7f
-cmtg9af0h0019jyiroheu33pn,PRY-CAM-015,New Yamuna Bridge North,25.4253,81.8598,SOUTHBOUND,cmtg9adtt000jjyirb20xqj66,cmtg9acrl0006jyir122lxfbk
-cmtg9af0h001ajyirni81fj5e,PRY-CAM-016,New Yamuna Bridge Pylon,25.4192,81.8624,SOUTHBOUND,cmtg9adtt000jjyirb20xqj66,cmtg9acrl0006jyir122lxfbk
-cmtg9af0h001bjyirei4276kl,PRY-CAM-017,New Yamuna Bridge South,25.412,81.865,SOUTHBOUND,cmtg9adtt000jjyirb20xqj66,cmtg9acrl0006jyir122lxfbk
-cmtg9af0i001cjyirl7fg7sej,PRY-CAM-018,Naini Chungi,25.4025,81.8692,SOUTHBOUND,cmtg9adtt000jjyirb20xqj66,cmtg9acrl0006jyir122lxfbk
-cmtg9af0i001djyir74q8jxed,PRY-CAM-019,Naini Market,25.3943,81.877,SOUTHEASTBOUND,cmtg9adtt000kjyiruuwlfh4i,cmtg9acrl0006jyir122lxfbk
-cmtg9af0i001ejyirkq56rzev,PRY-CAM-020,Mirzapur Road Exit,25.3867,81.888,SOUTHEASTBOUND,cmtg9adtt000kjyiruuwlfh4i,cmtg9acrl0006jyir122lxfbk
-cmtg9af0i001fjyir40fxncgg,PRY-CAM-021,Teliarganj Crossing,25.4874,81.8654,NORTHBOUND,cmtg9adtt000fjyir2t51f3nq,cmtg9acrl0007jyir07uw9g4k
-cmtg9af0i001gjyirnxvw5hs3,PRY-CAM-022,Phaphamau Entry,25.5403,81.882,NORTHBOUND,cmtg9adtt000fjyir2t51f3nq,cmtg9acrl0007jyir07uw9g4k
-cmtg9af0i001hjyirr9fbekei,PRY-CAM-023,Shastri Bridge West,25.4365,81.895,EASTBOUND,cmtg9adtt000ljyiru3hlm0ph,cmtg9acrl0008jyir52epjjui
-cmtg9af0i001ijyir37olsqdp,PRY-CAM-024,Shastri Bridge Deck,25.4378,81.904,EASTBOUND,cmtg9adtt000ljyiru3hlm0ph,cmtg9acrl0008jyir52epjjui
-cmtg9af0i001jjyircfuth8gf,PRY-CAM-025,Shastri Bridge East,25.4388,81.913,EASTBOUND,cmtg9adtt000ljyiru3hlm0ph,cmtg9acrl0008jyir52epjjui
-cmtg9af0i001kjyirw7oguo13,PRY-CAM-026,Jhunsi Police Chowki,25.436,81.925,EASTBOUND,cmtg9adtt000mjyirig5ahabg,cmtg9acrl0008jyir52epjjui
-cmtg9af0i001ljyir0mrsfmbe,PRY-CAM-027,Jhunsi Entry,25.4345,81.936,EASTBOUND,cmtg9adtt000mjyirig5ahabg,cmtg9acrl0008jyir52epjjui
-cmtg9af0i001mjyiriue2kw9u,PRY-CAM-028,Subedarganj Crossing,25.4421,81.8023,WESTBOUND,cmtg9adtt000ojyirle3bmrpv,cmtg9acrl0009jyir48s7ho3g
-cmtg9af0i001njyirmsdlsc9g,PRY-CAM-029,Bamrauli Approach,25.439,81.745,WESTBOUND,cmtg9adtt000ojyirle3bmrpv,cmtg9acrl0009jyir48s7ho3g
-cmtg9af0i001ojyirv7ayw00f,PRY-CAM-030,Airport Main Gate,25.44,81.735,WESTBOUND,cmtg9adtt000ojyirle3bmrpv,cmtg9acrl0009jyir48s7ho3g
-cmtg9af0i001pjyir3wxzc7ru,PRY-CAM-031,Karamchari Nagar,25.42,81.81,SOUTHBOUND,cmtg9adtt000pjyirk45el6xc,cmtg9acrl0009jyir48s7ho3g
-cmtg9af0i001qjyir8xa21crn,PRY-CAM-032,Jhalwa Chouraha,25.432,81.785,SOUTHBOUND,cmtg9adtt000pjyirk45el6xc,cmtg9acrl0009jyir48s7ho3g
-cmtg9af0i001rjyirslc2e4n6,PRY-CAM-033,IIIT Allahabad Gate,25.43,81.77,SOUTHBOUND,cmtg9adtt000pjyirk45el6xc,cmtg9acrl0009jyir48s7ho3g
-cmtg9af0i001sjyir9iwpxmz9,PRY-CAM-034,Johnston Ganj,25.445,81.83,SOUTHBOUND,cmtg9adtt000qjyirqxvallm2,cmtg9acrl000bjyiraihh3tzn
-cmtg9af0i001tjyirjdkeer90,PRY-CAM-035,Chowk Market,25.44,81.835,SOUTHBOUND,cmtg9adtt000qjyirqxvallm2,cmtg9acrl000bjyiraihh3tzn
-cmtg9af0i001ujyirf7cpnfbe,PRY-CAM-036,Meerapur Junction,25.43,81.835,SOUTHBOUND,cmtg9adtt000qjyirqxvallm2,cmtg9acrl000bjyiraihh3tzn
-cmtg9af0i001vjyiruwhm9p1v,PRY-CAM-037,Old Yamuna Bridge North,25.423,81.85,SOUTHBOUND,cmtg9adtt000sjyiraeow0xdk,cmtg9acrl000bjyiraihh3tzn
-cmtg9af0i001wjyiresx7zgy8,PRY-CAM-038,Old Yamuna Bridge South,25.41,81.855,SOUTHBOUND,cmtg9adtt000sjyiraeow0xdk,cmtg9acrl0006jyir122lxfbk
-cmtg9af0i001xjyirtcs3h025,PRY-CAM-039,Naini Station,25.39,81.86,SOUTHBOUND,cmtg9adtt000rjyir3ttoimji,cmtg9acrl0006jyir122lxfbk
-cmtg9af0i001yjyir9hvvsrgd,PRY-CAM-040,Naini Industrial Hub,25.385,81.865,SOUTHBOUND,cmtg9adtt000rjyir3ttoimji,cmtg9acrl0006jyir122lxfbk
-cmtg9af0i001zjyirsktm5kbj,PRY-CAM-041,ARAI Gate,25.37,81.85,SOUTHBOUND,cmtg9adtt000rjyir3ttoimji,cmtg9acrl000ajyir5buzfzv5
-cmtg9af0i0020jyir2m6ffgh7,PRY-CAM-042,Dandi Crossing,25.365,81.84,SOUTHBOUND,cmtg9adtt000rjyir3ttoimji,cmtg9acrl000ajyir5buzfzv5
-cmtg9af0i0021jyir2hydcqtt,PRY-CAM-043,Ghoorpur Toll Plaza,25.35,81.82,SOUTHBOUND,cmtg9adtt000ujyir4vxk7nkx,cmtg9acrl000ajyir5buzfzv5
-cmtg9af0i0022jyirzqysmxu6,PRY-CAM-044,Sohbatiabagh,25.45,81.855,EASTBOUND,cmtg9adtt000cjyir4hgxm12e,cmtg9acrl0004jyir748sdwf5
-cmtg9af0i0023jyirdoymdkb7,PRY-CAM-045,Allen Ganj,25.468,81.86,NORTHBOUND,cmtg9adtt000tjyirgz6xr9sw,cmtg9acrl0004jyir748sdwf5
-cmtg9af0i0024jyir0yfiwxuz,PRY-CAM-046,Govindpur,25.48,81.87,NORTHBOUND,cmtg9adtt000tjyirgz6xr9sw,cmtg9acrl0004jyir748sdwf5
-cmtg9af0i0025jyirpwsb9qnz,PRY-CAM-047,Rajapur,25.47,81.845,EASTBOUND,cmtg9adtt000cjyir4hgxm12e,cmtg9acrl0003jyir8vwjhhtd
-cmtg9af0i0026jyirggov5chm,PRY-CAM-048,Rambagh Station,25.44,81.845,EASTBOUND,cmtg9adtt000qjyirqxvallm2,cmtg9acrl000bjyiraihh3tzn
-cmtg9af0i0027jyirpcqby5a4,PRY-CAM-049,Sangam Tent City Area,25.42,81.885,SOUTHBOUND,cmtg9adtt000hjyira8t5pbdw,cmtg9acrl0005jyir6i0skj7f
-cmtg9af0i0028jyirw8dc8ekm,PRY-CAM-050,Alopi Bagh,25.45,81.875,EASTBOUND,cmtg9adtt000gjyir9sxh8tlm,cmtg9acrl0005jyir6i0skj7f
-cmtg9af0i0029jyirga5n7cth,PRY-CAM-051,Phaphamau Bridge Mid,25.52,81.875,NORTHBOUND,cmtg9adtt000fjyir2t51f3nq,cmtg9acrl0007jyir07uw9g4k
-cmtg9af0i002ajyir3bqxjtge,PRY-CAM-052,Shantipuram Highway,25.545,81.87,NORTHBOUND,cmtg9adtt000fjyir2t51f3nq,cmtg9acrl0007jyir07uw9g4k
+cmth96370000vnyir9vozpkrx,PRY-CAM-001,High Court — MG Marg,25.4509,81.8321,EASTBOUND,cmth9629t000cnyirfzkebhf9,cmth961cq0003nyir7mf86cbw
+cmth96370000wnyirnettaodm,PRY-CAM-002,MG Marg — Civil Lines,25.4501,81.8407,EASTBOUND,cmth9629t000cnyirfzkebhf9,cmth961cq0003nyir7mf86cbw
+cmth96370000xnyirrn4we25i,PRY-CAM-003,Civil Lines Bus Stand,25.4516,81.8468,EASTBOUND,cmth9629t000cnyirfzkebhf9,cmth961cq0003nyir7mf86cbw
+cmth96370000ynyir6luh1m91,PRY-CAM-004,Lohia Marg — Station Approach,25.4468,81.8382,SOUTHBOUND,cmth9629t000dnyir7rocvhtu,cmth961cq0003nyir7mf86cbw
+cmth96370000znyirgcu1onxv,PRY-CAM-005,Prayagraj Junction Entry,25.443,81.8265,WESTBOUND,cmth9629t000dnyir7rocvhtu,cmth961cq0003nyir7mf86cbw
+cmth963700010nyirjk34zhze,PRY-CAM-006,Zero Road Junction,25.4376,81.8299,SOUTHBOUND,cmth9629t000dnyir7rocvhtu,cmth961cq0003nyir7mf86cbw
+cmth963710011nyirhff4k8ij,PRY-CAM-007,Katra Crossing,25.4655,81.8565,NORTHBOUND,cmth9629t000cnyirfzkebhf9,cmth961cq0004nyir9yv8yynw
+cmth963710012nyirp5np3dxd,PRY-CAM-008,Allahabad University Gate,25.4586,81.8644,EASTBOUND,cmth9629t000enyirwltwiyy8,cmth961cq0004nyir9yv8yynw
+cmth963710013nyira665ijk0,PRY-CAM-009,George Town Junction,25.4624,81.8716,SOUTHBOUND,cmth9629t000enyirwltwiyy8,cmth961cq0004nyir9yv8yynw
+cmth963710014nyird9x2ru58,PRY-CAM-010,Allapur Junction,25.447,81.8707,SOUTHBOUND,cmth9629t000enyirwltwiyy8,cmth961cq0004nyir9yv8yynw
+cmth963710015nyirpcn23h3d,PRY-CAM-011,Bairhana Junction,25.4408,81.8778,EASTBOUND,cmth9629t000gnyirpoe5xjo3,cmth961cq0005nyir13mdrn12
+cmth963710016nyireq9jz8zy,PRY-CAM-012,Daraganj Junction,25.431,81.8862,SOUTHBOUND,cmth9629t000gnyirpoe5xjo3,cmth961cq0005nyir13mdrn12
+cmth963710017nyirj0e1t8oa,PRY-CAM-013,Sangam Parade Approach,25.4165,81.8822,SOUTHBOUND,cmth9629t000hnyirrcq4r5xh,cmth961cq0005nyir13mdrn12
+cmth963710018nyir4ekfaomg,PRY-CAM-014,Minto Park Approach,25.4271,81.85,SOUTHEASTBOUND,cmth9629t000inyir27pazn5e,cmth961cq0005nyir13mdrn12
+cmth963710019nyir7cdomfac,PRY-CAM-015,New Yamuna Bridge North,25.4253,81.8598,SOUTHBOUND,cmth9629t000jnyirfc8rzl3u,cmth961cq0006nyiryghpj9n2
+cmth96371001anyirqps952yi,PRY-CAM-016,New Yamuna Bridge Pylon,25.4192,81.8624,SOUTHBOUND,cmth9629t000jnyirfc8rzl3u,cmth961cq0006nyiryghpj9n2
+cmth96371001bnyir6sz8vh42,PRY-CAM-017,New Yamuna Bridge South,25.412,81.865,SOUTHBOUND,cmth9629t000jnyirfc8rzl3u,cmth961cq0006nyiryghpj9n2
+cmth96371001cnyirr238wo4j,PRY-CAM-018,Naini Chungi,25.4025,81.8692,SOUTHBOUND,cmth9629t000jnyirfc8rzl3u,cmth961cq0006nyiryghpj9n2
+cmth96371001dnyir7su023yj,PRY-CAM-019,Naini Market,25.3943,81.877,SOUTHEASTBOUND,cmth9629t000knyir8o50z060,cmth961cq0006nyiryghpj9n2
+cmth96371001enyirbldfr6ix,PRY-CAM-020,Mirzapur Road Exit,25.3867,81.888,SOUTHEASTBOUND,cmth9629t000knyir8o50z060,cmth961cq0006nyiryghpj9n2
+cmth96371001fnyirjquuuasc,PRY-CAM-021,Teliarganj Crossing,25.4874,81.8654,NORTHBOUND,cmth9629t000fnyir5bvin9k2,cmth961cq0007nyircbx63svh
+cmth96371001gnyirtk3y0jwc,PRY-CAM-022,Phaphamau Entry,25.5403,81.882,NORTHBOUND,cmth9629t000fnyir5bvin9k2,cmth961cq0007nyircbx63svh
+cmth96371001hnyir05gtkmgf,PRY-CAM-023,Shastri Bridge West,25.4365,81.895,EASTBOUND,cmth9629t000lnyirgj0u952k,cmth961cq0008nyir8spqdzk7
+cmth96371001inyirqb8vea64,PRY-CAM-024,Shastri Bridge Deck,25.4378,81.904,EASTBOUND,cmth9629t000lnyirgj0u952k,cmth961cq0008nyir8spqdzk7
+cmth96371001jnyir242nrlgs,PRY-CAM-025,Shastri Bridge East,25.4388,81.913,EASTBOUND,cmth9629t000lnyirgj0u952k,cmth961cq0008nyir8spqdzk7
+cmth96371001knyirn1c8veb0,PRY-CAM-026,Jhunsi Police Chowki,25.436,81.925,EASTBOUND,cmth9629t000mnyirccpuv54d,cmth961cq0008nyir8spqdzk7
+cmth96371001lnyir6vqfqijv,PRY-CAM-027,Jhunsi Entry,25.4345,81.936,EASTBOUND,cmth9629t000mnyirccpuv54d,cmth961cq0008nyir8spqdzk7
+cmth96371001mnyirimep859z,PRY-CAM-028,Subedarganj Crossing,25.4421,81.8023,WESTBOUND,cmth9629t000onyirixf5qsm7,cmth961cq0009nyir0n9l65tf
+cmth96371001nnyirni19ph7i,PRY-CAM-029,Bamrauli Approach,25.439,81.745,WESTBOUND,cmth9629t000onyirixf5qsm7,cmth961cq0009nyir0n9l65tf
+cmth96371001onyirzxedf4vv,PRY-CAM-030,Airport Main Gate,25.44,81.735,WESTBOUND,cmth9629t000onyirixf5qsm7,cmth961cq0009nyir0n9l65tf
+cmth96371001pnyirivai6an4,PRY-CAM-031,Karamchari Nagar,25.42,81.81,SOUTHBOUND,cmth9629t000pnyirisyyjy81,cmth961cq0009nyir0n9l65tf
+cmth96371001qnyirv4vjkzbl,PRY-CAM-032,Jhalwa Chouraha,25.432,81.785,SOUTHBOUND,cmth9629t000pnyirisyyjy81,cmth961cq0009nyir0n9l65tf
+cmth96371001rnyir72w4kizc,PRY-CAM-033,IIIT Allahabad Gate,25.43,81.77,SOUTHBOUND,cmth9629t000pnyirisyyjy81,cmth961cq0009nyir0n9l65tf
+cmth96371001snyir8m70iivu,PRY-CAM-034,Johnston Ganj,25.445,81.83,SOUTHBOUND,cmth9629t000qnyir35b4ds1r,cmth961cq000bnyir8o86y6q2
+cmth96371001tnyir7b58cacd,PRY-CAM-035,Chowk Market,25.44,81.835,SOUTHBOUND,cmth9629t000qnyir35b4ds1r,cmth961cq000bnyir8o86y6q2
+cmth96371001unyir4ukzxpbt,PRY-CAM-036,Meerapur Junction,25.43,81.835,SOUTHBOUND,cmth9629t000qnyir35b4ds1r,cmth961cq000bnyir8o86y6q2
+cmth96371001vnyirb2onbnnh,PRY-CAM-037,Old Yamuna Bridge North,25.423,81.85,SOUTHBOUND,cmth9629t000snyirdbf6b5bw,cmth961cq000bnyir8o86y6q2
+cmth96371001wnyirshs62wlz,PRY-CAM-038,Old Yamuna Bridge South,25.41,81.855,SOUTHBOUND,cmth9629t000snyirdbf6b5bw,cmth961cq0006nyiryghpj9n2
+cmth96371001xnyirjyn3oxct,PRY-CAM-039,Naini Station,25.39,81.86,SOUTHBOUND,cmth9629t000rnyir5jaewsej,cmth961cq0006nyiryghpj9n2
+cmth96371001ynyir0xp8c9z2,PRY-CAM-040,Naini Industrial Hub,25.385,81.865,SOUTHBOUND,cmth9629t000rnyir5jaewsej,cmth961cq0006nyiryghpj9n2
+cmth96371001znyirz0q52tm8,PRY-CAM-041,ARAI Gate,25.37,81.85,SOUTHBOUND,cmth9629t000rnyir5jaewsej,cmth961cq000anyirdamdf4vh
+cmth963710020nyirtzrmj0te,PRY-CAM-042,Dandi Crossing,25.365,81.84,SOUTHBOUND,cmth9629t000rnyir5jaewsej,cmth961cq000anyirdamdf4vh
+cmth963710021nyiryzh0krmt,PRY-CAM-043,Ghoorpur Toll Plaza,25.35,81.82,SOUTHBOUND,cmth9629t000unyirltthajm8,cmth961cq000anyirdamdf4vh
+cmth963710022nyirawyvrhro,PRY-CAM-044,Sohbatiabagh,25.45,81.855,EASTBOUND,cmth9629t000cnyirfzkebhf9,cmth961cq0004nyir9yv8yynw
+cmth963710023nyirak1b7sdg,PRY-CAM-045,Allen Ganj,25.468,81.86,NORTHBOUND,cmth9629t000tnyirz35u7xm7,cmth961cq0004nyir9yv8yynw
+cmth963710024nyirrija5erj,PRY-CAM-046,Govindpur,25.48,81.87,NORTHBOUND,cmth9629t000tnyirz35u7xm7,cmth961cq0004nyir9yv8yynw
+cmth963710025nyir2mvmhijs,PRY-CAM-047,Rajapur,25.47,81.845,EASTBOUND,cmth9629t000cnyirfzkebhf9,cmth961cq0003nyir7mf86cbw
+cmth963710026nyirikyf5s16,PRY-CAM-048,Rambagh Station,25.44,81.845,EASTBOUND,cmth9629t000qnyir35b4ds1r,cmth961cq000bnyir8o86y6q2
+cmth963710027nyir3fsc0qpz,PRY-CAM-049,Sangam Tent City Area,25.42,81.885,SOUTHBOUND,cmth9629t000hnyirrcq4r5xh,cmth961cq0005nyir13mdrn12
+cmth963710028nyirgtap8jrp,PRY-CAM-050,Alopi Bagh,25.45,81.875,EASTBOUND,cmth9629t000gnyirpoe5xjo3,cmth961cq0005nyir13mdrn12
+cmth963710029nyir6h2ecad4,PRY-CAM-051,Phaphamau Bridge Mid,25.52,81.875,NORTHBOUND,cmth9629t000fnyir5bvin9k2,cmth961cq0007nyircbx63svh
+cmth96371002anyirn1e5cnqi,PRY-CAM-052,Shantipuram Highway,25.545,81.87,NORTHBOUND,cmth9629t000fnyir5bvin9k2,cmth961cq0007nyircbx63svh

@@ -1,30 +1,3 @@
 {
-  "vehicles": [
-    {
-      "vehicle_id": 1,
-      "vehicle_type": "car",
-      "plate_number": "UP32L04373",
-      "status": "LIKELY",
-      "confidence": 0.6598,
-      "frames_used": 8,
-      "first_frame": 0,
-      "last_frame": 39,
-      "reason": null,
-      "plate_format": null,
-      "state_code": null
-    },
-    {
-      "vehicle_id": 2,
-      "vehicle_type": "bus",
-      "plate_number": null,
-      "status": "UNKNOWN",
-      "confidence": 0.0,
-      "frames_used": 0,
-      "first_frame": 0,
-      "last_frame": 0,
-      "reason": "No plate candidates of sufficient quality were detected.",
-      "plate_format": null,
-      "state_code": null
-    }
-  ]
+  "vehicles": []
 }

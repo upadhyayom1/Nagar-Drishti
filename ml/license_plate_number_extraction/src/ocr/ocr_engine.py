@@ -45,6 +45,12 @@ class OCRReading:
 
 
 class OCREngine:
+    # Variants ordered by (cost, typical usefulness): cheap/generally-useful
+    # ones are tried first so early-exit (below) can skip the rest of the
+    # list -- including the expensive "denoised" variant -- as soon as a
+    # confident reading is already in hand.
+    _VARIANT_PRIORITY = ["clahe", "raw", "two_line", "adaptive_thresh", "sharpened", "denoised"]
+
     def __init__(
         self,
         languages: Optional[List[str]] = None,
@@ -53,6 +59,7 @@ class OCREngine:
         min_confidence: float = 0.35,
         min_text_length: int = 4,
         max_text_length: int = 13,
+        early_stop_confidence: float = 0.90,
     ):
         try:
             import easyocr
@@ -65,6 +72,11 @@ class OCREngine:
         self.min_confidence = min_confidence
         self.min_text_length = min_text_length
         self.max_text_length = max_text_length
+        # As soon as a variant produces a reading at/above this confidence,
+        # stop trying the remaining (more expensive) variants for this crop.
+        # This is the main lever that keeps average OCR calls per plate close
+        # to 1-2 instead of always paying for every variant.
+        self.early_stop_confidence = early_stop_confidence
 
     @staticmethod
     def _normalize(text: str) -> str:
@@ -82,9 +94,25 @@ class OCREngine:
         if not results:
             return None
 
-        # A plate crop may yield multiple text fragments (e.g. state emblem
-        # text); concatenate fragments left-to-right by x-position since
-        # EasyOCR sometimes splits a single plate string into pieces.
+        # A plate crop can yield multiple text fragments -- most commonly
+        # the actual plate characters split into pieces, but occasionally a
+        # small "IND" hologram / state-emblem watermark printed above the
+        # main text on many Indian plates. Those emblem fragments are
+        # reliably much smaller (lower box height) than the real plate
+        # characters, so drop any fragment under half the median box height
+        # before concatenating -- otherwise a stray "IND" silently inflates
+        # the reading with 2-3 extra wrong characters.
+        def _box_height(pts):
+            ys = [p[1] for p in pts]
+            return max(ys) - min(ys)
+
+        heights = [_box_height(r[0]) for r in results]
+        median_h = float(np.median(heights)) if heights else 0.0
+        if median_h > 0:
+            results = [r for r, h in zip(results, heights) if h >= 0.5 * median_h] or results
+
+        # Concatenate the surviving fragments left-to-right by x-position,
+        # since EasyOCR sometimes splits a single plate string into pieces.
         results.sort(key=lambda r: min(pt[0] for pt in r[0]))
         combined_text = "".join(self._normalize(r[1]) for r in results)
         avg_conf = float(np.mean([r[2] for r in results]))
@@ -97,13 +125,23 @@ class OCREngine:
         return {"text": combined_text, "confidence": avg_conf}
 
     def read_best(self, variants: Dict[str, np.ndarray], frame_index: int, quality_weight: float) -> Optional[OCRReading]:
-        """Run OCR on every preprocessing variant of one crop and keep the
-        single best (highest-confidence) reading. This implements the
-        'do not blindly apply every technique' requirement: each variant is
-        judged purely by whether it produces a better OCR result."""
+        """Run OCR across the available preprocessing variants of one crop
+        and keep the single best (highest-confidence) reading, trying
+        variants in cheapest-first / generally-most-useful-first order and
+        stopping as soon as a sufficiently confident reading is found.
+
+        This implements the 'do not blindly apply every technique'
+        requirement two ways: (1) `generate_variants` already only produces
+        the variants that make sense for this crop's own quality stats, and
+        (2) here, we stop calling OCR at all on the remaining variants once
+        we already have a confident-enough reading -- so a crisp daylight
+        plate typically costs 1 OCR call instead of paying for all 5+."""
+        ordered_names = [n for n in self._VARIANT_PRIORITY if n in variants]
+        ordered_names += [n for n in variants if n not in self._VARIANT_PRIORITY]
+
         best: Optional[OCRReading] = None
-        for variant_name, img in variants.items():
-            result = self.read(img)
+        for variant_name in ordered_names:
+            result = self.read(variants[variant_name])
             if result is None:
                 continue
             if best is None or result["confidence"] > best.confidence:
@@ -114,4 +152,6 @@ class OCREngine:
                     frame_index=frame_index,
                     quality_weight=quality_weight,
                 )
+            if best.confidence >= self.early_stop_confidence:
+                break
         return best

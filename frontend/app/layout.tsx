@@ -25,7 +25,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'UrbanPulse | AI Command Center',
+  title: 'NagarDrishti | AI Command Center',
   description: 'AI-powered city-wide vehicle intelligence and traffic analytics platform',
 };
 

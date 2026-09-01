@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ==========================================================================
-   URBANPULSE — CYBER INTELLIGENCE MULTI-CHROMATIC DESIGN SYSTEM
+   NAGARDRISHTI — CYBER INTELLIGENCE MULTI-CHROMATIC DESIGN SYSTEM
    ========================================================================== */
 
 :root {
@@ -48,6 +48,18 @@
   --surface-glass:   var(--glass-surface);
   --border-glass:    var(--glass-border);
 
+  /* Badge text colors — dark mode (neon) */
+  --badge-ok-text:       #34d399;
+  --badge-warn-text:     #fbbf24;
+  --badge-critical-text: #fb7185;
+  --badge-cyan-text:     #22d3ee;
+  --badge-violet-text:   #a78bfa;
+
+  /* Skeleton shimmer */
+  --shimmer-from:   rgba(255,255,255,0.0);
+  --shimmer-mid:    rgba(255,255,255,0.06);
+  --shimmer-to:     rgba(255,255,255,0.0);
+
   --sidebar-width:     260px;
   --sidebar-collapsed: 76px;
   --topbar-height:     72px;
@@ -87,6 +99,18 @@
   --glass-border:    rgba(15, 23, 42, 0.08);
   --glass-highlight: rgba(255, 255, 255, 1);
   --glass-shadow:    0 14px 35px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 1);
+
+  /* Badge text colors — light mode (WCAG AA on white) */
+  --badge-ok-text:       #047857;
+  --badge-warn-text:     #b45309;
+  --badge-critical-text: #be123c;
+  --badge-cyan-text:     #0369a1;
+  --badge-violet-text:   #6d28d9;
+
+  /* Skeleton shimmer */
+  --shimmer-from:   rgba(0,0,0,0.0);
+  --shimmer-mid:    rgba(0,0,0,0.05);
+  --shimmer-to:     rgba(0,0,0,0.0);
 }
 
 @theme {
@@ -158,6 +182,13 @@
       radial-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px);
   }
 
+  /* Global keyboard focus ring */
+  :focus-visible {
+    outline: 2px solid var(--cyber-cyan);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
   ::selection {
     background: rgba(0, 240, 255, 0.3);
     color: #ffffff;
@@ -173,10 +204,24 @@
   -webkit-backdrop-filter: blur(28px) saturate(180%);
   border: 1px solid var(--glass-border);
   border-top: 1px solid var(--glass-highlight);
-  box-shadow: var(--glass-shadow);
+  box-shadow: var(--glass-shadow), 0 4px 24px rgba(0, 0, 0, 0.25), 0 1px 4px rgba(0, 0, 0, 0.15);
   border-radius: 18px;
-  transition: all 0.25s ease-out;
+  transition: transform 150ms ease-out, box-shadow 150ms ease-out, border-color 150ms ease-out;
   position: relative;
+}
+
+/* Light mode: suppress neon box-shadows, use clean neutral depth */
+[data-theme='light'] .glass-panel {
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.07), 0 1px 4px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+[data-theme='light'] .glass-panel:hover {
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.10), 0 2px 8px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+/* Light mode: suppress neon glow hovers on cards */
+[data-theme='light'] .glass-panel[class*="hover:shadow-[0_0_"] {
+  --tw-shadow: 0 8px 32px rgba(15, 23, 42, 0.10);
 }
 
 .glass-panel-elevated {
@@ -199,6 +244,10 @@
 .spectrum-bar {
   background: linear-gradient(90deg, #00f0ff 0%, #00E6B0 25%, #6366f1 50%, #ec4899 75%, #f59e0b 100%);
   box-shadow: 0 0 16px rgba(0, 240, 255, 0.5), 0 0 24px rgba(99, 102, 241, 0.4);
+}
+
+[data-theme='light'] .spectrum-bar {
+  box-shadow: 0 0 8px rgba(2, 132, 199, 0.3), 0 0 12px rgba(79, 70, 229, 0.2);
 }
 
 /* =========================================
@@ -242,6 +291,74 @@
   100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 240, 255, 0); }
 }
 .animate-pulse-live { animation: pulse-live-dot 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+/* ── Empty State Breathing Icon ── */
+@keyframes empty-breathe {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 0.85; transform: scale(1.04); }
+}
+.animate-empty-breathe { animation: empty-breathe 3.5s ease-in-out infinite; }
+
+@keyframes empty-ring {
+  0%   { opacity: 0; transform: scale(1); }
+  50%  { opacity: 0.35; transform: scale(1.12); }
+  100% { opacity: 0; transform: scale(1.2); }
+}
+.animate-empty-ring { animation: empty-ring 3.5s ease-in-out infinite; }
+
+/* ── Notification Badge Pop ── */
+@keyframes badge-pop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.35); }
+  65%  { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+.animate-badge-pop { animation: badge-pop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+/* ── Skeleton Shimmer ── */
+@keyframes skeleton-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--shimmer-from) 0%,
+    var(--shimmer-mid) 50%,
+    var(--shimmer-to) 100%
+  );
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* ── Camera Feed Scanline ── */
+@keyframes scanline-sweep {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  20%  { opacity: 0.5; }
+  80%  { opacity: 0.5; }
+  100% { transform: translateY(200%); opacity: 0; }
+}
+.camera-scanline {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 240, 255, 0.06) 50%,
+    transparent 100%
+  );
+  animation: scanline-sweep 4s linear infinite;
+  pointer-events: none;
+}
+
+/* ── Camera Tile Gradient Background ── */
+.camera-feed-bg {
+  background: linear-gradient(135deg, #060913 0%, #0c1222 40%, #0d0f1a 70%, #050810 100%);
+}
+
+[data-theme='light'] .camera-feed-bg {
+  background: linear-gradient(135deg, #dde1ed 0%, #e8eaf4 40%, #f0f2f8 70%, #e5e8f2 100%);
+}
 
 /* =========================================
    LEAFLET MAP GLASS THEME

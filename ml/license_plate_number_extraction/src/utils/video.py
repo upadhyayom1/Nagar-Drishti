@@ -85,6 +85,15 @@ class VideoReader:
         frame_index is the index in the ORIGINAL (unsampled) video, so
         timestamps/frame numbers remain meaningful for reporting.
         """
+        if self.total_frames == 1:
+            # It's a static image! Yield it multiple times so the tracker initializes.
+            ok, frame = self.cap.read()
+            if ok:
+                for i in range(15):
+                    if i % self._stride == 0:
+                        yield i, self._resize(frame)
+            return
+
         idx = -1
         consecutive_failures = 0
         while True:

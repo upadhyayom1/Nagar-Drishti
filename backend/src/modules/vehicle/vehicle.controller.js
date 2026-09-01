@@ -1,6 +1,6 @@
 
-const turf = require('@turf/turf');
 const { prisma } = require('../../lib/prisma');
+const { buildVehicleTrajectory } = require('../trajectory/trajectory.service');
 
 const normalizePlate = (plate) => String(plate || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
 const toVehicleSummary = (vehicle) => ({
@@ -73,6 +73,9 @@ exports.getRecentVehicles = async (req, res, next) => {
   return exports.getVehicles(req, res, next);
 };
 
+// Trajectory reconstruction itself lives in trajectory.service.js — this is the
+// only place that adapts the canonical { points, segments } shape to the
+// vehicle-history API response. Do not recompute distance/time/speed here.
 exports.getVehicleJourney = async (req, res, next) => {
   try {
     const plateNumber = normalizePlate(req.params.plateNumber);
@@ -82,76 +85,55 @@ exports.getVehicleJourney = async (req, res, next) => {
     });
     if (!vehicle) return res.status(404).json({ success: false, message: 'Vehicle not found' });
 
-    const [detections, transitions] = await Promise.all([
-      prisma.detection.findMany({
-        where: { vehicleId: vehicle.id },
-        orderBy: { timestamp: 'asc' },
-        include: { camera: { select: { id: true, name: true, cameraCode: true, latitude: true, longitude: true } } },
-      }),
-      prisma.cameraTransition.findMany({
-        where: { vehicleId: vehicle.id },
-        orderBy: { timestamp: 'asc' },
-        select: { sourceCameraId: true, destinationCameraId: true, timestamp: true, travelTimeSeconds: true, distanceMeters: true, averageSpeed: true },
-      }),
-    ]);
-    const waypoints = detections.map((detection) => ({
-      cameraId: detection.cameraId,
-      cameraCode: detection.camera?.cameraCode || 'CAM',
-      cameraName: detection.camera?.name || detection.camera?.cameraCode || 'Prayagraj Optical Node',
-      lat: detection.latitude ?? detection.camera?.latitude,
-      lng: detection.longitude ?? detection.camera?.longitude,
-      timestamp: detection.timestamp,
-      speed: detection.speed ?? null,
-      direction: detection.direction || 'UNKNOWN',
-    })).filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lng));
+    const { from, to } = req.query;
+    const { points, segments } = await buildVehicleTrajectory(vehicle.id, {
+      from: from ? new Date(from) : undefined,
+      to: to ? new Date(to) : undefined,
+    });
 
-    // Collapse consecutive observations from the same camera. A vehicle can be detected
-    // multiple times while remaining at one camera; those are not separate route legs.
-    const cleanWaypoints = [];
-    for (const point of waypoints) {
-      const previous = cleanWaypoints.at(-1);
-      if (previous?.cameraId === point.cameraId) continue;
-      cleanWaypoints.push(point);
-    }
+    // segmentInto[i] is the segment that arrives at points[i] (i.e. segments[i-1]).
+    const segmentInto = [null, ...segments];
 
-    let totalDistance = 0;
-    let totalTravelSeconds = 0;
-    let weightedSpeedDistance = 0;
-    let measuredSpeedDistance = 0;
-    for (let index = 1; index < cleanWaypoints.length; index++) {
-      const previous = cleanWaypoints[index - 1];
-      const current = cleanWaypoints[index];
-      const transition = transitions.find((candidate) =>
-        candidate.sourceCameraId === previous.cameraId &&
-        candidate.destinationCameraId === current.cameraId &&
-        new Date(candidate.timestamp).getTime() >= new Date(previous.timestamp).getTime()
-      );
-      const distanceKm = Number.isFinite(transition?.distanceMeters)
-        ? transition.distanceMeters / 1000
-        : turf.distance([previous.lng, previous.lat], [current.lng, current.lat], { units: 'kilometers' });
-      const durationSeconds = Number.isFinite(transition?.travelTimeSeconds) && transition.travelTimeSeconds > 0
-        ? transition.travelTimeSeconds
-        : Math.max(0, (new Date(current.timestamp) - new Date(previous.timestamp)) / 1000);
-      totalDistance += distanceKm;
-      totalTravelSeconds += durationSeconds;
-      if (durationSeconds > 0 && distanceKm > 0) {
-        current.speed = transition?.averageSpeed > 0
-          ? Math.round(transition.averageSpeed * 10) / 10
-          : Math.round((distanceKm / (durationSeconds / 3600)) * 10) / 10;
-        measuredSpeedDistance += distanceKm;
-        weightedSpeedDistance += current.speed * distanceKm;
-      } else {
-        current.speed = null;
-      }
-    }
-    const first = cleanWaypoints[0]?.timestamp;
-    const last = cleanWaypoints.at(-1)?.timestamp;
+    const waypoints = points
+      .filter((point) => Number.isFinite(point.latitude) && Number.isFinite(point.longitude))
+      .map((point, index) => {
+        const segment = segmentInto[index];
+        return {
+          cameraId: point.cameraId,
+          cameraCode: point.cameraCode || 'CAM',
+          cameraName: point.cameraName,
+          lat: point.latitude,
+          lng: point.longitude,
+          timestamp: point.timestamp,
+          // Speed of the leg that arrived at this waypoint. Never fabricated:
+          // null means unknown/invalid, not "vehicle stopped".
+          speed: segment?.valid ? segment.averageSpeedKmh : null,
+          direction: 'UNKNOWN',
+          distanceFromPrevKm: segment ? (segment.distanceMeters != null ? Math.round(segment.distanceMeters) / 1000 : null) : null,
+          travelTimeFromPrevSeconds: segment?.travelTimeSeconds ?? null,
+          distanceSource: segment?.distanceSource ?? null,
+          segmentValid: segment?.valid ?? null,
+        };
+      });
+
+    const validSegments = segments.filter((segment) => segment.valid);
+    const totalDistanceMeters = validSegments.reduce((sum, segment) => sum + (segment.distanceMeters || 0), 0);
+    const totalTravelSeconds = validSegments.reduce((sum, segment) => sum + (segment.travelTimeSeconds || 0), 0);
+    const weightedSpeedDistance = validSegments.reduce(
+      (sum, segment) => sum + (segment.averageSpeedKmh || 0) * (segment.distanceMeters || 0), 0
+    );
+    const avgSpeed = totalDistanceMeters > 0 ? weightedSpeedDistance / totalDistanceMeters : null;
+
+    const first = waypoints[0]?.timestamp;
+    const last = waypoints.at(-1)?.timestamp;
     const totalDuration = first && last ? Math.max(0, Math.round((new Date(last) - new Date(first)) / 60000)) : 0;
-    const avgSpeed = measuredSpeedDistance > 0 ? weightedSpeedDistance / measuredSpeedDistance : null;
+
     return res.json({ success: true, data: {
       plate: vehicle.plateNumber,
-      waypoints: cleanWaypoints,
-      totalDistance: Math.round(totalDistance * 100) / 100,
+      waypoints,
+      segments,
+      totalDistance: Math.round((totalDistanceMeters / 1000) * 100) / 100,
+      totalTravelSeconds: Math.round(totalTravelSeconds),
       totalDuration,
       avgSpeed: avgSpeed != null ? Math.round(avgSpeed * 10) / 10 : null,
     }});

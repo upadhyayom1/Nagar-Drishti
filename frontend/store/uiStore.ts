@@ -46,7 +46,7 @@ export const useUIStore = create<UIState>((set) => ({
   theme: 'dark',
   setTheme: (theme) => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('urbanpulse_theme', theme);
+        localStorage.setItem('nagardrishti_theme', theme);
       document.documentElement.setAttribute('data-theme', theme);
     }
     set({ theme });
@@ -55,7 +55,7 @@ export const useUIStore = create<UIState>((set) => ({
     set((state) => {
       const nextTheme = state.theme === 'dark' ? 'light' : 'dark';
       if (typeof window !== 'undefined') {
-        localStorage.setItem('urbanpulse_theme', nextTheme);
+        localStorage.setItem('nagardrishti_theme', nextTheme);
         document.documentElement.setAttribute('data-theme', nextTheme);
       }
       return { theme: nextTheme };
