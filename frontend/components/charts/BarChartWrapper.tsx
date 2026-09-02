@@ -17,15 +17,14 @@ interface BarChartWrapperProps {
 
 const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (!active || !payload?.length) return null;
-  // Show the full label (full camera name) in the tooltip
   const fullLabel = String(label ?? '');
   return (
-    <div className="rounded-2xl px-4 py-3 text-xs bg-[var(--bg-elevated)] backdrop-blur-xl border border-cyan-400/30 shadow-[0_12px_36px_rgba(0,0,0,0.85)] font-mono text-[var(--text-primary)]">
-      <p className="text-[var(--text-secondary)] mb-1 text-[11px] font-display font-medium truncate max-w-[200px]">{fullLabel}</p>
+    <div className="rounded-lg px-3 py-2 text-xs bg-[var(--bg-elevated)] border border-neutral-700 shadow-md font-mono text-[var(--text-primary)]">
+      <p className="text-[var(--text-secondary)] mb-1 text-[11px] font-medium truncate max-w-[200px]">{fullLabel}</p>
       {payload.map((entry, index) => (
         <p key={`${entry.name}-${index}`} className="text-[var(--text-primary)] font-bold flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: entry.color }} />
-          <span className="text-cyan-400">{entry.value?.toLocaleString()} veh</span>
+          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#10a37f' }} />
+          <span className="text-[#10a37f]">{entry.value?.toLocaleString()} veh</span>
         </p>
       ))}
     </div>
@@ -44,23 +43,18 @@ function formatLabel(name: string, maxLen = 10): string {
   return clean.length > maxLen ? `${clean.slice(0, maxLen - 1)}…` : clean;
 }
 
-/** Bar colors: cycle through a palette for variety */
-const BAR_COLORS = [
-  '#00f0ff', '#8b5cf6', '#ec4899', '#00E6B0', '#f59e0b', '#38bdf8', '#10b981', '#f43f5e',
-];
-
 export function BarChartWrapper({
   data,
   dataKey,
   xAxisKey,
   height = 280,
-  color = '#06b6d4',
+  color = '#10a37f',
 }: BarChartWrapperProps) {
   const theme = useUIStore((s) => s.theme);
   const isDark = theme === 'dark';
-  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
-  const axisColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)';
-  const tickFill  = isDark ? '#94a3b8' : '#64748b';
+  const gridColor = isDark ? '#262626' : '#e5e5e5';
+  const axisColor = isDark ? '#333333' : '#e5e5e5';
+  const tickFill  = isDark ? '#737373' : '#8e8e8e';
 
   // Show at most ~10 labels regardless of how many bars there are
   const labelInterval = data.length > 12 ? Math.ceil(data.length / 10) : 0;
@@ -90,14 +84,18 @@ export function BarChartWrapper({
             axisLine={{ stroke: axisColor }}
             tickLine={false}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }} />
-          <Bar dataKey={dataKey} radius={[6, 6, 0, 0]} maxBarSize={32} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
-            {data.map((_, index) => (
-              <Cell
-                key={`cell-${index}`}
-                fill={BAR_COLORS[index % BAR_COLORS.length]}
-              />
-            ))}
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }} />
+          <Bar dataKey={dataKey} radius={[4, 4, 0, 0]} maxBarSize={32} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
+            {data.map((_, index) => {
+              const opacity = 0.55 + ((index % 5) * 0.1);
+              return (
+                <Cell
+                  key={`cell-${index}`}
+                  fill="#10a37f"
+                  fillOpacity={opacity}
+                />
+              );
+            })}
           </Bar>
         </BarChart>
       </ResponsiveContainer>

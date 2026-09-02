@@ -22,10 +22,10 @@ interface UIState {
 
   theme: AppTheme;
   setTheme: (theme: AppTheme) => void;
-  toggleTheme: () => void;
+  toggleTheme: (event?: React.MouseEvent | MouseEvent | any) => void;
 }
 
-export const useUIStore = create<UIState>((set) => ({
+export const useUIStore = create<UIState>((set, get) => ({
   sidebarCollapsed: false,
   toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
   setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
@@ -46,19 +46,42 @@ export const useUIStore = create<UIState>((set) => ({
   theme: 'dark',
   setTheme: (theme) => {
     if (typeof window !== 'undefined') {
-        localStorage.setItem('nagardrishti_theme', theme);
+      localStorage.setItem('nagardrishti_theme', theme);
       document.documentElement.setAttribute('data-theme', theme);
     }
     set({ theme });
   },
-  toggleTheme: () => {
-    set((state) => {
-      const nextTheme = state.theme === 'dark' ? 'light' : 'dark';
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('nagardrishti_theme', nextTheme);
-        document.documentElement.setAttribute('data-theme', nextTheme);
-      }
-      return { theme: nextTheme };
+  toggleTheme: (event?: React.MouseEvent | MouseEvent | any) => {
+    const currentTheme = get().theme;
+    const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+    if (typeof window === 'undefined') {
+      set({ theme: nextTheme });
+      return;
+    }
+
+    const doc = document as any;
+    const isReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Fallback if browser doesn't support View Transitions or user prefers reduced motion
+    if (!doc.startViewTransition || isReducedMotion) {
+      localStorage.setItem('nagardrishti_theme', nextTheme);
+      document.documentElement.setAttribute('data-theme', nextTheme);
+      set({ theme: nextTheme });
+      return;
+    }
+
+    // Set transition state for directional cinematic CSS styling
+    document.documentElement.setAttribute('data-theme-transition', nextTheme);
+
+    const transition = doc.startViewTransition(() => {
+      localStorage.setItem('nagardrishti_theme', nextTheme);
+      document.documentElement.setAttribute('data-theme', nextTheme);
+      set({ theme: nextTheme });
+    });
+
+    transition.finished.finally(() => {
+      document.documentElement.removeAttribute('data-theme-transition');
     });
   },
 }));

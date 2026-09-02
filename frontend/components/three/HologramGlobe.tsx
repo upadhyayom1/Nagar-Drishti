@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
@@ -42,7 +42,7 @@ function GlobeMesh() {
 
         {/* Optical Sensor Beacons on Globe */}
         <Points positions={nodePositions} stride={3}>
-          <PointMaterial color="#ec4899" size={0.12} sizeAttenuation transparent opacity={0.9} />
+          <PointMaterial color="#d55b38" size={0.12} sizeAttenuation transparent opacity={0.9} />
         </Points>
       </group>
 

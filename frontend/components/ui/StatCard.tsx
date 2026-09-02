@@ -6,18 +6,19 @@ import { StatCounter } from './StatCounter';
 import type { LucideIcon } from 'lucide-react';
 
 export type StatCardColorTheme =
-  | 'cyan' | 'violet' | 'emerald' | 'amber' | 'rose' | 'pink' | 'blue' | 'teal' | 'ok' | 'warn' | 'critical';
+  | 'cyan' | 'violet' | 'emerald' | 'amber' | 'rose' | 'pink' | 'blue' | 'teal' | 'ok' | 'warn' | 'critical' | 'brand';
 
 export interface StatCardProps {
-  label: string;
-  value: string | number;
-  icon: LucideIcon;
-  trend?: { value: number; isPositive: boolean };
-  subtitle?: string;
-  isLoading?: boolean;
+  label:       string;
+  value:       string | number;
+  icon:        LucideIcon;
+  trend?:      { value: number; isPositive: boolean };
+  subtitle?:   string;
   accentColor?: string;
   colorTheme?: StatCardColorTheme;
-  className?: string;
+  className?:  string;
+  /** Hero variant — larger treatment, watermark icon, brand gradient tint */
+  hero?:       boolean;
 }
 
 const themeStyles: Record<StatCardColorTheme, {
@@ -29,116 +30,139 @@ const themeStyles: Record<StatCardColorTheme, {
   barColor: string;
   glowBar: string;
   valueColor: string;
+  watermarkColor: string;
 }> = {
+  brand: {
+    glow: 'none',
+    accent: 'brand',
+    iconBg: 'bg-[var(--brand-teal)]/15 border border-[var(--brand-teal)]/30 text-[var(--brand-teal)]',
+    trendPositive: 'bg-[var(--brand-teal)]/15 text-[var(--status-ok)] border border-[var(--brand-teal)]/30',
+    trendNegative: 'bg-red-500/15 text-[var(--status-critical)] border border-red-500/30',
+    barColor: 'bg-[var(--brand-teal)]',
+    glowBar: '',
+    valueColor: 'text-[var(--text-primary)]',
+    watermarkColor: 'text-[var(--text-primary)]/[0.04]',
+  },
   cyan: {
-    glow: 'cyan',
+    glow: 'none',
     accent: 'cyan',
-    iconBg: 'bg-cyan-500/15 border-cyan-500/35 text-cyan-400 shadow-[0_0_18px_rgba(6,182,212,0.3)]',
-    trendPositive: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
-    trendNegative: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30',
-    barColor: 'bg-gradient-to-r from-cyan-400 to-blue-500 shadow-[0_0_12px_rgba(0,240,255,0.6)]',
-    glowBar: 'group-hover:shadow-[0_0_16px_rgba(0,240,255,0.8)]',
-    valueColor: 'text-cyan-400',
+    iconBg: 'bg-[var(--brand-teal)]/15 border border-[var(--brand-teal)]/30 text-[var(--brand-teal)]',
+    trendPositive: 'bg-[var(--brand-teal)]/15 text-[var(--status-ok)] border border-[var(--brand-teal)]/30',
+    trendNegative: 'bg-red-500/15 text-[var(--status-critical)] border border-red-500/30',
+    barColor: 'bg-[var(--brand-teal)]',
+    glowBar: '',
+    valueColor: 'text-[var(--text-primary)]',
+    watermarkColor: 'text-[var(--text-primary)]/[0.04]',
   },
   blue: {
-    glow: 'blue',
+    glow: 'none',
     accent: 'blue',
-    iconBg: 'bg-sky-500/15 border-sky-500/35 text-sky-400 shadow-[0_0_18px_rgba(56,189,248,0.3)]',
-    trendPositive: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
-    trendNegative: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30',
-    barColor: 'bg-gradient-to-r from-sky-400 to-indigo-500 shadow-[0_0_12px_rgba(56,189,248,0.6)]',
-    glowBar: 'group-hover:shadow-[0_0_16px_rgba(56,189,248,0.8)]',
-    valueColor: 'text-sky-400',
+    iconBg: 'bg-[var(--brand-teal)]/15 border border-[var(--brand-teal)]/30 text-[var(--brand-teal)]',
+    trendPositive: 'bg-[var(--brand-teal)]/15 text-[var(--status-ok)] border border-[var(--brand-teal)]/30',
+    trendNegative: 'bg-red-500/15 text-[var(--status-critical)] border border-red-500/30',
+    barColor: 'bg-[var(--brand-teal)]',
+    glowBar: '',
+    valueColor: 'text-[var(--text-primary)]',
+    watermarkColor: 'text-[var(--text-primary)]/[0.04]',
   },
   teal: {
-    glow: 'teal',
+    glow: 'none',
     accent: 'teal',
-    iconBg: 'bg-teal-500/15 border-teal-500/35 text-teal-400 shadow-[0_0_18px_rgba(20,184,166,0.3)]',
-    trendPositive: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
-    trendNegative: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30',
-    barColor: 'bg-gradient-to-r from-teal-400 to-cyan-500 shadow-[0_0_12px_rgba(20,184,166,0.6)]',
-    glowBar: 'group-hover:shadow-[0_0_16px_rgba(20,184,166,0.8)]',
-    valueColor: 'text-teal-400',
+    iconBg: 'bg-[var(--brand-teal)]/15 border border-[var(--brand-teal)]/30 text-[var(--brand-teal)]',
+    trendPositive: 'bg-[var(--brand-teal)]/15 text-[var(--status-ok)] border border-[var(--brand-teal)]/30',
+    trendNegative: 'bg-red-500/15 text-[var(--status-critical)] border border-red-500/30',
+    barColor: 'bg-[var(--brand-teal)]',
+    glowBar: '',
+    valueColor: 'text-[var(--text-primary)]',
+    watermarkColor: 'text-[var(--text-primary)]/[0.04]',
   },
   violet: {
-    glow: 'violet',
+    glow: 'none',
     accent: 'violet',
-    iconBg: 'bg-violet-500/15 border-violet-500/35 text-violet-400 shadow-[0_0_18px_rgba(139,92,246,0.3)]',
-    trendPositive: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
-    trendNegative: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30',
-    barColor: 'bg-gradient-to-r from-violet-400 to-fuchsia-500 shadow-[0_0_12px_rgba(139,92,246,0.6)]',
-    glowBar: 'group-hover:shadow-[0_0_16px_rgba(139,92,246,0.8)]',
-    valueColor: 'text-violet-400',
+    iconBg: 'bg-neutral-800 border border-neutral-700 text-[var(--text-secondary)]',
+    trendPositive: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+    trendNegative: 'bg-red-500/10 text-red-400 border border-red-500/20',
+    barColor: 'bg-[#10a37f]',
+    glowBar: '',
+    valueColor: 'text-[var(--text-primary)]',
+    watermarkColor: 'text-white/[0.03]',
   },
   pink: {
-    glow: 'pink',
+    glow: 'none',
     accent: 'pink',
-    iconBg: 'bg-pink-500/15 border-pink-500/35 text-pink-400 shadow-[0_0_18px_rgba(236,72,153,0.3)]',
-    trendPositive: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
-    trendNegative: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30',
-    barColor: 'bg-gradient-to-r from-pink-400 to-rose-500 shadow-[0_0_12px_rgba(236,72,153,0.6)]',
-    glowBar: 'group-hover:shadow-[0_0_16px_rgba(236,72,153,0.8)]',
-    valueColor: 'text-pink-400',
+    iconBg: 'bg-neutral-800 border border-neutral-700 text-[var(--text-secondary)]',
+    trendPositive: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+    trendNegative: 'bg-red-500/10 text-red-400 border border-red-500/20',
+    barColor: 'bg-[#10a37f]',
+    glowBar: '',
+    valueColor: 'text-[var(--text-primary)]',
+    watermarkColor: 'text-white/[0.03]',
   },
   emerald: {
-    glow: 'emerald',
+    glow: 'none',
     accent: 'emerald',
-    iconBg: 'bg-emerald-500/15 border-emerald-500/35 text-emerald-400 shadow-[0_0_18px_rgba(16,185,129,0.3)]',
-    trendPositive: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
-    trendNegative: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30',
-    barColor: 'bg-gradient-to-r from-emerald-400 to-teal-500 shadow-[0_0_12px_rgba(16,185,129,0.6)]',
-    glowBar: 'group-hover:shadow-[0_0_16px_rgba(16,185,129,0.8)]',
-    valueColor: 'text-emerald-400',
+    iconBg: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400',
+    trendPositive: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+    trendNegative: 'bg-red-500/10 text-red-400 border border-red-500/20',
+    barColor: 'bg-emerald-500',
+    glowBar: '',
+    valueColor: 'text-[var(--text-primary)]',
+    watermarkColor: 'text-white/[0.03]',
   },
   ok: {
-    glow: 'ok',
+    glow: 'none',
     accent: 'ok',
-    iconBg: 'bg-emerald-500/15 border-emerald-500/35 text-emerald-400 shadow-[0_0_18px_rgba(16,185,129,0.3)]',
-    trendPositive: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
-    trendNegative: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30',
-    barColor: 'bg-gradient-to-r from-emerald-400 to-teal-500 shadow-[0_0_12px_rgba(16,185,129,0.6)]',
-    glowBar: 'group-hover:shadow-[0_0_16px_rgba(16,185,129,0.8)]',
-    valueColor: 'text-emerald-400',
+    iconBg: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400',
+    trendPositive: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+    trendNegative: 'bg-red-500/10 text-red-400 border border-red-500/20',
+    barColor: 'bg-emerald-500',
+    glowBar: '',
+    valueColor: 'text-[var(--text-primary)]',
+    watermarkColor: 'text-white/[0.03]',
   },
   amber: {
-    glow: 'amber',
+    glow: 'none',
     accent: 'amber',
-    iconBg: 'bg-amber-500/15 border-amber-500/35 text-amber-400 shadow-[0_0_18px_rgba(245,158,11,0.3)]',
-    trendPositive: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
-    trendNegative: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30',
-    barColor: 'bg-gradient-to-r from-amber-400 to-orange-500 shadow-[0_0_12px_rgba(245,158,11,0.6)]',
-    glowBar: 'group-hover:shadow-[0_0_16px_rgba(245,158,11,0.8)]',
-    valueColor: 'text-amber-400',
+    iconBg: 'bg-amber-500/10 border border-amber-500/20 text-amber-400',
+    trendPositive: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+    trendNegative: 'bg-red-500/10 text-red-400 border border-red-500/20',
+    barColor: 'bg-amber-500',
+    glowBar: '',
+    valueColor: 'text-[var(--text-primary)]',
+    watermarkColor: 'text-white/[0.03]',
   },
   warn: {
-    glow: 'warn',
+    glow: 'none',
     accent: 'warn',
-    iconBg: 'bg-amber-500/15 border-amber-500/35 text-amber-400 shadow-[0_0_18px_rgba(245,158,11,0.3)]',
-    trendPositive: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
-    trendNegative: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30',
-    barColor: 'bg-gradient-to-r from-amber-400 to-orange-500 shadow-[0_0_12px_rgba(245,158,11,0.6)]',
-    glowBar: 'group-hover:shadow-[0_0_16px_rgba(245,158,11,0.8)]',
-    valueColor: 'text-amber-400',
+    iconBg: 'bg-amber-500/10 border border-amber-500/20 text-amber-400',
+    trendPositive: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+    trendNegative: 'bg-red-500/10 text-red-400 border border-red-500/20',
+    barColor: 'bg-amber-500',
+    glowBar: '',
+    valueColor: 'text-[var(--text-primary)]',
+    watermarkColor: 'text-white/[0.03]',
   },
   rose: {
-    glow: 'rose',
+    glow: 'none',
     accent: 'rose',
-    iconBg: 'bg-rose-500/15 border-rose-500/35 text-rose-400 shadow-[0_0_18px_rgba(244,63,94,0.3)]',
-    trendPositive: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
-    trendNegative: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30',
-    barColor: 'bg-gradient-to-r from-rose-400 to-red-600 shadow-[0_0_12px_rgba(244,63,94,0.6)]',
-    glowBar: 'group-hover:shadow-[0_0_16px_rgba(244,63,94,0.8)]',
-    valueColor: 'text-rose-400',
+    iconBg: 'bg-red-500/10 border border-red-500/20 text-red-400',
+    trendPositive: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+    trendNegative: 'bg-red-500/10 text-red-400 border border-red-500/20',
+    barColor: 'bg-red-500',
+    glowBar: '',
+    valueColor: 'text-[var(--text-primary)]',
+    watermarkColor: 'text-white/[0.03]',
   },
   critical: {
-    glow: 'critical',
+    glow: 'none',
     accent: 'critical',
-    iconBg: 'bg-rose-500/15 border-rose-500/35 text-rose-400 shadow-[0_0_18px_rgba(244,63,94,0.3)]',
-    trendPositive: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
-    trendNegative: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30',
-    barColor: 'bg-gradient-to-r from-rose-400 to-red-600 shadow-[0_0_12px_rgba(244,63,94,0.6)]',
-    glowBar: 'group-hover:shadow-[0_0_16px_rgba(244,63,94,0.8)]',
-    valueColor: 'text-rose-400',
+    iconBg: 'bg-red-500/10 border border-red-500/20 text-red-400',
+    trendPositive: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+    trendNegative: 'bg-red-500/10 text-red-400 border border-red-500/20',
+    barColor: 'bg-red-500',
+    glowBar: '',
+    valueColor: 'text-[var(--text-primary)]',
+    watermarkColor: 'text-white/[0.03]',
   },
 };
 
@@ -151,6 +175,7 @@ export function StatCard({
   accentColor,
   colorTheme = 'cyan',
   className,
+  hero = false,
 }: StatCardProps) {
   let themeKey: StatCardColorTheme = colorTheme;
   if (accentColor) {
@@ -163,10 +188,63 @@ export function StatCard({
   }
 
   const theme = themeStyles[themeKey] || themeStyles.cyan;
-
-  // Determine if value is a pure number for count-up animation
   const numericValue = typeof value === 'number' ? value : null;
-  const stringValue = typeof value === 'string' ? value : null;
+  const stringValue  = typeof value === 'string' ? value : null;
+
+  if (hero) {
+    return (
+      <GlassCard
+        hover
+        hero
+        glow={theme.glow}
+        className={cn(
+          'group flex flex-col justify-between relative overflow-hidden transition-all duration-150',
+          'p-7',
+          className,
+        )}
+      >
+        {/* Watermark icon */}
+        <Icon
+          size={90}
+          className={cn(
+            'absolute -bottom-4 -right-4 pointer-events-none select-none',
+            theme.watermarkColor,
+            'transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3',
+          )}
+        />
+        <div className="relative z-10 space-y-2">
+          <p className="text-[11px] font-body font-medium text-[var(--text-secondary)] uppercase tracking-widest">
+            {label}
+          </p>
+          <div className="text-4xl sm:text-5xl font-bold font-data tabular-nums tracking-tight leading-none text-[var(--text-primary)]">
+            {numericValue !== null ? (
+              <StatCounter value={numericValue} duration={1100} />
+            ) : (
+              <span style={{ fontVariantNumeric: 'tabular-nums' }}>{stringValue}</span>
+            )}
+          </div>
+          {trend && (
+            <div className="flex items-center gap-2 mt-2">
+              <span className={cn(
+                'inline-flex items-center gap-1 text-[11px] font-data tabular-nums font-semibold px-2 py-0.5 rounded-md border',
+                trend.isPositive ? theme.trendPositive : theme.trendNegative,
+              )}>
+                {trend.isPositive ? '▲' : '▼'} {Math.abs(trend.value)}%
+              </span>
+              <span className="text-[var(--text-tertiary)] text-[10px] font-body uppercase tracking-wider font-medium">vs prev cycle</span>
+            </div>
+          )}
+          {subtitle && (
+            <p className="text-sm text-[var(--text-secondary)] font-body mt-1 leading-relaxed">{subtitle}</p>
+          )}
+        </div>
+        {/* Gradient accent bar */}
+        <div className="relative z-10 mt-5 h-1 rounded-full overflow-hidden bg-[var(--bg-elevated-2)]">
+          <div className={cn('h-full w-4/5 rounded-full transition-all duration-500 group-hover:w-full', theme.barColor)} />
+        </div>
+      </GlassCard>
+    );
+  }
 
   return (
     <GlassCard
@@ -178,15 +256,12 @@ export function StatCard({
       <div className="flex items-start justify-between gap-3 pt-1">
         <div className="space-y-1.5 flex-1 min-w-0">
           {/* Label */}
-          <p className="text-[11px] font-display font-semibold text-[var(--text-secondary)] uppercase tracking-wider truncate">
+          <p className="text-[11px] font-body font-medium text-[var(--text-secondary)] uppercase tracking-widest truncate">
             {label}
           </p>
 
-          {/* Value — count-up for numbers, plain text for strings */}
-          <div className={cn(
-            'text-2xl sm:text-3xl font-bold font-data tabular-nums tracking-tight leading-none mt-1 transition-colors duration-150 truncate flex items-baseline gap-1.5',
-            theme.valueColor
-          )}>
+          {/* Value */}
+          <div className="text-2xl sm:text-3xl font-bold font-data tabular-nums tracking-tight leading-none mt-1 truncate flex items-baseline gap-1.5 text-[var(--text-primary)]">
             {numericValue !== null ? (
               <StatCounter value={numericValue} duration={900} />
             ) : (
@@ -198,8 +273,8 @@ export function StatCard({
           {trend && (
             <div className="flex items-center gap-2 mt-2.5">
               <span className={cn(
-                'inline-flex items-center gap-1 text-[11px] font-data tabular-nums font-semibold px-2 py-0.5 rounded-md border',
-                trend.isPositive ? theme.trendPositive : theme.trendNegative
+                'inline-flex items-center gap-1 text-[11px] font-data tabular-nums font-semibold px-2.5 py-0.5 rounded-full border shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]',
+                trend.isPositive ? theme.trendPositive : theme.trendNegative,
               )}>
                 {trend.isPositive ? '▲' : '▼'} {Math.abs(trend.value)}%
               </span>
@@ -213,16 +288,16 @@ export function StatCard({
         </div>
 
         {/* Icon */}
-        <div className={cn('p-2.5 rounded-xl border backdrop-blur-md shrink-0 transition-transform duration-300 group-hover:scale-110', theme.iconBg)}>
+        <div className={cn('p-2.5 rounded-2xl border backdrop-blur-md shrink-0 transition-transform duration-300 group-hover:scale-110 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)]', theme.iconBg)}>
           <Icon size={19} />
         </div>
       </div>
 
       {/* Accent Bar */}
-      <div className="mt-3.5 pt-2 border-t border-[var(--glass-border)] flex items-center gap-2">
+      <div className="mt-4 pt-2 border-t border-white/10 flex items-center gap-2">
         <div className={cn(
-          'h-1.5 flex-1 rounded-full overflow-hidden bg-[var(--bg-elevated-2)] transition-all duration-300',
-          theme.glowBar
+          'h-1.5 flex-1 rounded-full overflow-hidden bg-neutral-800 transition-all duration-300',
+          theme.glowBar,
         )}>
           <div className={cn('h-full w-full rounded-full transition-all duration-300 group-hover:brightness-125', theme.barColor)} />
         </div>

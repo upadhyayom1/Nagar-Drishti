@@ -32,83 +32,97 @@ function CameraCard({ camera }: { camera: Camera }) {
   const isOnline  = camera.status === 'online';
   const isWarn    = camera.status === 'warning';
   const statusVar = isOnline ? 'ok' : isWarn ? 'warn' : 'critical';
-  const glowType  = isOnline ? 'emerald' : isWarn ? 'amber' : 'rose';
 
   const trafficVar =
     camera.trafficLevel === 'congested' ? 'critical' :
-    camera.trafficLevel === 'high'      ? 'warn' : 'info';
+    camera.trafficLevel === 'high'      ? 'warn' : 'ok';
 
   return (
-    <Link href={`/cameras/${camera.id}`} className="block h-full">
-      <GlassCard hover glow={glowType} className="h-full flex flex-col gap-3.5 p-4 transition-all duration-150">
+    <Link href={`/cameras/${camera.id}`} className="block h-full group">
+      <div className="h-full rounded-3xl p-3.5 flex flex-col justify-between transition-all duration-300 relative overflow-hidden border border-[var(--glass-border)] bg-[var(--bg-elevated)] backdrop-blur-2xl shadow-[var(--glass-shadow)] hover:border-[var(--brand-teal)]/50 hover:shadow-[0_20px_45px_rgba(0,0,0,0.4),0_0_25px_rgba(0,245,155,0.15)] hover:-translate-y-1.5">
 
-        {/* Video Thumbnail Box — animated scanline placeholder */}
-        <div className="relative aspect-video rounded-xl overflow-hidden camera-feed-bg border border-[var(--glass-border)] shrink-0 shadow-inner">
-          {/* Scanline sweep animation */}
-          <div className="camera-scanline" />
+        {/* Specular top rim highlight */}
+        <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-[var(--glass-highlight)] to-transparent pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity" />
 
-          {/* CRT grid lines overlay */}
+        {/* Liquid Glass CCTV Viewport Box */}
+        <div className="relative aspect-video rounded-2xl overflow-hidden shrink-0 border border-[var(--glass-border)] bg-gradient-to-br from-black/90 via-[#0a0d14]/80 to-black/95 shadow-inner group/feed">
+          {/* CRT scanline texture */}
           <div
-            className="absolute inset-0 opacity-[0.07]"
+            className="absolute inset-0 opacity-[0.06] pointer-events-none"
             style={{
-              backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,240,255,0.5) 2px, rgba(0,240,255,0.5) 3px)',
+              backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,245,155,0.5) 2px, rgba(0,245,155,0.5) 3px)',
               backgroundSize: '100% 6px',
             }}
           />
+          <div className="camera-scanline pointer-events-none opacity-35" />
 
-          {/* Camera icon centred */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <CameraIcon size={28} className="text-cyan-400/20" />
+          {/* Center: Frosted Glass Lens Ring */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="p-3.5 rounded-full bg-[var(--brand-teal)]/10 border border-[var(--brand-teal)]/25 group-hover:scale-110 group-hover:bg-[var(--brand-teal)]/20 transition-all duration-300 shadow-[0_0_24px_rgba(0,245,155,0.15)]">
+              <CameraIcon size={26} className="text-[var(--brand-teal)]/60 group-hover:text-[var(--brand-teal)] transition-colors" />
+            </div>
           </div>
 
-          {/* Status badge */}
-          <div className="absolute top-2.5 left-2.5">
-            <Badge variant={statusVar} size="sm" dot pulse={isOnline}>{camera.status}</Badge>
+          {/* Viewfinder crosshair brackets */}
+          <div className="absolute top-2 left-2 w-2.5 h-2.5 border-t-2 border-l-2 border-white/40 pointer-events-none" />
+          <div className="absolute top-2 right-2 w-2.5 h-2.5 border-t-2 border-r-2 border-white/40 pointer-events-none" />
+          <div className="absolute bottom-2 left-2 w-2.5 h-2.5 border-b-2 border-l-2 border-white/40 pointer-events-none" />
+          <div className="absolute bottom-2 right-2 w-2.5 h-2.5 border-b-2 border-r-2 border-white/40 pointer-events-none" />
+
+          {/* Top-Left: Glass Status Badge */}
+          <div className="absolute top-2.5 left-2.5 z-10">
+            <Badge variant={statusVar} size="sm" dot pulse={isOnline} className="backdrop-blur-md bg-black/60 shadow-md">
+              {camera.status}
+            </Badge>
           </div>
 
-          {/* Detection count */}
-          <div className="absolute top-2.5 right-2.5">
-            <span className="text-[9px] font-mono bg-black/80 backdrop-blur-md px-2 py-0.5 rounded text-white font-bold border border-white/15">
-              {camera.vehiclesDetected} vehicles
+          {/* Top-Right: Glass Detection Count */}
+          <div className="absolute top-2.5 right-2.5 z-10">
+            <span className="text-[9px] font-mono bg-black/75 backdrop-blur-md px-2 py-0.5 rounded-full text-white font-bold border border-white/20 shadow-md">
+              {camera.detectionCount || 12} detections
             </span>
           </div>
 
-          {/* Camera code pill */}
-          <div className="absolute bottom-2.5 left-2.5">
-            <span className="text-[9px] font-mono bg-black/80 backdrop-blur-md px-2.5 py-0.5 rounded text-cyan-400 font-bold border border-cyan-400/40 shadow-md">
+          {/* Bottom-Left: Camera ID Chip */}
+          <div className="absolute bottom-2.5 left-2.5 z-10">
+            <span className="text-[9px] font-mono bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-md text-[var(--brand-teal)] font-bold border border-[var(--brand-teal)]/40 shadow-sm">
               {camera.cameraCode}
             </span>
           </div>
 
-          {/* LIVE indicator with PulseDot */}
+          {/* Bottom-Right: LIVE Beacon */}
           {isOnline && (
-            <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-2 py-0.5 rounded border border-emerald-400/30">
-              <PulseDot variant="emerald" size="sm" />
-              <span className="text-[8px] font-mono text-emerald-400 font-bold">LIVE</span>
+            <div className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-1.5 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-md border border-emerald-400/40 shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-teal)] animate-ping" />
+              <span className="text-[8px] font-mono text-[var(--brand-teal)] font-bold tracking-wider">LIVE {camera.fps || 30}FPS</span>
             </div>
           )}
         </div>
 
-        {/* Info */}
-        <div className="flex flex-col gap-2 flex-1">
+        {/* Info & Telemetry */}
+        <div className="flex flex-col gap-2 pt-3 flex-1">
           <div>
-            <h3 className="text-sm font-bold text-[var(--text-primary)] truncate font-display">{camera.name}</h3>
-            <p className="text-xs text-[var(--text-secondary)] truncate mt-0.5 font-body">{camera.location}</p>
+            <h3 className="text-sm font-bold text-[var(--text-primary)] group-hover:text-[var(--brand-teal)] truncate font-display transition-colors">
+              {camera.name}
+            </h3>
+            <p className="text-xs text-[var(--text-secondary)] truncate mt-0.5 font-mono">
+              {camera.location}
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-xs text-[var(--text-secondary)] font-mono">
-            <div className="flex items-center gap-1.5 font-body truncate">
-              <CameraIcon size={12} className="text-cyan-400 shrink-0" />
+            <div className="flex items-center gap-1.5 truncate">
+              <CameraIcon size={12} className="text-[var(--brand-teal)] shrink-0" />
               <span className="truncate">{camera.zone}</span>
             </div>
             <div className="flex items-center gap-1.5 justify-end">
               <Activity size={12} className="text-violet-400 shrink-0" />
-              <span className="text-[var(--text-primary)] font-bold">{camera.vehiclesDetected}</span>
-              <span>veh</span>
+              <span className="text-[var(--text-primary)] font-bold font-display">{camera.vehiclesDetected}</span>
+              <span className="text-[10px]">veh</span>
             </div>
           </div>
 
-          {/* Footer */}
+          {/* Footer with Specular Rim */}
           <div className="flex items-center justify-between pt-2.5 border-t border-[var(--glass-border)] mt-auto">
             <span className="text-[10px] font-mono text-[var(--text-tertiary)] flex items-center gap-1">
               <Clock size={10} />
@@ -117,7 +131,8 @@ function CameraCard({ camera }: { camera: Camera }) {
             <Badge variant={trafficVar} size="sm">{camera.trafficLevel}</Badge>
           </div>
         </div>
-      </GlassCard>
+
+      </div>
     </Link>
   );
 }
@@ -129,10 +144,10 @@ function FilterPill({
     <button
       onClick={onClick}
       className={cn(
-        'text-xs font-display font-semibold uppercase tracking-wider px-3.5 py-1.5 rounded-xl border transition-all duration-200 capitalize cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-400',
+        'text-xs font-display font-semibold uppercase tracking-wider px-4 py-2 rounded-full border transition-all duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-[var(--brand-teal)] backdrop-blur-xl',
         active
-          ? 'bg-cyan-500/20 text-cyan-400 border-cyan-400/50 shadow-[0_0_15px_rgba(0,240,255,0.3)] font-bold'
-          : 'bg-white/[0.03] text-[var(--text-secondary)] border-[var(--glass-border)] hover:border-cyan-400/30 hover:text-[var(--text-primary)]'
+          ? 'bg-[var(--brand-teal)]/20 text-[var(--brand-teal)] border-[var(--brand-teal)]/50 shadow-[0_0_16px_rgba(0,245,155,0.25)] font-bold'
+          : 'bg-[var(--bg-elevated)]/60 text-[var(--text-secondary)] border-[var(--glass-border)] hover:border-[var(--brand-teal)]/40 hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated-2)]'
       )}
     >
       {label}

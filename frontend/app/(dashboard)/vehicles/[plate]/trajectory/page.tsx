@@ -83,8 +83,8 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
   const centerLng = waypoints.reduce((s, w) => s + w.lng, 0) / waypoints.length;
   const currentWaypoint = waypoints[currentWaypointIndex];
 
-  const darkTileUrl = 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png';
-  const lightTileUrl = 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/rastertiles/voyager/{z}/{x}/{y}.png';
+  const darkTileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+  const lightTileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
   const tileUrl = theme === 'light' ? lightTileUrl : darkTileUrl;
 
   return (
@@ -108,14 +108,14 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
           {/* Inactive planned route path */}
           <Polyline
             positions={routeCoords}
-            pathOptions={{ color: theme === 'light' ? '#0284c7' : '#38bdf8', weight: 2, opacity: 0.35, dashArray: '6 6' }}
+            pathOptions={{ color: '#525252', weight: 1.5, opacity: 0.4, dashArray: '4 4' }}
           />
 
-          {/* Active traversed route (Accent Cyan) */}
+          {/* Active traversed route (Single Restrained Accent) */}
           {visibleRoute.length > 1 && (
             <Polyline
               positions={visibleRoute}
-              pathOptions={{ color: theme === 'light' ? '#0284c7' : '#00f0ff', weight: 4, opacity: 0.95 }}
+              pathOptions={{ color: theme === 'light' ? '#0d9488' : '#10a37f', weight: 3.5, opacity: 0.95 }}
             />
           )}
 
@@ -124,21 +124,21 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
             <CircleMarker
               key={`${wp.cameraId}-${i}`}
               center={[wp.lat, wp.lng]}
-              radius={i <= currentWaypointIndex ? 7 : 4.5}
+              radius={i <= currentWaypointIndex ? 6 : 4}
               pathOptions={{
-                color:       i <= currentWaypointIndex ? '#00f0ff' : '#6366f1',
-                fillColor:   i <= currentWaypointIndex ? '#00f0ff' : '#0e1016',
+                color:       i <= currentWaypointIndex ? '#10a37f' : '#525252',
+                fillColor:   i <= currentWaypointIndex ? '#10a37f' : '#212121',
                 fillOpacity: i <= currentWaypointIndex ? 0.9 : 0.4,
                 weight: 1.5,
               }}
             >
               <Popup>
                 <div className="p-3 min-w-[190px] font-body text-[var(--text-primary)]">
-                  <p className="font-bold text-xs font-display text-[var(--text-primary)]">{wp.cameraName}</p>
-                  <p className="text-[10px] text-cyan-400 font-mono mt-0.5">{wp.cameraId}</p>
+                  <p className="font-semibold text-xs font-display text-[var(--text-primary)]">{wp.cameraName}</p>
+                  <p className="text-[10px] text-[#10a37f] font-mono mt-0.5">{wp.cameraId}</p>
                   <div className="text-[10px] text-[var(--text-secondary)] mt-2 space-y-0.5 font-mono">
                     <p>Time: <span className="font-semibold text-[var(--text-primary)]">{formatTime(wp.timestamp)}</span></p>
-                    <p>Speed: <span className="text-cyan-400 font-semibold">{wp.speed} km/h</span></p>
+                    <p>Speed: <span className="text-[#10a37f] font-semibold">{wp.speed} km/h</span></p>
                   </div>
                 </div>
               </Popup>
@@ -148,12 +148,12 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
           {/* Active Pulsing Position Marker */}
           <CircleMarker
             center={[currentWaypoint.lat, currentWaypoint.lng]}
-            radius={12}
+            radius={10}
             pathOptions={{
-              color:       '#6366f1',
-              fillColor:   '#00f0ff',
-              fillOpacity: 0.9,
-              weight: 3,
+              color:       '#ffffff',
+              fillColor:   '#10a37f',
+              fillOpacity: 1,
+              weight: 2,
             }}
           />
         </MapContainer>
@@ -169,8 +169,8 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
 
         {/* Target Plate Floating Badge */}
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000]">
-          <div className="px-5 py-1.5 rounded-full bg-[var(--bg-elevated)]/90 backdrop-blur-2xl border border-cyan-400/40 shadow-[0_0_20px_rgba(0,240,255,0.25)]">
-            <span className="font-mono font-bold text-cyan-400 text-sm tracking-widest">{decodedPlate}</span>
+          <div className="px-4 py-1.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--glass-border)] shadow-md">
+            <span className="font-mono font-bold text-[var(--text-primary)] text-sm tracking-widest">{decodedPlate}</span>
           </div>
         </div>
       </div>
@@ -184,7 +184,7 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
       >
         <div>
           <h2 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider font-display flex items-center gap-2">
-            <Radio size={13} className="text-cyan-400 animate-pulse" />
+            <Radio size={13} className="text-[#10a37f]" />
             Trajectory Telemetry
           </h2>
           <p className="text-[10px] font-mono text-[var(--text-secondary)] mt-0.5">Route vector sequence &amp; metrics</p>
@@ -202,7 +202,7 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
           </GlassCard>
           <GlassCard padding="sm" className="p-3">
             <div className="text-[8px] font-mono text-[var(--text-secondary)] uppercase tracking-wider">Avg Velocity</div>
-            <div className="text-sm font-mono font-bold text-cyan-400 mt-0.5">{formatSpeed(journey.avgSpeed)}</div>
+            <div className="text-sm font-mono font-bold text-[var(--text-primary)] mt-0.5">{formatSpeed(journey.avgSpeed)}</div>
           </GlassCard>
           <GlassCard padding="sm" className="p-3">
             <div className="text-[8px] font-mono text-[var(--text-secondary)] uppercase tracking-wider">Waypoints</div>
@@ -214,7 +214,7 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
         <div className="p-3 rounded-xl bg-white/[0.02] border border-[var(--glass-border)] space-y-3">
           <div className="flex items-center justify-between text-[11px] font-mono">
             <span className="text-[var(--text-secondary)]">Progress</span>
-            <span className="text-cyan-400 font-bold">{currentWaypointIndex + 1} / {waypoints.length}</span>
+            <span className="text-[#10a37f] font-bold">{currentWaypointIndex + 1} / {waypoints.length}</span>
           </div>
 
           <input
@@ -226,7 +226,7 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
               setCurrentWaypointIndex(Number(e.target.value));
               setIsPlaying(false);
             }}
-            className="w-full accent-cyan-400 h-1 rounded-lg bg-white/10 cursor-pointer"
+            className="w-full accent-[#10a37f] h-1 rounded-lg bg-neutral-700 cursor-pointer"
           />
 
           <div className="flex items-center gap-2 pt-1">
@@ -266,12 +266,12 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
                     setIsPlaying(false);
                   }}
                   className={cn(
-                    'p-2.5 rounded-xl border text-xs cursor-pointer transition-all duration-150',
+                    'p-2.5 rounded-xl border text-xs cursor-pointer transition-colors duration-150',
                     isCurrent
-                      ? 'bg-cyan-500/10 border-cyan-400/50 shadow-[0_0_12px_rgba(0,240,255,0.15)] text-[var(--text-primary)]'
+                      ? 'bg-[var(--bg-elevated-2)] border-neutral-700 text-[var(--text-primary)]'
                       : isPassed
-                      ? 'bg-white/[0.02] border-white/5 opacity-60 hover:opacity-100 text-[var(--text-secondary)]'
-                      : 'bg-transparent border-transparent text-[var(--text-tertiary)] hover:bg-white/[0.02]',
+                      ? 'bg-transparent border-transparent opacity-60 hover:opacity-100 text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)]'
+                      : 'bg-transparent border-transparent text-[var(--text-tertiary)] hover:bg-[var(--bg-elevated)]',
                   )}
                 >
                   <div className="flex items-center justify-between gap-1 mb-1">
@@ -279,7 +279,7 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
                     <span className="text-[9px] font-mono text-[var(--text-secondary)]">{formatTime(wp.timestamp)}</span>
                   </div>
                   <div className="flex items-center justify-between text-[10px] font-mono">
-                    <span className="text-cyan-400 font-semibold">{wp.cameraId}</span>
+                    <span className="text-[#10a37f] font-semibold">{wp.cameraId}</span>
                     <span className="text-[var(--text-secondary)]">{wp.speed} km/h</span>
                   </div>
                 </div>

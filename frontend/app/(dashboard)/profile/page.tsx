@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { motion } from 'framer-motion';
 import { Shield, User, Clock, MapPin, Radio, Key, LogOut, Sun, Moon, CheckCircle2, Award, Zap, ShieldCheck, Activity } from 'lucide-react';
@@ -39,7 +39,7 @@ export default function UserProfilePage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
             <div className="relative">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#00f0ff] via-[#6366f1] to-[#ec4899] p-0.5 shadow-[0_0_24px_rgba(0,240,255,0.5)]">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#00f0ff] via-[#6366f1] to-[#ec4899] p-0.5 shadow-[0_0_24px_rgba(61,118,121,0.5)]">
                 <div className="w-full h-full rounded-2xl bg-[var(--bg-elevated)] flex items-center justify-center text-2xl font-bold font-display text-white">
                   {initials}
                 </div>

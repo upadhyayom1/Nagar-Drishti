@@ -5,24 +5,36 @@ export function cn(...classes: (string | undefined | null | false | 0)[]): strin
 
 // ── Date/Time Formatting ──────────────────────────────────────────────────────
 
-export function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('en-IN', {
+export function formatDate(dateString?: string | null): string {
+  if (!dateString) return '—';
+  const d = new Date(dateString);
+  if (isNaN(d.getTime())) return String(dateString);
+  return d.toLocaleDateString('en-IN', {
     day: '2-digit', month: 'short', year: 'numeric',
   });
 }
 
-export function formatTime(dateString: string): string {
-  return new Date(dateString).toLocaleTimeString('en-IN', {
+export function formatTime(dateString?: string | null): string {
+  if (!dateString) return '—';
+  const d = new Date(dateString);
+  if (isNaN(d.getTime())) return String(dateString);
+  return d.toLocaleTimeString('en-IN', {
     hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
   });
 }
 
-export function formatDateTime(dateString: string): string {
+export function formatDateTime(dateString?: string | null): string {
+  if (!dateString) return '—';
+  const d = new Date(dateString);
+  if (isNaN(d.getTime())) return String(dateString);
   return `${formatDate(dateString)} ${formatTime(dateString)}`;
 }
 
-export function formatRelativeTime(dateString: string): string {
-  const diffMs = Date.now() - new Date(dateString).getTime();
+export function formatRelativeTime(dateString?: string | null): string {
+  if (!dateString) return 'just now';
+  const d = new Date(dateString);
+  if (isNaN(d.getTime())) return 'just now';
+  const diffMs = Date.now() - d.getTime();
   const diffSec = Math.floor(diffMs / 1000);
   if (diffSec < 45) return 'just now';
   const diffMin = Math.floor(diffSec / 60);

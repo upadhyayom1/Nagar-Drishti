@@ -100,48 +100,47 @@ export function TopBar() {
   };
 
   function severityColor(sev: string) {
-    if (sev === 'critical') return 'text-rose-400';
+    if (sev === 'critical') return 'text-red-400';
     if (sev === 'high') return 'text-amber-400';
-    return 'text-cyan-400';
+    return 'text-[#10a37f]';
   }
 
   return (
     <>
-      <div className="flex items-center justify-between gap-3 px-4 sm:px-6 h-18 w-full font-body border-b border-[var(--glass-border)] bg-[var(--glass-surface)] backdrop-blur-2xl relative">
-
+      <div className="h-14 lg:h-16 w-full rounded-full border border-[var(--glass-border)] true-glass flex items-center justify-between px-4 lg:px-6 transition-colors">
         {/* Left: Mobile Hamburger & Page Title */}
-        <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="flex items-center gap-3 min-w-0">
           <button
             onClick={toggleMobileMenu}
             aria-label="Open Navigation Menu"
-            className="md:hidden p-2 rounded-xl bg-white/[0.04] border border-[var(--glass-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors shrink-0 focus-visible:ring-2 focus-visible:ring-cyan-400"
+            className="md:hidden p-2 rounded-xl bg-white/[0.04] border border-[var(--glass-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors shrink-0 focus-visible:ring-2 focus-visible:ring-[#10a37f]"
           >
             <Menu size={18} />
           </button>
 
           <div className="min-w-0">
-            <h1 className="font-display text-sm sm:text-base md:text-lg font-bold text-[var(--text-primary)] tracking-tight truncate flex items-center gap-2">
+            <h1 className="font-display text-sm sm:text-base md:text-lg font-extrabold text-[var(--text-primary)] tracking-tight truncate flex items-center gap-2">
               {getPageTitle(pathname)}
             </h1>
-            <p className="text-[10px] font-mono uppercase tracking-wider flex items-center gap-1.5 font-medium mt-0.5 text-[var(--text-secondary)] truncate">
+            <p className="text-[10px] font-mono uppercase tracking-wider flex items-center gap-1.5 font-semibold mt-0.5 text-[var(--text-secondary)] truncate">
               <PulseDot variant="emerald" size="sm" />
-              <span className="text-cyan-400 font-semibold truncate">{systemHealth?.summary.online ?? 0} Camera Nodes Online</span>
+              <span className="text-[var(--brand-teal)] font-bold truncate">{systemHealth?.summary.online ?? 0} CAMERA NODES ONLINE</span>
               <span className="hidden sm:inline text-[var(--text-tertiary)]">·</span>
-              <span className="hidden sm:inline truncate">Prayagraj Sector</span>
+              <span className="hidden sm:inline truncate text-[var(--text-secondary)]">PRAYAGRAJ SECTOR</span>
             </p>
           </div>
         </div>
 
         {/* Desktop & Tablet Search Bar */}
-        <div className="w-64 lg:w-80 shrink-0 hidden md:block">
+        <div className="w-72 lg:w-96 shrink-0 hidden md:block">
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleSearch}
-            placeholder="Search license plate (e.g. TN38AB1234)"
+            placeholder="Search plate (e.g. TN38AB1234)..."
             showSearchIcon
-            shortcutHint="↵ ENTER"
-            className="h-9 text-xs font-mono"
+            shortcutHint="↵ Enter"
+            className="h-10 text-xs font-mono"
           />
         </div>
 
@@ -152,7 +151,7 @@ export function TopBar() {
           <button
             onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
             aria-label="Toggle Search"
-            className="md:hidden p-2 rounded-xl bg-white/[0.04] border border-[var(--glass-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors focus-visible:ring-2 focus-visible:ring-cyan-400"
+            className="md:hidden p-2.5 rounded-full bg-[var(--bg-elevated)]/60 hover:bg-[var(--bg-elevated-2)] border border-[var(--glass-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--brand-teal)]"
           >
             {mobileSearchOpen ? <X size={16} /> : <Search size={16} />}
           </button>
@@ -162,11 +161,11 @@ export function TopBar() {
             onClick={toggleTheme}
             aria-label="Toggle Color Theme"
             title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            className="p-2 rounded-xl bg-white/[0.04] border border-[var(--glass-border)] text-[var(--text-secondary)] hover:text-cyan-400 hover:border-cyan-400/40 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-cyan-400"
+            className="p-2.5 rounded-full bg-[var(--bg-elevated)]/60 hover:bg-[var(--bg-elevated-2)] border border-[var(--glass-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all duration-150 focus-visible:ring-2 focus-visible:ring-[var(--brand-teal)]"
           >
             {theme === 'dark'
-              ? <Sun size={16} className="text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
-              : <Moon size={16} className="text-violet-500 drop-shadow-[0_0_8px_rgba(139,92,246,0.5)]" />
+              ? <Sun size={15} className="text-amber-400" />
+              : <Moon size={15} className="text-violet-500" />
             }
           </button>
 
@@ -174,14 +173,14 @@ export function TopBar() {
           <button
             onClick={() => setProfileModalOpen(true)}
             title="Open Operator Profile"
-            className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/[0.03] hover:bg-white/[0.07] border border-[var(--glass-border)] hover:border-cyan-400/40 transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-cyan-400"
+            className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-[var(--bg-elevated)]/60 hover:bg-[var(--bg-elevated-2)] border border-[var(--glass-border)] transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-[var(--brand-teal)]"
           >
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#00f0ff] via-[#6366f1] to-[#ec4899] flex items-center justify-center text-[10px] font-bold text-white shadow-[0_0_12px_rgba(0,240,255,0.4)] group-hover:scale-105 transition-transform">
+            <div className="w-6 h-6 rounded-full bg-[var(--brand-teal)]/15 border border-[var(--brand-teal)]/30 flex items-center justify-center text-[10px] font-bold text-[var(--brand-teal)] group-hover:scale-105 transition-transform">
               {initials}
             </div>
             <div className="text-[10px] leading-tight font-mono text-left hidden lg:block">
-              <span className="text-[var(--text-primary)] font-semibold block group-hover:text-cyan-400 transition-colors">{displayName}</span>
-              <span className="text-[var(--text-tertiary)] block text-[9px]">{user?.role === 'ADMIN' ? 'Municipal Administrator' : 'Authenticated User'}</span>
+              <span className="text-[var(--text-primary)] font-bold block group-hover:text-[var(--brand-teal)] transition-colors">{displayName}</span>
+              <span className="text-[var(--text-secondary)] block text-[9px]">{user?.role === 'ADMIN' ? 'Municipal Administrator' : 'Authenticated User'}</span>
             </div>
           </button>
 
@@ -190,7 +189,7 @@ export function TopBar() {
             <button
               ref={bellRef}
               onClick={() => setNotificationsOpen(!notificationsOpen)}
-              className="relative p-2 rounded-xl bg-white/[0.03] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.06] border border-[var(--glass-border)] hover:border-cyan-400/40 transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+              className="relative p-2.5 rounded-full bg-[var(--bg-elevated)]/60 hover:bg-[var(--bg-elevated-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--glass-border)] transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-teal)]"
               aria-label="Sentinel Alerts"
             >
               <Bell size={16} />
@@ -202,7 +201,7 @@ export function TopBar() {
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0.5, opacity: 0 }}
                     transition={{ type: 'spring', stiffness: 500, damping: 20 }}
-                    className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-rose-500 text-white border border-rose-400 text-[9px] font-mono font-bold flex items-center justify-center shadow-[0_0_10px_rgba(244,63,94,0.5)]"
+                    className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-white border border-red-400 text-[9px] font-mono font-bold flex items-center justify-center"
                   >
                     {alertCount > 99 ? '99+' : alertCount}
                   </motion.span>

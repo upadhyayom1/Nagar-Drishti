@@ -92,7 +92,7 @@ export function StackingCapabilities() {
                 accent={isSelected ? cap.accent : 'none'}
                 className={`p-4.5 transition-all duration-300 flex items-center justify-between gap-4 ${
                   isSelected
-                    ? 'border-cyan-400 shadow-[0_0_24px_rgba(0,240,255,0.25)] bg-white/[0.06] dark:bg-slate-900/80'
+                    ? 'border-cyan-400 shadow-[0_0_24px_rgba(61,118,121,0.25)] bg-white/[0.06] dark:bg-slate-900/80'
                     : 'border-[var(--glass-border)] opacity-75 hover:opacity-100'
                 }`}
               >
@@ -130,7 +130,7 @@ export function StackingCapabilities() {
         })}
       </div>
 
-      {/* ── Right 3D Book/Deck Stacking Showcase ────────────────────────── */}
+      {/* ── Right 3D Book/Deck Stacking Showcase ───────────────────────── */}
       <div className="lg:col-span-7 relative min-h-[380px] flex items-center">
         <AnimatePresence mode="wait">
           <motion.div

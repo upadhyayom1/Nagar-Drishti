@@ -8,7 +8,7 @@ import { ArrowLeft, Eye, Clock, Route, Camera, BrainCircuit, Scan } from 'lucide
 import { GlassCard }    from '@/components/ui/GlassCard';
 import { Badge }        from '@/components/ui/Badge';
 import { Button }       from '@/components/ui/Button';
-import { StatCard }     from '@/components/ui/StatCard';
+import { BentoStatDeck } from '@/components/ui/BentoStatDeck';
 import { EmptyState }   from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/SkeletonCard';
 import { PageWrapper }  from '@/components/layout/PageWrapper';
@@ -83,13 +83,70 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
         )}
       </div>
 
-      {/* KPI Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Detections" value={vehicle.totalDetections} icon={Eye}    colorTheme="cyan" />
-        <StatCard label="Cameras Visited"  value={vehicle.camerasVisited}  icon={Camera} colorTheme="violet" />
-        <StatCard label="First Sighted"    value={formatDate(vehicle.firstSeen)} icon={Clock} colorTheme="emerald" />
-        <StatCard label="Last Sighted"     value={formatDate(vehicle.lastSeen)}  icon={Clock} colorTheme="amber" />
-      </div>
+      {/* ── Vehicle Intelligence Bento Stat Grid ── */}
+      <BentoStatDeck
+        items={[
+          {
+            hero: true,
+            category: 'OPTICAL SURVEILLANCE',
+            title: 'Recorded Plate Detections',
+            badge: {
+              text: vehicle.status.toUpperCase(),
+              variant: vehicle.status === 'blacklist' ? 'critical' : vehicle.status === 'watchlist' ? 'warn' : 'ok',
+            },
+            value: vehicle.totalDetections,
+            unit: 'events',
+            trend: { text: `${vehicle.camerasVisited} Nodes Visited`, isPositive: true },
+            note: `Registered: ${vehicle.registeredCity || 'Prayagraj Zone'}`,
+            icon: Eye,
+            colorTheme: 'brand',
+            bars: {
+              label: 'Detection Frequency Rhythm (Past 12h)',
+              rightText: `${detections.length} Total Telemetry Hits`,
+            },
+          },
+          {
+            category: 'CAMERA COVERAGE',
+            title: 'Optical nodes visited',
+            value: vehicle.camerasVisited,
+            unit: '/ 10',
+            icon: Camera,
+            colorTheme: 'violet',
+            visual: 'ring',
+            visualMeta: {
+              ringValue: Math.min(Math.round((vehicle.camerasVisited / 10) * 100), 100),
+              ringText: `${vehicle.camerasVisited}`,
+              subLabel: 'Grid Exposure',
+              subNote: 'Spatial Distribution',
+            },
+          },
+          {
+            category: 'FIRST SIGHTED',
+            title: 'Initial optical capture',
+            value: formatDate(vehicle.firstSeen),
+            icon: Clock,
+            colorTheme: 'emerald',
+            visual: 'segmented-bar',
+            visualMeta: {
+              subLabel: 'Temporal Anchor',
+              subNote: 'First Log Entry',
+            },
+          },
+          {
+            category: 'LAST SIGHTED',
+            title: 'Most recent detection',
+            value: formatDate(vehicle.lastSeen),
+            icon: Clock,
+            colorTheme: 'amber',
+            visual: 'action-link',
+            visualMeta: {
+              subNote: 'Last active position',
+              actionLabel: 'Trajectory',
+              actionHref: journey ? `/vehicles/${vehicle.plate}/trajectory` : undefined,
+            },
+          },
+        ]}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Movement Timeline */}

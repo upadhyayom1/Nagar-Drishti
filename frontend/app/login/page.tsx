@@ -97,50 +97,48 @@ function LoginFormContent() {
   return (
     <div className="min-h-screen bg-[var(--bg-void)] text-[var(--text-primary)] flex flex-col items-center justify-center p-4 relative overflow-hidden font-body select-none">
       
-      {/* ── Multi-Chromatic Ambient Glowing Orbs ── */}
-      <div className="absolute top-[-15%] left-[20%] w-[55vw] h-[55vw] rounded-full blur-[190px] pointer-events-none bg-cyan-500/[0.08]" />
-      <div className="absolute bottom-[-15%] right-[20%] w-[55vw] h-[55vw] rounded-full blur-[190px] pointer-events-none bg-indigo-500/[0.08]" />
-      <div className="absolute top-[35%] right-[-10%] w-[40vw] h-[40vw] rounded-full blur-[180px] pointer-events-none bg-pink-500/[0.05]" />
+      {/* ── Neutral Ambient Orbs ── */}
+      <div className="absolute top-[-15%] left-[20%] w-[55vw] h-[55vw] rounded-full blur-[190px] pointer-events-none bg-white/[0.015]" />
+      <div className="absolute bottom-[-15%] right-[20%] w-[55vw] h-[55vw] rounded-full blur-[190px] pointer-events-none bg-white/[0.01]" />
 
       {/* ── Central Glass Card ── */}
       <motion.div
         initial={{ opacity: 0, y: 16, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.45, ease: 'easeOut' }}
         className="w-full max-w-md relative z-10 space-y-5"
       >
         {/* Brand Header */}
         <div className="text-center space-y-2">
           <Logo size="md" className="justify-center" />
-          <p className="text-xs text-[var(--text-secondary)] font-mono uppercase tracking-wider mt-1">
+          <p className="text-xs text-[var(--text-secondary)] font-body mt-1">
             Municipal AI Intelligence &amp; Citizen Dispatch Gateway
           </p>
         </div>
 
         {/* Login Panel */}
-        <GlassCard padding="lg" glow="spectral" className="p-7 sm:p-8 space-y-6 relative overflow-hidden border border-cyan-500/30 shadow-[0_24px_70px_rgba(0,0,0,0.8),0_0_30px_rgba(0,240,255,0.15)]">
-          
+        <GlassCard variant="textured" padding="lg" className="p-7 sm:p-8 space-y-6 relative overflow-hidden border border-neutral-800 shadow-xl bg-[var(--bg-elevated)]">
+
           {/* Multi-Stage Scanning HUD Animation during Verification */}
           {isVerifying && (
             <div className="absolute inset-0 z-30 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center p-6 space-y-5 animate-in fade-in duration-200">
               <div className="relative w-20 h-20 flex items-center justify-center">
-                <div className="absolute inset-0 rounded-full border-2 border-cyan-400/20 border-t-cyan-400 animate-spin" />
-                <div className="absolute inset-2.5 rounded-full border-2 border-fuchsia-500/20 border-b-fuchsia-500 animate-spin [animation-direction:reverse] [animation-duration:1.2s]" />
-                <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-400 shadow-[0_0_16px_rgba(0,240,255,0.6)] animate-pulse">
+                <div className="absolute inset-0 rounded-full border-2 border-neutral-700 border-t-[#10a37f] animate-spin" />
+                <div className="w-8 h-8 rounded-full bg-[#10a37f]/10 border border-[#10a37f]/20 flex items-center justify-center text-[#10a37f]">
                   <Activity size={16} />
                 </div>
               </div>
 
               <div className="text-center space-y-2">
-                <p className="text-xs font-mono text-cyan-400 font-bold uppercase tracking-wider flex items-center justify-center gap-2">
+                <p className="text-xs font-mono text-[#10a37f] font-bold uppercase tracking-wider flex items-center justify-center gap-2">
                   <Radio size={14} className="animate-pulse" />
-                  {verificationStep === 1 && "Scanning Biometric & Node Credentials…"}
-                  {verificationStep === 2 && "Validating Cryptographic Sector Signatures…"}
+                  {verificationStep === 1 && 'Scanning Biometric & Node Credentials…'}
+                  {verificationStep === 2 && 'Validating Cryptographic Sector Signatures…'}
                 </p>
-                <div className="w-48 h-1 bg-white/10 rounded-full overflow-hidden mx-auto">
-                  <div 
-                    className="h-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-fuchsia-500 transition-all duration-700" 
-                    style={{ width: verificationStep === 1 ? '50%' : '95%' }} 
+                <div className="w-48 h-1 bg-neutral-800 rounded-full overflow-hidden mx-auto">
+                  <div
+                    className="h-full bg-[#10a37f] transition-all duration-700"
+                    style={{ width: verificationStep === 1 ? '50%' : '95%' }}
                   />
                 </div>
                 <span className="text-[10px] font-mono text-[var(--text-tertiary)] block">
@@ -153,7 +151,7 @@ function LoginFormContent() {
           {/* Verified Success Screen */}
           {verifiedSuccess && (
             <div className="absolute inset-0 z-30 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-6 space-y-4 animate-in fade-in zoom-in-95 duration-300">
-              <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex items-center justify-center text-emerald-400 shadow-[0_0_28px_rgba(16,185,129,0.6)]">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
                 <CheckCircle2 size={36} />
               </div>
               <div className="text-center space-y-1">
@@ -166,30 +164,30 @@ function LoginFormContent() {
           )}
 
           {/* Dual-Role Selector Tabs */}
-          <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-white/[0.03] border border-[var(--glass-border)]">
+          <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-white/[0.03] border border-[var(--glass-border)]">
             <button
               type="button"
               onClick={() => handleRoleSwitch('admin')}
-              className={`flex items-center justify-center gap-2 py-2.5 rounded-xl font-display text-xs font-bold transition-all duration-200 cursor-pointer ${
+              className={`flex items-center justify-center gap-2 py-2.5 rounded-lg font-display text-xs font-semibold transition-colors duration-150 cursor-pointer ${
                 role === 'admin'
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 shadow-[0_0_16px_rgba(0,240,255,0.3)]'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  ? 'bg-[var(--bg-elevated-2)] text-[var(--text-primary)] border border-neutral-700'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent'
               }`}
             >
-              <Shield size={14} className={role === 'admin' ? 'text-cyan-400' : ''} />
+              <Shield size={14} className={role === 'admin' ? 'text-[#10a37f]' : ''} />
               Admin Command
             </button>
 
             <button
               type="button"
               onClick={() => handleRoleSwitch('user')}
-              className={`flex items-center justify-center gap-2 py-2.5 rounded-xl font-display text-xs font-bold transition-all duration-200 cursor-pointer ${
+              className={`flex items-center justify-center gap-2 py-2.5 rounded-lg font-display text-xs font-semibold transition-colors duration-150 cursor-pointer ${
                 role === 'user'
-                  ? 'bg-violet-500/20 text-violet-300 border border-violet-400/50 shadow-[0_0_16px_rgba(139,92,246,0.3)]'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  ? 'bg-[var(--bg-elevated-2)] text-[var(--text-primary)] border border-neutral-700'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent'
               }`}
             >
-              <UserCheck size={14} className={role === 'user' ? 'text-violet-400' : ''} />
+              <UserCheck size={14} className={role === 'user' ? 'text-[#10a37f]' : ''} />
               Citizen User
             </button>
           </div>
@@ -199,7 +197,7 @@ function LoginFormContent() {
             <div className="space-y-1.5">
               <label className="text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)] font-semibold flex items-center justify-between">
                 <span>{role === 'admin' ? 'Operator Identifier' : 'Citizen Email / Phone'}</span>
-                <span className="text-[10px] text-cyan-400 font-normal">Backend-verified account</span>
+                <span className="text-[10px] text-[#10a37f] font-normal">Backend-verified account</span>
               </label>
               <Input
                 value={username}
@@ -223,7 +221,7 @@ function LoginFormContent() {
             </div>
 
             {errorMessage && (
-              <p className="text-xs font-mono text-rose-400 bg-rose-500/10 border border-rose-500/30 p-2.5 rounded-xl">
+              <p className="text-xs font-mono text-red-400 bg-red-500/10 border border-red-500/20 p-2.5 rounded-lg">
                 {errorMessage}
               </p>
             )}
@@ -265,7 +263,7 @@ export default function LoginPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-[var(--bg-void)] flex items-center justify-center text-cyan-400 font-mono text-xs">
-        Initializing Secure Gateway…
+        Initializing Secure Gateway"¦
       </div>
     }>
       <LoginFormContent />

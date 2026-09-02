@@ -5,7 +5,7 @@ import { MapContainer, TileLayer, CircleMarker, Polyline, Circle, Popup, useMap 
 import 'leaflet/dist/leaflet.css';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
-import { Video, Crosshair } from 'lucide-react';
+import { Video, Crosshair, Plus, Minus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useFilterStore } from '@/store/filterStore';
 import { useUIStore } from '@/store/uiStore';
@@ -22,11 +22,11 @@ interface MapViewProps {
 
 function statusColor(status: string): string {
   switch (status) {
-    case 'online':   return '#00E6B0'; // emerald
-    case 'warning':  return '#f59e0b'; // amber
-    case 'offline':  return '#f43f5e'; // rose
-    case 'critical': return '#f43f5e';
-    default:         return '#00f0ff';
+    case 'online':   return '#10a37f';
+    case 'warning':  return '#f59e0b';
+    case 'offline':  return '#ef4444';
+    case 'critical': return '#ef4444';
+    default:         return '#10a37f';
   }
 }
 
@@ -58,27 +58,54 @@ function MapResizeHandler() {
   return null;
 }
 
-// Controller component to handle smooth animated recentering
-function MapViewController({ center, zoom }: { center: [number, number]; zoom: number }) {
+// Custom glass zoom controls matching the site's design system
+function ZoomControls({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap();
 
   const handleReset = () => {
     map.closePopup();
-    map.flyTo(center, zoom, {
-      duration: 1.2,
-      easeLinearity: 0.2,
-    });
+    map.flyTo(center, zoom, { duration: 1.2, easeLinearity: 0.2 });
   };
 
+  const btnBase =
+    'w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-150 cursor-pointer ' +
+    'bg-[var(--bg-elevated)] border border-[var(--glass-border)] text-[var(--text-secondary)] ' +
+    'hover:text-[var(--text-primary)] hover:border-cyan-500/40 hover:bg-[var(--bg-elevated-2)] ' +
+    'active:scale-95 shadow-[0_4px_14px_rgba(0,0,0,0.5)]';
+
   return (
-    <div className="absolute top-4 right-4 z-[400] flex items-center gap-2">
+    <div className="absolute bottom-6 right-4 z-[400] flex flex-col gap-1.5">
+      {/* Zoom In */}
+      <button
+        onClick={() => map.zoomIn()}
+        title="Zoom in"
+        aria-label="Zoom in"
+        className={btnBase}
+      >
+        <Plus size={15} strokeWidth={2.5} />
+      </button>
+
+      {/* Zoom Out */}
+      <button
+        onClick={() => map.zoomOut()}
+        title="Zoom out"
+        aria-label="Zoom out"
+        className={btnBase}
+      >
+        <Minus size={15} strokeWidth={2.5} />
+      </button>
+
+      {/* Divider */}
+      <div className="h-px w-full bg-[var(--glass-border)] my-0.5" />
+
+      {/* Reset / Recenter */}
       <button
         onClick={handleReset}
-        title="Reset Map to Sector Grid View"
-        className="px-3.5 py-1.5 rounded-xl bg-[var(--bg-elevated)]/90 text-cyan-400 hover:text-white hover:bg-cyan-500/20 border border-[var(--glass-border)] hover:border-cyan-400/60 transition-all text-xs font-display font-semibold flex items-center gap-1.5 shadow-[0_0_18px_rgba(0,240,255,0.25)] backdrop-blur-md cursor-pointer"
+        title="Reset map to sector grid view"
+        aria-label="Reset map view"
+        className={btnBase}
       >
-        <Crosshair size={13} className="text-cyan-400" />
-        Reset Grid View
+        <Crosshair size={14} className="text-[#10a37f]" />
       </button>
     </div>
   );
@@ -97,9 +124,9 @@ export function MapView({
     ? [cameras.reduce((sum, camera) => sum + camera.lat, 0) / cameras.length, cameras.reduce((sum, camera) => sum + camera.lng, 0) / cameras.length]
     : center;
 
-  // Use standard CartoCDN URLs to avoid the "API KEY REQUIRED" watermark from the old Fastly CDN
+  // Current CartoCDN SSL tile endpoints
   const darkTileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-  const lightTileUrl = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  const lightTileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
   const tileUrl = theme === 'light' ? lightTileUrl : darkTileUrl;
 
@@ -110,11 +137,11 @@ export function MapView({
         zoom={zoom}
         className={className}
         style={{ height: '100%', width: '100%', minHeight: '480px', zIndex: 1 }}
-        zoomControl={true}
+        zoomControl={false}
         attributionControl={true}
       >
         <MapResizeHandler />
-        <MapViewController center={mapCenter} zoom={zoom} />
+        <ZoomControls center={mapCenter} zoom={zoom} />
 
         {/* Clean Theme-Adaptive Tiles (No Watermark) */}
         <TileLayer
@@ -130,17 +157,17 @@ export function MapView({
             key={road.id}
             positions={road.geometry.coordinates.map(([longitude, latitude]) => [latitude, longitude] as [number, number])}
             pathOptions={{
-              color: theme === 'light' ? '#0284c7' : '#00f0ff',
-              weight: showTrajectories ? 3.5 : 2,
-              opacity: showTrajectories ? 0.9 : 0.45,
-              dashArray: showTrajectories ? '8 6' : undefined,
+              color: theme === 'light' ? '#0d9488' : '#10a37f',
+              weight: showTrajectories ? 3 : 1.5,
+              opacity: showTrajectories ? 0.9 : 0.4,
+              dashArray: showTrajectories ? '6 6' : undefined,
             }}
           />
         ))}
 
         {/* ── Layer 1: Density Heatmap Halos ── */}
         {showHeatmap && cameras.map((c) => {
-          const heatColor = c.trafficLevel === 'congested' ? '#f43f5e' : c.trafficLevel === 'high' ? '#f59e0b' : '#00f0ff';
+          const heatColor = c.trafficLevel === 'congested' ? '#ef4444' : c.trafficLevel === 'high' ? '#f59e0b' : '#10a37f';
           return (
             <Circle
               key={`heat-${c.id}`}
@@ -149,8 +176,8 @@ export function MapView({
               pathOptions={{
                 color: heatColor,
                 fillColor: heatColor,
-                fillOpacity: 0.18,
-                weight: 1.5,
+                fillOpacity: 0.14,
+                weight: 1,
                 dashArray: '4 4',
               }}
             />
@@ -159,7 +186,7 @@ export function MapView({
 
         {/* ── Layer 2: Live Density Rings ── */}
         {showTrafficDensity && cameras.map((c) => {
-          const ringColor = c.trafficLevel === 'congested' ? '#f43f5e' : c.trafficLevel === 'high' ? '#f59e0b' : '#00E6B0';
+          const ringColor = c.trafficLevel === 'congested' ? '#ef4444' : c.trafficLevel === 'high' ? '#f59e0b' : '#10a37f';
           const radius = c.vehiclesDetected > 300 ? 550 : c.vehiclesDetected > 150 ? 380 : 220;
           return (
             <Circle
@@ -176,7 +203,7 @@ export function MapView({
           );
         })}
 
-        {/* ── Camera Station Markers ── */}
+        {/* ── Camera Station Markers ─────────────────────────── */}
         {cameras.map((c) => {
           const color = statusColor(c.status);
           const isSelected = false;

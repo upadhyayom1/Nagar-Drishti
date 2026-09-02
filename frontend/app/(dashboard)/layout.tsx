@@ -25,10 +25,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div
       className="fixed inset-0 flex w-screen h-screen overflow-hidden select-none font-body bg-[var(--bg-void)] text-[var(--text-primary)]"
     >
-      {/* ── Multi-Chromatic Ambient Glowing Orbs ── */}
-      <div className="absolute top-[-15%] left-[-10%] w-[55vw] h-[55vw] rounded-full blur-[180px] pointer-events-none z-0 bg-cyan-500/[0.08]" />
-      <div className="absolute top-[20%] right-[-10%] w-[50vw] h-[50vw] rounded-full blur-[190px] pointer-events-none z-0 bg-indigo-500/[0.08]" />
-      <div className="absolute bottom-[-15%] left-[30%] w-[50vw] h-[50vw] rounded-full blur-[200px] pointer-events-none z-0 bg-pink-500/[0.05]" />
+      {/* ── Subtle Depth Gradient (Pure Void in Dark, Ambient Light Spheres in Light) ── */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[var(--bg-surface)]/20 to-[var(--bg-void)] pointer-events-none z-0" />
+      <div className="absolute -top-32 -left-32 w-[550px] h-[550px] rounded-full bg-indigo-300/25 dark:bg-transparent blur-[120px] pointer-events-none z-0" />
+      <div className="absolute top-1/4 -right-32 w-[600px] h-[600px] rounded-full bg-emerald-300/20 dark:bg-transparent blur-[140px] pointer-events-none z-0" />
+      <div className="absolute -bottom-32 left-1/3 w-[500px] h-[500px] rounded-full bg-cyan-300/20 dark:bg-transparent blur-[130px] pointer-events-none z-0" />
 
       {/* ── Desktop / Tablet Sidebar Shell ── */}
       <aside
@@ -73,13 +74,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex-1 flex flex-col min-w-0 z-10 p-2.5 sm:p-3.5 pl-2 sm:pl-2 gap-2.5 sm:gap-3 h-full overflow-hidden">
 
         {/* Floating TopBar */}
-        <header className="shrink-0 glass-panel rounded-2xl overflow-hidden">
+        <header className="shrink-0 z-30">
           <TopBar />
         </header>
 
         {/* Inner Scrollable Page Viewport */}
         <main
-          className="flex-1 overflow-y-auto rounded-2xl p-3 sm:p-5 relative z-10 bg-[var(--glass-surface)] border border-[var(--glass-border)]"
+          className="flex-1 overflow-y-auto rounded-3xl p-3 sm:p-5 relative z-10 bg-[var(--glass-surface)] backdrop-blur-2xl border border-[var(--glass-border)] shadow-[var(--glass-shadow)]"
         >
           {children}
         </main>

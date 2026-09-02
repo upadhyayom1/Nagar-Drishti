@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
@@ -38,12 +38,12 @@ function HologramMesh() {
 
       {/* Middle Gyro Ring */}
       <Torus ref={midRingRef} args={[1.6, 0.03, 16, 64]}>
-        <meshBasicMaterial color="#ec4899" transparent opacity={0.7} wireframe />
+        <meshBasicMaterial color="#d55b38" transparent opacity={0.7} wireframe />
       </Torus>
 
       {/* Inner Violet Ring */}
       <Torus ref={innerRingRef} args={[1.1, 0.03, 16, 64]}>
-        <meshBasicMaterial color="#8b5cf6" transparent opacity={0.75} wireframe />
+        <meshBasicMaterial color="#bc4323" transparent opacity={0.75} wireframe />
       </Torus>
 
       {/* Central Core Pulsing Sphere */}

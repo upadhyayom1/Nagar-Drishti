@@ -36,12 +36,12 @@ function AlertCard({
   const isCritical = alert.severity === 'critical';
   const isHigh     = alert.severity === 'high';
 
-  const iconColor = isCritical ? 'text-rose-500 dark:text-rose-400' : isHigh ? 'text-amber-500 dark:text-amber-400' : 'text-cyan-500 dark:text-cyan-400';
-  const iconBg    = isCritical ? 'bg-rose-500/10' : isHigh ? 'bg-amber-500/10' : 'bg-cyan-500/10';
+  const iconColor = isCritical ? 'text-rose-400' : isHigh ? 'text-amber-400' : 'text-teal-400';
+  const iconBg    = isCritical ? 'bg-rose-500/10' : isHigh ? 'bg-amber-500/10' : 'bg-teal-500/10';
   const borderClass = isCritical
-    ? 'border-rose-500/40 shadow-[0_0_24px_rgba(244,63,94,0.15)]'
+    ? 'border-rose-500/40 animate-urgency-critical'
     : isHigh
-    ? 'border-amber-500/30'
+    ? 'border-amber-500/30 animate-urgency-high'
     : 'border-[var(--glass-border)]';
 
   const svVariant = isCritical ? 'critical' : isHigh ? 'warn' : alert.severity === 'medium' ? 'info' : 'default';
@@ -201,8 +201,8 @@ export default function AlertsPage() {
             onClick={() => setAlertSeverityFilter(s)}
             className={`text-xs font-display font-semibold px-3.5 py-1.5 rounded-xl border transition-all duration-150 capitalize cursor-pointer ${
               alertSeverityFilter === s
-                ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 border-cyan-400/50 shadow-[0_0_15px_rgba(0,240,255,0.25)] font-bold'
-                : 'bg-white/[0.03] text-[var(--text-secondary)] border-[var(--glass-border)] hover:border-cyan-400/30 hover:text-[var(--text-primary)]'
+                ? 'bg-teal-500/20 text-teal-400 border-teal-400/50 shadow-[0_0_14px_rgba(13,148,136,0.25)] font-bold'
+                : 'bg-white/[0.03] text-[var(--text-secondary)] border-[var(--glass-border)] hover:border-teal-400/30 hover:text-[var(--text-primary)]'
             }`}
           >
             {s === 'all' ? `All (${alerts.length})` : `${s} (${counts[s as keyof typeof counts] ?? 0})`}

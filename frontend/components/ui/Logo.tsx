@@ -34,17 +34,17 @@ export function NagarDrishtiIcon({ size = 32, className }: { size?: number; clas
     >
       <defs>
         <linearGradient id="nd-grad-spectral" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#00f0ff" />
-          <stop offset="45%" stopColor="#6366f1" />
-          <stop offset="85%" stopColor="#ec4899" />
+          <stop offset="0%" stopColor="#539194" />
+          <stop offset="45%" stopColor="#315f62" />
+          <stop offset="85%" stopColor="#bc4323" />
         </linearGradient>
         <linearGradient id="nd-grad-cyan" x1="0%" y1="100%" x2="100%" y2="0%">
           <stop offset="0%" stopColor="#00E6B0" />
-          <stop offset="100%" stopColor="#00f0ff" />
+          <stop offset="100%" stopColor="#539194" />
         </linearGradient>
         <radialGradient id="nd-glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#00f0ff" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="#00f0ff" stopOpacity="0" />
+          <stop offset="0%" stopColor="#539194" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="#539194" stopOpacity="0" />
         </radialGradient>
       </defs>
 
@@ -63,9 +63,9 @@ export function NagarDrishtiIcon({ size = 32, className }: { size?: number; clas
       />
 
       {/* Cardinal Sensor Nodes */}
-      <circle cx="50" cy="8" r="2.5" fill="#00f0ff" />
-      <circle cx="92" cy="50" r="2.5" fill="#ec4899" />
-      <circle cx="50" cy="92" r="2.5" fill="#6366f1" />
+      <circle cx="50" cy="8" r="2.5" fill="#539194" />
+      <circle cx="92" cy="50" r="2.5" fill="#bc4323" />
+      <circle cx="50" cy="92" r="2.5" fill="#315f62" />
       <circle cx="8" cy="50" r="2.5" fill="#00E6B0" />
 
       {/* Optical Eye/Lens Outer Arc (Drishti Vision Symbol) */}
@@ -123,7 +123,7 @@ export function Logo({
       {!textOnly && (
         <div
           className={cn(
-            'rounded-xl bg-cyan-500/10 border border-cyan-400/40 flex items-center justify-center shadow-[0_0_18px_rgba(0,240,255,0.35)] shrink-0 transition-all duration-300 group-hover:border-cyan-400 group-hover:shadow-[0_0_24px_rgba(0,240,255,0.5)]',
+            'rounded-xl bg-cyan-500/10 border border-cyan-400/40 flex items-center justify-center shadow-[0_0_18px_rgba(61,118,121,0.35)] shrink-0 transition-all duration-300 group-hover:border-cyan-400 group-hover:shadow-[0_0_24px_rgba(61,118,121,0.5)]',
             config.container,
             iconClassName
           )}
@@ -134,9 +134,9 @@ export function Logo({
 
       {showText && (
         <div className="min-w-0">
-          <h1 className={cn('font-display font-bold tracking-tight text-[var(--text-primary)] leading-none', config.text, textClassName)}>
+          <span className={cn('font-display font-bold tracking-tight text-[var(--text-primary)] leading-none block', config.text, textClassName)}>
             Nagar<span className="text-gradient-spectral">Drishti</span>
-          </h1>
+          </span>
           <span className="text-[9px] font-mono text-[var(--text-secondary)] tracking-[0.16em] uppercase mt-1 block">
             AI Command OS
           </span>

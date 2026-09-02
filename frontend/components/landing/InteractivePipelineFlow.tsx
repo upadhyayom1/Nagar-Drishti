@@ -110,7 +110,7 @@ export function InteractivePipelineFlow() {
                   accent={isSelected ? item.accent : 'none'}
                   className={`p-6 flex flex-col justify-between h-full transition-all duration-300 ${
                     isSelected
-                      ? 'border-cyan-400 shadow-[0_0_28px_rgba(0,240,255,0.3)] bg-white/[0.06] dark:bg-slate-900/80'
+                      ? 'border-cyan-400 shadow-[0_0_28px_rgba(61,118,121,0.3)] bg-white/[0.06] dark:bg-slate-900/80'
                       : 'border-[var(--glass-border)] opacity-85 hover:opacity-100'
                   }`}
                 >
@@ -163,7 +163,7 @@ export function InteractivePipelineFlow() {
 
               {/* Glowing Arrow Connector between Cards */}
               {index < 3 && (
-                <div className="hidden lg:flex absolute -right-3.5 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-[var(--bg-elevated)] border border-cyan-400/50 shadow-[0_0_15px_rgba(0,240,255,0.4)] items-center justify-center text-cyan-400 pointer-events-none">
+                <div className="hidden lg:flex absolute -right-3.5 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-[var(--bg-elevated)] border border-cyan-400/50 shadow-[0_0_15px_rgba(61,118,121,0.4)] items-center justify-center text-cyan-400 pointer-events-none">
                   <ArrowRight size={13} className="animate-pulse" />
                 </div>
               )}

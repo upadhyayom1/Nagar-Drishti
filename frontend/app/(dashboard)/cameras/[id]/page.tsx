@@ -6,26 +6,21 @@ import Link from 'next/link';
 import { ArrowLeft, Video, MapPin, Clock, Activity, Maximize2, Minimize2, Car, Radio, Zap } from 'lucide-react';
 import { GlassCard }   from '@/components/ui/GlassCard';
 import { Badge }       from '@/components/ui/Badge';
-import { Input }       from '@/components/ui/Input';
 import { PageWrapper } from '@/components/layout/PageWrapper';
 import { cameraService } from '@/services/cameraService';
 import { formatTime } from '@/lib/utils';
+import { getCameraFeedImage } from '@/lib/cameraImages';
 import type { Detection } from '@/types';
 
 export default function CameraDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { data: camera }          = useQuery({ queryKey: ['camera', id],     queryFn: () => cameraService.getCameraById(id), refetchInterval: 3000 });
-  const { data: detections = [] } = useQuery({ queryKey: ['detections', id], queryFn: () => cameraService.getDetectionsByCamera(id), refetchInterval: 3000 });
+  const { data: camera }          = useQuery({ queryKey: ['camera', id],     queryFn: () => cameraService.getCameraById(id) });
+  const { data: detections = [] } = useQuery({ queryKey: ['detections', id], queryFn: () => cameraService.getDetectionsByCamera(id) });
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
 
   const toggleFullscreen = useCallback(() => {
     setIsFullscreen(prev => !prev);
   }, []);
-
-  const filteredDetections = detections.filter(d => 
-    d.vehiclePlate.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   if (!camera) return (
     <PageWrapper className="flex items-center justify-center min-h-[450px]">
@@ -55,37 +50,48 @@ export default function CameraDetailPage({ params }: { params: Promise<{ id: str
           <p className="text-xs font-mono text-[var(--text-secondary)] mt-1">{camera.location} · Sector Zone: {camera.zone}</p>
         </div>
         <span className="text-xs font-mono text-cyan-400 font-bold bg-cyan-500/10 px-3.5 py-1.5 rounded-xl border border-cyan-400/30 shadow-[0_0_15px_rgba(0,240,255,0.25)]">
-          NODE: {camera.cameraCode}
+          NODE: {camera.id}
         </span>
       </div>
 
       <div className={`grid gap-6 ${isFullscreen ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
         <div className={`space-y-4 ${isFullscreen ? '' : 'lg:col-span-2'}`}>
-          {/* Optical feed shell. Real detections are shown below; no fabricated bounding boxes are rendered. */}
-          <GlassCard padding="none" className="relative aspect-video overflow-hidden border border-cyan-500/30 shadow-[0_0_30px_rgba(0,240,255,0.15)]">
+          {/* Main Optical Video Stream with Simulated Bounding Box + OCR Overlays */}
+          <GlassCard padding="none" className="relative aspect-video overflow-hidden border border-cyan-500/30 shadow-[0_0_30px_rgba(0,240,255,0.15)] rounded-3xl">
             <div className="absolute inset-0 bg-[#060913] flex items-center justify-center">
-              <div className="text-center">
-                <Video size={64} className="mx-auto text-cyan-400/15" />
-                <p className="mt-3 text-[10px] font-mono uppercase tracking-widest text-[var(--text-tertiary)]">
-                  Video stream not configured
-                </p>
-                <p className="mt-1 text-[9px] font-mono text-[var(--text-tertiary)]">
-                  Live ANPR telemetry is displayed from the detection service.
-                </p>
-              </div>
+              <img
+                src={getCameraFeedImage(camera.cameraCode, camera.name).url}
+                alt={camera.name}
+                className="w-full h-full object-cover brightness-[0.88] contrast-[1.05]"
+              />
             </div>
+
+            {/* Glowing Scan-line sweep animation */}
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-400/[0.04] to-cyan-400/[0.1] pointer-events-none" />
             <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-40 animate-pulse pointer-events-none" style={{ top: '35%' }} />
 
+            {/* Simulated Bounding Box + OCR Plate Readout Overlays with Neon Halos */}
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute border-2 border-cyan-400 rounded shadow-[0_0_15px_rgba(0,240,255,0.8)]" style={{ left: '22%', top: '44%', width: '14%', height: '20%' }}>
+                <span className="absolute -top-5 left-0 text-[9px] font-mono bg-cyan-400 text-[#060913] px-1 py-0.5 rounded-sm whitespace-nowrap font-bold shadow-md">TN38AB1234 · 95%</span>
+              </div>
+              <div className="absolute border-2 border-fuchsia-500 rounded shadow-[0_0_15px_rgba(236,72,153,0.8)]" style={{ left: '56%', top: '48%', width: '12%', height: '18%' }}>
+                <span className="absolute -top-5 left-0 text-[9px] font-mono bg-fuchsia-500 text-white px-1 py-0.5 rounded-sm whitespace-nowrap font-bold shadow-md">UP70CD5678 · 88%</span>
+              </div>
+              <div className="absolute border-2 border-amber-400 rounded shadow-[0_0_15px_rgba(245,158,11,0.8)]" style={{ left: '74%', top: '42%', width: '9%', height: '14%' }}>
+                <span className="absolute -top-5 left-0 text-[9px] font-mono bg-amber-400 text-[#060913] px-1 py-0.5 rounded-sm whitespace-nowrap font-bold shadow-md">UP70EF9012 · 76%</span>
+              </div>
+            </div>
+
+            {/* Live Status Indicators */}
             <div className="absolute top-3 left-3 flex items-center gap-2">
-              <Badge variant={detections.length > 0 ? 'critical' : 'info'} dot pulse={detections.length > 0} size="sm">
-                {detections.length > 0 ? 'LIVE' : 'MONITORING'}
-              </Badge>
+              <Badge variant="critical" dot pulse size="sm">LIVE</Badge>
               <span className="text-[10px] font-mono bg-black/80 backdrop-blur-md px-2.5 py-0.5 rounded-lg text-white font-bold border border-white/15">
-                {detections.length} recent detections
+                {camera.detectionCount} detections
               </span>
             </div>
 
+            {/* Fullscreen Toggle */}
             <div className="absolute top-3 right-3">
               <button
                 onClick={toggleFullscreen}
@@ -146,21 +152,11 @@ export default function CameraDetailPage({ params }: { params: Promise<{ id: str
               <h3 className="text-xs font-bold font-display uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
                 <Zap size={14} className="text-cyan-400" /> Recent Sighting Events
               </h3>
-              <Badge variant="info" size="sm">{filteredDetections.length}</Badge>
-            </div>
-
-            <div className="mb-3">
-              <Input
-                placeholder="Search vehicle plate..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                showSearchIcon
-                className="h-9 text-xs font-mono"
-              />
+              <Badge variant="info" size="sm">{detections.length}</Badge>
             </div>
 
             <div className="space-y-2 overflow-y-auto flex-1 pr-1">
-              {filteredDetections.map((d: Detection) => (
+              {detections.map((d: Detection) => (
                 <Link
                   key={d.id}
                   href={`/vehicles/${d.vehiclePlate}`}
@@ -172,15 +168,15 @@ export default function CameraDetailPage({ params }: { params: Promise<{ id: str
                   </div>
                   <div className="flex items-center justify-between text-[11px] font-mono text-[var(--text-secondary)]">
                     <span>{d.vehicleType} · {d.direction}</span>
-                    <span className="text-emerald-400 font-bold">{d.confidence > 0 ? `${d.confidence}% match` : 'unverified'}</span>
+                    <span className="text-emerald-400 font-bold">{d.confidence}% match</span>
                   </div>
                   <div className="text-[10px] font-mono text-[var(--text-tertiary)] mt-1 flex justify-between">
-                    <span>Velocity: <strong className="text-[var(--text-primary)]">{d.speed != null ? `${d.speed} km/h` : '—'}</strong></span>
+                    <span>Velocity: <strong className="text-[var(--text-primary)]">{d.speed} km/h</strong></span>
                   </div>
                 </Link>
               ))}
 
-              {filteredDetections.length === 0 && (
+              {detections.length === 0 && (
                 <p className="text-center text-xs font-mono text-[var(--text-tertiary)] py-12">No recent detection events</p>
               )}
             </div>

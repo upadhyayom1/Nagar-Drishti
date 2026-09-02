@@ -19,13 +19,13 @@ interface AreaChartWrapperProps {
 const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-2xl px-4 py-3 text-xs bg-[var(--bg-elevated)] backdrop-blur-xl border border-violet-400/30 shadow-[0_12px_36px_rgba(0,0,0,0.85)] font-mono text-[var(--text-primary)]">
-      <p className="text-[var(--text-secondary)] mb-1 text-[11px] font-display font-medium">{label}</p>
+    <div className="rounded-lg px-3 py-2 text-xs bg-[var(--bg-elevated)] border border-neutral-700 shadow-md font-mono text-[var(--text-primary)]">
+      <p className="text-[var(--text-secondary)] mb-1 text-[11px] font-medium">{label}</p>
       {payload.map((entry, index) => (
         <p key={`${entry.name}-${index}`} className="text-[var(--text-primary)] font-bold flex items-center gap-2">
           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
           <span>{entry.name}:</span>
-          <span className="text-violet-400">{entry.value?.toLocaleString()}</span>
+          <span className="text-[#10a37f]">{entry.value?.toLocaleString()}</span>
         </p>
       ))}
     </div>
@@ -37,14 +37,14 @@ export function AreaChartWrapper({
   dataKey,
   xAxisKey,
   height = 280,
-  color = '#8b5cf6',
+  color = '#10a37f',
   gradientId = 'areaGradient',
 }: AreaChartWrapperProps) {
   const theme = useUIStore((s) => s.theme);
   const isDark = theme === 'dark';
-  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
-  const axisColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)';
-  const tickFill  = isDark ? '#94a3b8' : '#64748b';
+  const gridColor = isDark ? '#262626' : '#e5e5e5';
+  const axisColor = isDark ? '#333333' : '#e5e5e5';
+  const tickFill  = isDark ? '#737373' : '#8e8e8e';
 
   return (
     <div className="w-full" style={{ height }}>
