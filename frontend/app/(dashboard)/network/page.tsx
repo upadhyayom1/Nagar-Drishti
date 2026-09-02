@@ -103,12 +103,6 @@ export default function MovementNetworkPage() {
             unit: 'veh/hr',
             icon: Zap,
             colorTheme: 'amber',
-            visual: 'action-link',
-            visualMeta: {
-              subNote: 'Peak arterial corridor',
-              actionLabel: 'Explore Link',
-              actionHref: '#corridors',
-            },
           },
         ]}
       />
