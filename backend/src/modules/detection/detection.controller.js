@@ -74,6 +74,7 @@ exports.getVehicleDetections = async (req, res) => {
     
     if (cursor) {
       query.cursor = { id: cursor };
+      query.skip = 1;
     }
     
     const detections = await prisma.detection.findMany(query);
@@ -159,6 +160,7 @@ exports.getCameraDetections = async (req, res) => {
     
     if (cursor) {
       query.cursor = { id: cursor };
+      query.skip = 1;
     }
     
     const detections = await prisma.detection.findMany(query);
