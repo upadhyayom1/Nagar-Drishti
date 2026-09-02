@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useCallback } from 'react';
+import { use, useState, useCallback, useEffect } from 'react';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { ArrowLeft, Video, MapPin, Clock, Activity, Maximize2, Minimize2, Car, Radio, Zap } from 'lucide-react';
@@ -32,13 +32,11 @@ export default function CameraDetailPage({ params }: { params: Promise<{ id: str
 
   const { ref: loadMoreRef, inView } = useInView();
 
-  import('react').then((React) => {
-    React.useEffect(() => {
-      if (inView && hasNextPage && !isFetchingNextPage) {
-        fetchNextPage();
-      }
-    }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
-  });
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const detections = detectionsData?.pages.flatMap((page) => page.items) || [];
 
