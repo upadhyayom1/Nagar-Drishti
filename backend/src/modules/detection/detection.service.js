@@ -57,8 +57,7 @@ async function recordDetection(data, { evaluateCongestion = true } = {}) {
   const detection = await prisma.detection.create({ 
     data: { 
       ...detectionData, 
-      timestamp, 
-      ...(calculatedSpeed != null ? { speed: calculatedSpeed } : {}) 
+      timestamp,
     } 
   });
 
