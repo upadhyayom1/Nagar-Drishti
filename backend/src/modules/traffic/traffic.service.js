@@ -101,13 +101,19 @@ async function evaluateCongestionAlert(cameraId, timestamp = new Date()) {
   // Thresholds: 20 vehicles = HIGH, 30 vehicles = CRITICAL in the 5-minute window
   const vehicleCount = camera ? camera.vehicleCount : 0;
   
-  if (!camera || vehicleCount < 20) {
+  // Hysteresis: Only resolve the alert if traffic drops significantly below the threshold (e.g. < 15)
+  if (!camera || vehicleCount < 15) {
     if (existingActiveAlert) {
       return prisma.alert.update({
         where: { id: existingActiveAlert.id },
         data: { status: 'RESOLVED', resolvedAt: new Date(timestamp) },
       });
     }
+    return null;
+  }
+
+  // If no alert exists and we haven't hit the threshold yet, do nothing
+  if (!existingActiveAlert && vehicleCount < 20) {
     return null;
   }
 

@@ -138,6 +138,7 @@ exports.getCameraDetections = async (req, res) => {
     const { cameraId } = req.params;
     const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 100);
     const live = String(req.query.live || '').toLowerCase() === 'true' || req.query.live === '1';
+    const cursor = req.query.cursor ? String(req.query.cursor) : undefined;
     
     const engine = global.simulationEngine;
     const running = Boolean(engine?.running);
@@ -148,13 +149,33 @@ exports.getCameraDetections = async (req, res) => {
     if (live) {
       where.timestamp = { gte: new Date(currentTime.getTime() - windowMinutes * 60 * 1000), lte: currentTime };
     }
-    const detections = await prisma.detection.findMany({
+    
+    const query = {
       where,
-      take: limit,
+      take: limit + 1, // Fetch one extra for nextCursor
       orderBy: { timestamp: 'desc' },
       include: { vehicle: { select: { plateNumber: true, vehicleType: true, speed: true } }, camera: { select: { cameraCode: true, name: true } } }
+    };
+    
+    if (cursor) {
+      query.cursor = { id: cursor };
+    }
+    
+    const detections = await prisma.detection.findMany(query);
+    
+    let nextCursor = null;
+    if (detections.length > limit) {
+      const nextItem = detections.pop();
+      nextCursor = nextItem.id;
+    }
+    
+    res.status(200).json({ 
+      success: true, 
+      data: {
+        items: detections.map(serializeDetection),
+        nextCursor
+      } 
     });
-    res.status(200).json({ success: true, data: detections.map(serializeDetection) });
   } catch (error) {
     console.error('Error fetching camera detections:', error);
     res.status(500).json({ success: false, message: 'Server error: ' + error.message, stack: error.stack });

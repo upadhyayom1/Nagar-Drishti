@@ -1,10 +1,11 @@
 'use client';
 
-import { use } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { use, useEffect } from 'react';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Eye, Clock, Route, Camera, BrainCircuit, Scan } from 'lucide-react';
+import { useInView } from 'react-intersection-observer';
 import { GlassCard }    from '@/components/ui/GlassCard';
 import { Badge }        from '@/components/ui/Badge';
 import { Button }       from '@/components/ui/Button';
@@ -21,7 +22,26 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
   const decodedPlate = decodeURIComponent(plate).toUpperCase();
 
   const { data: vehicle, isLoading: vehicleLoading }   = useQuery({ queryKey: ['vehicle', decodedPlate],           queryFn: () => vehicleService.getVehicleByPlate(decodedPlate) });
-  const { data: detections = { items: [] }, isLoading: detectionsLoading } = useQuery({ queryKey: ['vehicleDetections', decodedPlate], queryFn: () => vehicleService.getVehicleDetections(decodedPlate) });
+  const {
+    data: detectionsData,
+    isLoading: detectionsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useInfiniteQuery({
+    queryKey: ['vehicleDetections', decodedPlate],
+    queryFn: ({ pageParam }) => vehicleService.getVehicleDetections(decodedPlate, pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor || undefined,
+  });
+
+  const { ref: loadMoreRef, inView } = useInView();
+
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
   const { data: journey }                              = useQuery({ queryKey: ['vehicleJourney', decodedPlate],    queryFn: () => vehicleService.getVehicleJourney(decodedPlate) });
   const { data: intelligence, refetch: fetchIntelligence, isFetching: isAnalyzing } = useQuery({
     queryKey: ['vehicleIntelligence', decodedPlate],
@@ -45,13 +65,15 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
   );
 
   const statusVariant = vehicle.status === 'blacklist' ? 'danger' : vehicle.status === 'watchlist' ? 'warning' : 'success';
+  const detectionsItems = detectionsData?.pages.flatMap((page) => page.items) || [];
+
   const activityDays = Array.from({ length: 28 }, (_, index) => {
     const day = new Date();
     day.setHours(0, 0, 0, 0);
     day.setDate(day.getDate() - (27 - index));
     const nextDay = new Date(day);
     nextDay.setDate(nextDay.getDate() + 1);
-    return detections?.items?.filter((detection) => {
+    return detectionsItems.filter((detection) => {
       const timestamp = new Date(detection.timestamp);
       return timestamp >= day && timestamp < nextDay;
     }).length || 0;
@@ -102,7 +124,7 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
             colorTheme: 'brand',
             bars: {
               label: 'Detection Frequency Rhythm (Past 12h)',
-              rightText: `${detections.length} Total Telemetry Hits`,
+              rightText: `${vehicle.totalDetections} Total Telemetry Hits`,
             },
           },
           {
@@ -160,7 +182,7 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
 
           {detectionsLoading ? (
             <SkeletonCard variant="list" rows={5} />
-          ) : !detections?.items || detections.items.length === 0 ? (
+          ) : detectionsItems.length === 0 ? (
             <EmptyState icon={Eye} title="No Detection Events" subtitle="No detection events recorded for this vehicle yet." />
           ) : (
             <div className="relative">
@@ -168,7 +190,8 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
               <div className="absolute left-[11px] top-3 bottom-3 w-[2px] bg-[var(--bg-elevated-2)]" />
 
               <div className="space-y-4">
-                {detections.items.map((d: Detection, i: number) => (
+                {detectionsItems.map((d: Detection, i: number) => (
+
                   <motion.div
                     key={d.id}
                     initial={{ opacity: 0, x: -10 }}
@@ -188,7 +211,7 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
                       </div>
                       {/* Bug #4 fixed: each detection shows its own recorded speed via d.speed */}
                       <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs font-mono text-[var(--text-secondary)]">
-                        <span className="text-cyan-400 font-semibold">{d.cameraId}</span>
+                        <span className="text-cyan-400 font-semibold">{d.cameraName}</span>
                         <span>Speed: <span className="text-[var(--text-primary)] font-bold tabular-nums">{d.speed} km/h</span></span>
                         <span>Confidence: <span className="text-violet-400 font-bold">{d.confidence}%</span></span>
                         <span>Heading: {d.direction}</span>
@@ -196,6 +219,12 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
                     </div>
                   </motion.div>
                 ))}
+                {/* Infinite Scroll Trigger */}
+                {hasNextPage && (
+                  <div ref={loadMoreRef} className="flex justify-center py-4">
+                    <div className="w-6 h-6 rounded-full border-2 border-cyan-400/20 border-t-cyan-400 animate-spin" />
+                  </div>
+                )}
               </div>
             </div>
           )}
