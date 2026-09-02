@@ -1,14 +1,15 @@
 'use client';
 
-import { use } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { use, useEffect } from 'react';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Eye, Clock, Route, Camera, BrainCircuit, Scan } from 'lucide-react';
+import { useInView } from 'react-intersection-observer';
 import { GlassCard }    from '@/components/ui/GlassCard';
 import { Badge }        from '@/components/ui/Badge';
 import { Button }       from '@/components/ui/Button';
-import { StatCard }     from '@/components/ui/StatCard';
+import { BentoStatDeck } from '@/components/ui/BentoStatDeck';
 import { EmptyState }   from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/SkeletonCard';
 import { PageWrapper }  from '@/components/layout/PageWrapper';
@@ -21,7 +22,26 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
   const decodedPlate = decodeURIComponent(plate).toUpperCase();
 
   const { data: vehicle, isLoading: vehicleLoading }   = useQuery({ queryKey: ['vehicle', decodedPlate],           queryFn: () => vehicleService.getVehicleByPlate(decodedPlate) });
-  const { data: detections = { items: [] }, isLoading: detectionsLoading } = useQuery({ queryKey: ['vehicleDetections', decodedPlate], queryFn: () => vehicleService.getVehicleDetections(decodedPlate) });
+  const {
+    data: detectionsData,
+    isLoading: detectionsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useInfiniteQuery({
+    queryKey: ['vehicleDetections', decodedPlate],
+    queryFn: ({ pageParam }) => vehicleService.getVehicleDetections(decodedPlate, pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor || undefined,
+  });
+
+  const { ref: loadMoreRef, inView } = useInView();
+
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
   const { data: journey }                              = useQuery({ queryKey: ['vehicleJourney', decodedPlate],    queryFn: () => vehicleService.getVehicleJourney(decodedPlate) });
   const { data: intelligence, refetch: fetchIntelligence, isFetching: isAnalyzing } = useQuery({
     queryKey: ['vehicleIntelligence', decodedPlate],
@@ -45,13 +65,15 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
   );
 
   const statusVariant = vehicle.status === 'blacklist' ? 'danger' : vehicle.status === 'watchlist' ? 'warning' : 'success';
+  const detectionsItems = detectionsData?.pages.flatMap((page) => page.items) || [];
+
   const activityDays = Array.from({ length: 28 }, (_, index) => {
     const day = new Date();
     day.setHours(0, 0, 0, 0);
     day.setDate(day.getDate() - (27 - index));
     const nextDay = new Date(day);
     nextDay.setDate(nextDay.getDate() + 1);
-    return detections?.items?.filter((detection) => {
+    return detectionsItems.filter((detection) => {
       const timestamp = new Date(detection.timestamp);
       return timestamp >= day && timestamp < nextDay;
     }).length || 0;
@@ -83,13 +105,70 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
         )}
       </div>
 
-      {/* KPI Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Detections" value={vehicle.totalDetections} icon={Eye}    colorTheme="cyan" />
-        <StatCard label="Cameras Visited"  value={vehicle.camerasVisited}  icon={Camera} colorTheme="violet" />
-        <StatCard label="First Sighted"    value={formatDate(vehicle.firstSeen)} icon={Clock} colorTheme="emerald" />
-        <StatCard label="Last Sighted"     value={formatDate(vehicle.lastSeen)}  icon={Clock} colorTheme="amber" />
-      </div>
+      {/* ── Vehicle Intelligence Bento Stat Grid ── */}
+      <BentoStatDeck
+        items={[
+          {
+            hero: true,
+            category: 'OPTICAL SURVEILLANCE',
+            title: 'Recorded Plate Detections',
+            badge: {
+              text: vehicle.status.toUpperCase(),
+              variant: vehicle.status === 'blacklist' ? 'critical' : vehicle.status === 'watchlist' ? 'warn' : 'ok',
+            },
+            value: vehicle.totalDetections,
+            unit: 'events',
+            trend: { text: `${vehicle.camerasVisited} Nodes Visited`, isPositive: true },
+            note: `Registered: ${vehicle.registeredCity || 'Prayagraj Zone'}`,
+            icon: Eye,
+            colorTheme: 'brand',
+            bars: {
+              label: 'Detection Frequency Rhythm (Past 12h)',
+              rightText: `${vehicle.totalDetections} Total Telemetry Hits`,
+            },
+          },
+          {
+            category: 'CAMERA COVERAGE',
+            title: 'Optical nodes visited',
+            value: vehicle.camerasVisited,
+            unit: '/ 52',
+            icon: Camera,
+            colorTheme: 'violet',
+            visual: 'ring',
+            visualMeta: {
+              ringValue: Math.min(Math.round((vehicle.camerasVisited / 52) * 100), 100),
+              ringText: `${vehicle.camerasVisited}`,
+              subLabel: 'Grid Exposure',
+              subNote: 'Spatial Distribution',
+            },
+          },
+          {
+            category: 'FIRST SIGHTED',
+            title: 'Initial optical capture',
+            value: formatDate(vehicle.firstSeen),
+            icon: Clock,
+            colorTheme: 'emerald',
+            visual: 'segmented-bar',
+            visualMeta: {
+              subLabel: 'Temporal Anchor',
+              subNote: 'First Log Entry',
+            },
+          },
+          {
+            category: 'LAST SIGHTED',
+            title: 'Most recent detection',
+            value: formatDate(vehicle.lastSeen),
+            icon: Clock,
+            colorTheme: 'amber',
+            visual: 'action-link',
+            visualMeta: {
+              subNote: 'Last active position',
+              actionLabel: 'Trajectory',
+              actionHref: journey ? `/vehicles/${vehicle.plate}/trajectory` : undefined,
+            },
+          },
+        ]}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Movement Timeline */}
@@ -103,7 +182,7 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
 
           {detectionsLoading ? (
             <SkeletonCard variant="list" rows={5} />
-          ) : !detections?.items || detections.items.length === 0 ? (
+          ) : detectionsItems.length === 0 ? (
             <EmptyState icon={Eye} title="No Detection Events" subtitle="No detection events recorded for this vehicle yet." />
           ) : (
             <div className="relative">
@@ -111,7 +190,8 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
               <div className="absolute left-[11px] top-3 bottom-3 w-[2px] bg-[var(--bg-elevated-2)]" />
 
               <div className="space-y-4">
-                {detections.items.map((d: Detection, i: number) => (
+                {detectionsItems.map((d: Detection, i: number) => (
+
                   <motion.div
                     key={d.id}
                     initial={{ opacity: 0, x: -10 }}
@@ -124,14 +204,14 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
                     </div>
                     <div className="flex-1 p-3.5 rounded-xl bg-[var(--bg-elevated)]/60 border border-[var(--glass-border)] hover:border-cyan-400/40 transition-all">
                       <div className="flex items-center justify-between mb-1.5">
-                        <Link href={`/cameras/${d.cameraId}`} className="text-sm font-semibold text-[var(--text-primary)] hover:text-cyan-400 transition-colors font-display">
+                        <Link href={`/cameras/${encodeURIComponent(d.cameraName)}`} className="text-sm font-semibold text-[var(--text-primary)] hover:text-cyan-400 transition-colors font-display">
                           {d.cameraName}
                         </Link>
                         <span className="text-[10px] font-mono text-[var(--text-tertiary)]">{formatDateTime(d.timestamp)}</span>
                       </div>
                       {/* Bug #4 fixed: each detection shows its own recorded speed via d.speed */}
                       <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs font-mono text-[var(--text-secondary)]">
-                        <span className="text-cyan-400 font-semibold">{d.cameraId}</span>
+                        <span className="text-cyan-400 font-semibold">{d.cameraName}</span>
                         <span>Speed: <span className="text-[var(--text-primary)] font-bold tabular-nums">{d.speed} km/h</span></span>
                         <span>Confidence: <span className="text-violet-400 font-bold">{d.confidence}%</span></span>
                         <span>Heading: {d.direction}</span>
@@ -139,6 +219,12 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
                     </div>
                   </motion.div>
                 ))}
+                {/* Infinite Scroll Trigger */}
+                {hasNextPage && (
+                  <div ref={loadMoreRef} className="flex justify-center py-4">
+                    <div className="w-6 h-6 rounded-full border-2 border-cyan-400/20 border-t-cyan-400 animate-spin" />
+                  </div>
+                )}
               </div>
             </div>
           )}

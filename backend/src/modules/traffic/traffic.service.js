@@ -12,13 +12,14 @@ function parseTrafficWindow({ from, to } = {}) {
 }
 
 function getTrafficLevel({ detectionCount, vehicleCount, durationMinutes }) {
-  if (vehicleCount >= 30) return 'congested';
-  if (vehicleCount >= 20) return 'high';
-  if (vehicleCount >= 10) return 'moderate';
+  const scale = Math.max(1, (durationMinutes || 5) / 5);
+  if (vehicleCount >= 30 * scale) return 'congested';
+  if (vehicleCount >= 20 * scale) return 'high';
+  if (vehicleCount >= 10 * scale) return 'moderate';
   return 'low';
 }
 
-async function getTrafficSnapshot(windowInput = {}, cameraId) {
+async function getTrafficSnapshot(windowInput = {}, cameraIdentifier) {
   let { from, to } = windowInput;
 
   if (!to) {
@@ -26,10 +27,31 @@ async function getTrafficSnapshot(windowInput = {}, cameraId) {
   }
 
   const window = parseTrafficWindow({ from, to });
-  const where = { timestamp: { gte: window.from, lte: window.to }, ...(cameraId ? { cameraId } : {}) };
+
+  // Resolve camera identifier to internal ID if provided
+  let resolvedCameraId = undefined;
+  if (cameraIdentifier) {
+    const cam = await prisma.camera.findFirst({
+      where: {
+        OR: [
+          { id: cameraIdentifier },
+          { cameraCode: cameraIdentifier },
+          { name: { equals: cameraIdentifier, mode: 'insensitive' } }
+        ]
+      }
+    });
+    if (cam) {
+      resolvedCameraId = cam.id;
+    } else {
+      // If not found, fallback to just passing it (will likely result in 0 traffic)
+      resolvedCameraId = cameraIdentifier;
+    }
+  }
+
+  const where = { timestamp: { gte: window.from, lte: window.to }, ...(resolvedCameraId ? { cameraId: resolvedCameraId } : {}) };
 
   const cameras = await prisma.camera.findMany({
-    where: cameraId ? { id: cameraId } : undefined,
+    where: resolvedCameraId ? { id: resolvedCameraId } : undefined,
     include: { zone: { select: { name: true } }, road: { select: { name: true } } },
     orderBy: { cameraCode: 'asc' },
   });
@@ -98,10 +120,11 @@ async function evaluateCongestionAlert(cameraId, timestamp = new Date()) {
     orderBy: { createdAt: 'desc' },
   });
 
-  // Thresholds: 20 vehicles = HIGH, 30 vehicles = CRITICAL in the 5-minute window
+  // Thresholds: 100 vehicles = HIGH, 150 vehicles = CRITICAL in the 5-minute window
   const vehicleCount = camera ? camera.vehicleCount : 0;
   
-  if (!camera || vehicleCount < 20) {
+  // Hysteresis: Only resolve the alert if traffic drops significantly below the threshold (e.g. < 50)
+  if (!camera || vehicleCount < 50) {
     if (existingActiveAlert) {
       return prisma.alert.update({
         where: { id: existingActiveAlert.id },
@@ -111,7 +134,12 @@ async function evaluateCongestionAlert(cameraId, timestamp = new Date()) {
     return null;
   }
 
-  const severity = vehicleCount >= 30 ? 'CRITICAL' : 'HIGH';
+  // If no alert exists and we haven't hit the threshold yet, do nothing
+  if (!existingActiveAlert && vehicleCount < 100) {
+    return null;
+  }
+
+  const severity = vehicleCount >= 150 ? 'CRITICAL' : 'HIGH';
   const message = `Heavy traffic congestion detected at ${camera.name || camera.cameraCode} with ${vehicleCount} vehicles tracked in the last 5 minutes.`;
   
   if (existingActiveAlert) {

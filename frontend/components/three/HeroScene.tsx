@@ -11,14 +11,14 @@ function SensorConstellation({ isDark }: { isDark: boolean }) {
   const groupRef = useRef<THREE.Group>(null);
 
   const nodes = useMemo(() => [
-    { pos: new THREE.Vector3(-6, 1.5, -4), color: '#00f0ff' },
-    { pos: new THREE.Vector3(-2, 3.2, -7), color: '#00E6B0' },
-    { pos: new THREE.Vector3(3.5, 2.0, -5), color: '#8b5cf6' },
-    { pos: new THREE.Vector3(7, 3.8, -8), color: '#ec4899' },
-    { pos: new THREE.Vector3(-4.5, -1.8, -3), color: '#00E6B0' },
-    { pos: new THREE.Vector3(1.2, -0.5, -2), color: '#00f0ff' },
+    { pos: new THREE.Vector3(-6, 1.5, -4), color: '#539194' },
+    { pos: new THREE.Vector3(-2, 3.2, -7), color: '#659a73' },
+    { pos: new THREE.Vector3(3.5, 2.0, -5), color: '#bc4323' },
+    { pos: new THREE.Vector3(7, 3.8, -8), color: '#d55b38' },
+    { pos: new THREE.Vector3(-4.5, -1.8, -3), color: '#659a73' },
+    { pos: new THREE.Vector3(1.2, -0.5, -2), color: '#539194' },
     { pos: new THREE.Vector3(5.8, -1.5, -4), color: '#f43f5e' },
-    { pos: new THREE.Vector3(-1.0, 0.8, -1), color: '#00f0ff' },
+    { pos: new THREE.Vector3(-1.0, 0.8, -1), color: '#539194' },
   ], []);
 
   const connections = useMemo(() => [
@@ -42,7 +42,7 @@ function SensorConstellation({ isDark }: { isDark: boolean }) {
           <Line
             key={`conn-${i}`}
             points={[from, to]}
-            color={isDark ? '#00f0ff' : '#0284c7'}
+            color={isDark ? '#539194' : '#0284c7'}
             lineWidth={1}
             transparent
             opacity={isDark ? 0.16 : 0.22}
@@ -103,7 +103,7 @@ function VehicleTrajectories({ isDark }: { isDark: boolean }) {
       curveIndex: i % curves.length,
       progress: Math.random(),
       speed: 0.0012 + Math.random() * 0.0016,
-      color: i % 3 === 0 ? new THREE.Color('#00f0ff') : i % 3 === 1 ? new THREE.Color('#00E6B0') : new THREE.Color('#8b5cf6'),
+      color: i % 3 === 0 ? new THREE.Color('#539194') : i % 3 === 1 ? new THREE.Color('#659a73') : new THREE.Color('#bc4323'),
     }));
   }, [curves.length]);
 
@@ -130,7 +130,7 @@ function VehicleTrajectories({ isDark }: { isDark: boolean }) {
           <Line
             key={`curve-${i}`}
             points={points}
-            color={i === 0 ? '#00f0ff' : i === 1 ? '#8b5cf6' : '#ec4899'}
+            color={i === 0 ? '#539194' : i === 1 ? '#bc4323' : '#d55b38'}
             lineWidth={1}
             transparent
             opacity={isDark ? 0.2 : 0.28}
@@ -192,7 +192,7 @@ function DigitalCityTopography({ isDark }: { isDark: boolean }) {
         />
       </bufferGeometry>
       <PointMaterial
-        color={isDark ? '#00f0ff' : '#0284c7'}
+        color={isDark ? '#539194' : '#0284c7'}
         size={isDark ? 0.045 : 0.055}
         sizeAttenuation
         transparent

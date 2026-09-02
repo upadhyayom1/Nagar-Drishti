@@ -39,9 +39,20 @@ exports.getTraffic = async (req, res) => {
 exports.getLiveDetections = async (req, res) => {
   try {
     const { id } = req.params;
+    const cam = await prisma.camera.findFirst({
+      where: {
+        OR: [
+          { id },
+          { cameraCode: id },
+          { name: { equals: id, mode: 'insensitive' } }
+        ]
+      }
+    });
+    if (!cam) return res.status(404).json({ success: false, message: 'Camera not found' });
+    const resolvedId = cam.id;
     const engine = global.simulationEngine;
     const running = Boolean(engine?.running);
-    const vehicles = running ? engine.getLiveVehiclesAtCamera(id) : [];
+    const vehicles = running ? engine.getLiveVehiclesAtCamera(resolvedId) : [];
     res.status(200).json({
       success: true,
       data: {

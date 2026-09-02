@@ -24,6 +24,7 @@ import {
   ExternalLink,
   Zap,
 } from 'lucide-react';
+import { BentoStatDeck } from '@/components/ui/BentoStatDeck';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -151,48 +152,67 @@ export default function BlacklistPage() {
         </div>
       </div>
 
-      {/* ── KPI Stats Cards Grid ─────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <GlassCard padding="md" glow="rose" accent="rose">
-          <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] font-mono">
-            <span>ACTIVE WATCHLIST</span>
-            <ShieldAlert size={16} className="text-rose-400" />
-          </div>
-          <div className="text-2xl font-bold font-data text-[var(--text-primary)] mt-1.5">{vehicles.length}</div>
-          <div className="text-[10px] font-mono text-rose-400 mt-1 flex items-center gap-1">
-            <Zap size={10} /> Continuous Optical Scanning
-          </div>
-        </GlassCard>
-
-        <GlassCard padding="md" glow="rose" accent="rose">
-          <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] font-mono">
-            <span>CRITICAL THREATS</span>
-            <AlertTriangle size={16} className="text-rose-400" />
-          </div>
-          <div className="text-2xl font-bold font-data text-rose-400 mt-1.5">{criticalCount}</div>
-          <div className="text-[10px] font-mono text-[var(--text-secondary)] mt-1">High-priority law enforcement flags</div>
-        </GlassCard>
-
-        <GlassCard padding="md" glow="amber" accent="amber">
-          <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] font-mono">
-            <span>HIGH THREATS</span>
-            <AlertTriangle size={16} className="text-amber-400" />
-          </div>
-          <div className="text-2xl font-bold font-data text-amber-400 mt-1.5">{highCount}</div>
-          <div className="text-[10px] font-mono text-[var(--text-secondary)] mt-1">Elevated surveillance docket</div>
-        </GlassCard>
-
-        <GlassCard padding="md" glow="cyan" accent="cyan">
-          <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] font-mono">
-            <span>DETECTIONS TODAY</span>
-            <Camera size={16} className="text-cyan-400" />
-          </div>
-          <div className="text-2xl font-bold font-data text-cyan-400 mt-1.5">
-            {vehicles.reduce((sum, v) => sum + (v.vehicleIntelligence.totalDetections || 0), 0)}
-          </div>
-          <div className="text-[10px] font-mono text-[var(--text-secondary)] mt-1">Total optical match hits</div>
-        </GlassCard>
-      </div>
+      {/* ── KPI Stats Bento Grid ── */}
+      <BentoStatDeck
+        items={[
+          {
+            hero: true,
+            category: 'WATCHLIST CENSUS',
+            title: 'Active Surveillance Dockets',
+            badge: { text: 'ENFORCEMENT LIVE', variant: 'rose' },
+            value: vehicles.length,
+            unit: 'flagged',
+            trend: { text: '100% Optical Scanning', isPositive: true },
+            note: `${criticalCount} Critical Priority Flags`,
+            icon: ShieldAlert,
+            colorTheme: 'rose',
+            bars: {
+              label: 'Watchlist Match Activity (Past 12h)',
+              rightText: 'Continuous Neural OCR',
+            },
+          },
+          {
+            category: 'CRITICAL THREATS',
+            title: 'Immediate intercept flags',
+            value: criticalCount,
+            badge: { text: 'CRITICAL', variant: 'critical' },
+            icon: AlertTriangle,
+            colorTheme: 'rose',
+            visual: 'action-link',
+            visualMeta: {
+              subNote: 'High-priority law enforcement',
+              actionLabel: 'Filter Critical',
+              actionHref: '#filter-critical',
+            },
+          },
+          {
+            category: 'HIGH THREATS',
+            title: 'Elevated surveillance docket',
+            value: highCount,
+            icon: Shield,
+            colorTheme: 'amber',
+            visual: 'segmented-bar',
+            visualMeta: {
+              subLabel: 'Surveillance Load',
+              subNote: `${highCount} active investigations`,
+            },
+          },
+          {
+            category: 'DETECTIONS TODAY',
+            title: 'Total optical match hits',
+            value: vehicles.reduce((sum, v) => sum + (v.vehicleIntelligence?.totalDetections || 0), 0),
+            icon: Camera,
+            colorTheme: 'cyan',
+            visual: 'ring',
+            visualMeta: {
+              ringValue: 98,
+              ringText: '98%',
+              subLabel: 'Match Confidence',
+              subNote: 'OCR Verification',
+            },
+          },
+        ]}
+      />
 
       {/* ── Search & Filter Controls ─────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-[var(--glass-surface)] border border-[var(--glass-border)]">

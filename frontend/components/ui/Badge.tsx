@@ -13,49 +13,49 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
-  ok:       'bg-emerald-500/15 text-emerald-400 border-emerald-500/35 shadow-[0_0_12px_rgba(16,185,129,0.25)]',
-  success:  'bg-emerald-500/15 text-emerald-400 border-emerald-500/35 shadow-[0_0_12px_rgba(16,185,129,0.25)]',
-  emerald:  'bg-emerald-500/15 text-emerald-400 border-emerald-500/35 shadow-[0_0_12px_rgba(16,185,129,0.25)]',
+  ok:       'bg-[var(--brand-teal)]/15 text-[var(--status-ok)] border border-[var(--brand-teal)]/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]',
+  success:  'bg-[var(--brand-teal)]/15 text-[var(--status-ok)] border border-[var(--brand-teal)]/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]',
+  emerald:  'bg-[var(--brand-teal)]/15 text-[var(--status-ok)] border border-[var(--brand-teal)]/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]',
   
-  warn:     'bg-amber-500/15 text-amber-400 border-amber-500/35 shadow-[0_0_12px_rgba(245,158,11,0.25)]',
-  warning:  'bg-amber-500/15 text-amber-400 border-amber-500/35 shadow-[0_0_12px_rgba(245,158,11,0.25)]',
-  amber:    'bg-amber-500/15 text-amber-400 border-amber-500/35 shadow-[0_0_12px_rgba(245,158,11,0.25)]',
+  warn:     'bg-amber-500/15 text-[var(--status-warn)] border border-amber-500/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]',
+  warning:  'bg-amber-500/15 text-[var(--status-warn)] border border-amber-500/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]',
+  amber:    'bg-amber-500/15 text-[var(--status-warn)] border border-amber-500/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]',
   
-  critical: 'bg-rose-500/15 text-rose-400 border-rose-500/45 shadow-[0_0_16px_rgba(244,63,94,0.35)]',
-  danger:   'bg-rose-500/15 text-rose-400 border-rose-500/45 shadow-[0_0_16px_rgba(244,63,94,0.35)]',
-  rose:     'bg-rose-500/15 text-rose-400 border-rose-500/45 shadow-[0_0_16px_rgba(244,63,94,0.35)]',
+  critical: 'bg-red-500/15 text-[var(--status-critical)] border border-red-500/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]',
+  danger:   'bg-red-500/15 text-[var(--status-critical)] border border-red-500/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]',
+  rose:     'bg-red-500/15 text-[var(--status-critical)] border border-red-500/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]',
   
-  info:     'bg-cyan-500/15 text-cyan-400 border-cyan-500/35 shadow-[0_0_12px_rgba(6,182,212,0.25)]',
-  cyan:     'bg-cyan-500/15 text-cyan-400 border-cyan-500/35 shadow-[0_0_12px_rgba(0,240,255,0.3)]',
-  blue:     'bg-sky-500/15 text-sky-400 border-sky-500/35 shadow-[0_0_12px_rgba(56,189,248,0.25)]',
-  violet:   'bg-violet-500/15 text-violet-400 border-violet-500/35 shadow-[0_0_12px_rgba(139,92,246,0.25)]',
-  pink:     'bg-pink-500/15 text-pink-400 border-pink-500/35 shadow-[0_0_12px_rgba(236,72,153,0.3)]',
-  spectral: 'bg-gradient-to-r from-cyan-500/20 via-violet-500/20 to-pink-500/20 text-cyan-300 border-cyan-400/50 shadow-[0_0_16px_rgba(0,240,255,0.3)]',
+  info:     'bg-[var(--brand-teal)]/15 text-[var(--status-ok)] border border-[var(--brand-teal)]/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]',
+  cyan:     'bg-[var(--brand-teal)]/15 text-[var(--status-ok)] border border-[var(--brand-teal)]/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]',
+  blue:     'bg-[var(--bg-elevated-2)] text-[var(--text-primary)] border border-[var(--glass-border)] shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]',
+  violet:   'bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]',
+  pink:     'bg-[var(--bg-elevated-2)] text-[var(--text-primary)] border border-[var(--glass-border)] shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]',
+  spectral: 'bg-[var(--bg-elevated-2)] text-[var(--text-primary)] border border-[var(--glass-border)] shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]',
   
-  default:  'bg-white/[0.05] text-[var(--text-secondary)] border-[var(--glass-border)]',
+  default:  'bg-[var(--bg-elevated-2)] text-[var(--text-secondary)] border border-[var(--glass-border)] shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]',
 };
 
 const dotColors: Record<BadgeVariant, string> = {
-  ok:       'bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.9)]',
-  success:  'bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.9)]',
-  emerald:  'bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.9)]',
+  ok:       'bg-[var(--status-ok)] shadow-[0_0_8px_var(--status-ok)]',
+  success:  'bg-[var(--status-ok)] shadow-[0_0_8px_var(--status-ok)]',
+  emerald:  'bg-[var(--status-ok)] shadow-[0_0_8px_var(--status-ok)]',
   
-  warn:     'bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.9)]',
-  warning:  'bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.9)]',
-  amber:    'bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.9)]',
+  warn:     'bg-[var(--status-warn)] shadow-[0_0_8px_var(--status-warn)]',
+  warning:  'bg-[var(--status-warn)] shadow-[0_0_8px_var(--status-warn)]',
+  amber:    'bg-[var(--status-warn)] shadow-[0_0_8px_var(--status-warn)]',
   
-  critical: 'bg-rose-400 shadow-[0_0_10px_rgba(244,63,94,0.9)]',
-  danger:   'bg-rose-400 shadow-[0_0_10px_rgba(244,63,94,0.9)]',
-  rose:     'bg-rose-400 shadow-[0_0_10px_rgba(244,63,94,0.9)]',
+  critical: 'bg-[var(--status-critical)] shadow-[0_0_8px_var(--status-critical)]',
+  danger:   'bg-[var(--status-critical)] shadow-[0_0_8px_var(--status-critical)]',
+  rose:     'bg-[var(--status-critical)] shadow-[0_0_8px_var(--status-critical)]',
   
-  info:     'bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.9)]',
-  cyan:     'bg-cyan-400 shadow-[0_0_8px_rgba(0,240,255,0.9)]',
-  blue:     'bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.9)]',
-  violet:   'bg-violet-400 shadow-[0_0_8px_rgba(139,92,246,0.9)]',
-  pink:     'bg-pink-400 shadow-[0_0_8px_rgba(236,72,153,0.9)]',
-  spectral: 'bg-cyan-400 shadow-[0_0_10px_rgba(0,240,255,1)]',
+  info:     'bg-[var(--status-ok)] shadow-[0_0_8px_var(--status-ok)]',
+  cyan:     'bg-[var(--status-ok)] shadow-[0_0_8px_var(--status-ok)]',
+  blue:     'bg-[var(--text-primary)]',
+  violet:   'bg-purple-500',
+  pink:     'bg-pink-500',
+  spectral: 'bg-[var(--status-ok)]',
   
-  default:  'bg-[var(--text-secondary)]',
+  default:  'bg-[var(--text-tertiary)]',
 };
 
 export function Badge({

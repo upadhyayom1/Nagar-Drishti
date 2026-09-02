@@ -9,3 +9,4 @@ export { SkeletonCard } from './SkeletonCard';
 export { PulseDot } from './PulseDot';
 export { EmptyState } from './EmptyState';
 export { Logo, NagarDrishtiIcon } from './Logo';
+export { SectionHeader } from './SectionHeader';

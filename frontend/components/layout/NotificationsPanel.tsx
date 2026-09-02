@@ -138,7 +138,7 @@ export function NotificationsPanel() {
                 key={alert.id}
                 className={`p-3 rounded-xl border transition-all ${
                   isCritical
-                    ? 'bg-[var(--status-critical)]/10 border-[var(--status-critical)]/30 shadow-[0_0_16px_rgba(255,77,79,0.12)]'
+                    ? 'bg-[var(--status-critical)]/10 border-[var(--status-critical)]/30 shadow-[0_0_16px_rgba(204,102,102,0.12)]'
                     : isHigh
                     ? 'bg-[var(--status-warn)]/10 border-[var(--status-warn)]/25'
                     : 'bg-white/[0.03] border-[var(--glass-border)]'
@@ -187,7 +187,7 @@ export function NotificationsPanel() {
           <Link
             href="/alerts"
             onClick={() => setNotificationsOpen(false)}
-            className="flex items-center justify-center gap-2 w-full py-2 rounded-xl bg-[var(--brand-teal)]/10 border border-[var(--brand-teal)]/30 text-xs font-display font-bold text-[var(--brand-teal)] hover:bg-[var(--brand-teal)]/20 transition-all shadow-[0_0_12px_rgba(31,217,168,0.15)]"
+            className="flex items-center justify-center gap-2 w-full py-2 rounded-xl bg-[var(--brand-teal)]/10 border border-[var(--brand-teal)]/30 text-xs font-display font-bold text-[var(--brand-teal)] hover:bg-[var(--brand-teal)]/20 transition-all shadow-[0_0_12px_rgba(61,118,121,0.15)]"
           >
             <ExternalLink size={13} />
             View All Sentinel Alerts

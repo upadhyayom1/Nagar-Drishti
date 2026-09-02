@@ -38,6 +38,8 @@ import { Badge }  from '@/components/ui/Badge';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Logo } from '@/components/ui/Logo';
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
+import { BentoStatDeck } from '@/components/ui/BentoStatDeck';
+import { TypewriterText } from '@/components/ui/TypewriterText';
 import { InteractivePipelineFlow } from '@/components/landing/InteractivePipelineFlow';
 import { StackingCapabilities } from '@/components/landing/StackingCapabilities';
 import { analyticsService } from '@/services/analyticsService';
@@ -138,14 +140,13 @@ export default function LandingPage() {
         <HeroScene />
       </div>
 
-      {/* ── Multi-Chromatic Ambient Glowing Lights ── */}
-      <div className="fixed top-[-10%] left-[10%] w-[55vw] h-[55vw] bg-cyan-500/[0.08] dark:bg-cyan-500/[0.08] rounded-full blur-[190px] pointer-events-none z-0" />
-      <div className="fixed top-[35%] right-[-10%] w-[50vw] h-[50vw] bg-indigo-500/[0.08] dark:bg-indigo-500/[0.08] rounded-full blur-[190px] pointer-events-none z-0" />
-      <div className="fixed bottom-[5%] left-[20%] w-[45vw] h-[45vw] bg-pink-500/[0.06] dark:bg-pink-500/[0.06] rounded-full blur-[200px] pointer-events-none z-0" />
+      {/* ── Subtle Monochrome Ambient Lighting ── */}
+      <div className="fixed top-[-10%] left-[10%] w-[55vw] h-[55vw] bg-cyan-500/[0.03] rounded-full blur-[190px] pointer-events-none z-0" />
+      <div className="fixed bottom-[5%] left-[20%] w-[45vw] h-[45vw] bg-slate-500/[0.03] rounded-full blur-[200px] pointer-events-none z-0" />
 
       {/* ── Floating Glass Header ── */}
       <header className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between p-3.5 px-5 sm:px-6 rounded-2xl bg-[var(--glass-surface)] backdrop-blur-2xl border border-[var(--glass-border)] border-top-[var(--glass-highlight)] shadow-[var(--glass-shadow)]">
+        <div className="max-w-7xl mx-auto flex items-center justify-between p-3.5 px-5 sm:px-6 rounded-2xl bg-[var(--glass-surface)] backdrop-blur-2xl border border-[var(--glass-border)] border-t border-t-[var(--glass-highlight)] shadow-[var(--glass-shadow)]">
           <Logo size="sm" />
 
           <div className="hidden md:flex items-center gap-7 text-xs font-display uppercase tracking-wider font-semibold text-[var(--text-secondary)]">
@@ -197,22 +198,42 @@ export default function LandingPage() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-600 dark:text-cyan-400 text-xs font-mono font-semibold tracking-wider shadow-[0_0_18px_rgba(0,240,255,0.25)]"
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-600 dark:text-cyan-400 text-xs font-mono font-semibold tracking-wider shadow-[0_0_20px_rgba(0,240,255,0.2)]"
           >
             <Radio size={13} className="animate-pulse text-cyan-500 dark:text-cyan-400" />
-            AI-POWERED VEHICLE INTELLIGENCE &amp; CITIZEN REPORTING PLATFORM
+            <span className="bg-gradient-to-r from-cyan-400 via-[var(--brand-teal)] to-emerald-400 bg-clip-text text-transparent font-bold">
+              AI-POWERED VEHICLE INTELLIGENCE &amp; CITIZEN REPORTING PLATFORM
+            </span>
           </motion.div>
 
           <motion.h1
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl sm:text-6xl lg:text-7xl font-bold text-[var(--text-primary)] tracking-tight font-display leading-[1.08]"
+            className="text-4xl sm:text-6xl lg:text-7xl font-bold text-[var(--text-primary)] tracking-tight font-display leading-[1.12]"
           >
             Turn City Cameras Into <br />
-            <span className="text-gradient-spectral drop-shadow-[0_0_30px_rgba(0,240,255,0.3)]">
-              City Intelligence
-            </span>
+            <TypewriterText
+              words={[
+                {
+                  text: 'City Intelligence',
+                  gradientClass: 'from-[#00f59b] via-cyan-400 to-teal-300 drop-shadow-[0_0_35px_rgba(0,245,155,0.4)]',
+                },
+                {
+                  text: 'Unified Trajectories',
+                  gradientClass: 'from-cyan-400 via-sky-400 to-blue-500 drop-shadow-[0_0_35px_rgba(6,182,212,0.4)]',
+                },
+                {
+                  text: 'Sentinel Threat Radar',
+                  gradientClass: 'from-amber-400 via-orange-400 to-rose-500 drop-shadow-[0_0_35px_rgba(249,115,22,0.4)]',
+                },
+                {
+                  text: 'Real-Time ANPR Matrix',
+                  gradientClass: 'from-violet-400 via-fuchsia-400 to-pink-500 drop-shadow-[0_0_35px_rgba(168,85,247,0.4)]',
+                },
+              ]}
+              className="mt-1"
+            />
           </motion.h1>
 
           <motion.p
@@ -221,7 +242,7 @@ export default function LandingPage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="max-w-2xl mx-auto text-sm sm:text-base text-[var(--text-secondary)] font-body leading-relaxed"
           >
-            Connect distributed CCTV and ANPR optical feeds into unified vehicle trajectories, automated threat detection, and citizen incident reporting.
+            Connect distributed <span className="text-[var(--text-primary)] font-semibold border-b border-[var(--brand-teal)]/40 pb-0.5">CCTV &amp; ANPR optical feeds</span> into <span className="text-cyan-400 font-semibold">unified vehicle trajectories</span>, automated <span className="text-rose-400 font-semibold">threat detection</span>, and citizen incident reporting.
           </motion.p>
 
           <motion.div
@@ -249,57 +270,73 @@ export default function LandingPage() {
         <div className="text-center space-y-2 mb-10">
           <Badge variant="cyan" size="md">LIVE TELEMETRY DOCK</Badge>
           <h2 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] font-display tracking-tight">
-            Municipal Sensor Grid Performance
+            Municipal Sensor Grid <span className="bg-gradient-to-r from-cyan-400 to-[var(--brand-teal)] bg-clip-text text-transparent">Performance</span>
           </h2>
           <p className="text-xs text-[var(--text-secondary)]">
             Empirical real-time facts streamed directly from the Prayagraj optical camera matrix.
           </p>
         </div>
 
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: "-40px" }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
-        >
-          {telemetryFacts.map((fact, i) => (
-            <motion.div variants={fadeUp} key={i} className="h-full">
-              <GlassCard
-                hover
-                glow={fact.accent}
-                accent={fact.accent}
-                className={`p-5 flex flex-col justify-between h-full relative overflow-hidden transition-all duration-300 ${fact.border}`}
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-3.5">
-                    <div className={`p-2.5 rounded-xl border backdrop-blur-md ${fact.iconBg}`}>
-                      <fact.icon size={18} />
-                    </div>
-                    <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md bg-white/[0.04] border border-[var(--glass-border)] text-[var(--text-secondary)]">
-                      {fact.tag}
-                    </span>
-                  </div>
-
-                  <div className="text-3xl sm:text-4xl font-bold font-data tabular-nums text-[var(--text-primary)] tracking-tight leading-none">
-                    <AnimatedCounter value={fact.value} duration={1600 + i * 200} />
-                  </div>
-
-                  <p className="text-[11px] font-display font-semibold text-[var(--text-secondary)] uppercase tracking-wider mt-2 truncate">
-                    {fact.label}
-                  </p>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-[var(--glass-border)] flex items-center justify-between">
-                  <span className={`text-[10px] font-mono font-semibold flex items-center gap-1 ${fact.color}`}>
-                    <Activity size={12} className="animate-pulse" /> {fact.trend}
-                  </span>
-                  <span className="text-[9px] font-mono text-[var(--text-tertiary)]">LIVE SYNC</span>
-                </div>
-              </GlassCard>
-            </motion.div>
-          ))}
-        </motion.div>
+        <BentoStatDeck
+          items={[
+            {
+              hero: true,
+              category: 'CENSUS INTELLIGENCE',
+              title: 'Vehicles Tracked Today',
+              badge: { text: 'LIVE ANPR', variant: 'cyan' },
+              value: rawVehicles || 2847,
+              unit: 'detections',
+              trend: { text: '+12.4% flow velocity', isPositive: true },
+              note: 'Peak: 3,420/hr (Zone B)',
+              icon: Car,
+              colorTheme: 'brand',
+              bars: {
+                label: 'Diurnal Volume Rhythm (Past 12h)',
+                rightText: '98.4% ANPR Accuracy',
+              },
+            },
+            {
+              category: 'GRID NODES',
+              title: 'Camera sensor stations',
+              value: `${rawOnline || 10} / ${rawNodes || 10}`,
+              icon: Video,
+              colorTheme: 'emerald',
+              visual: 'ring',
+              visualMeta: {
+                ringValue: 100,
+                ringText: '100%',
+                subLabel: '6 Municipal Sectors',
+                subNote: 'Zero Packet Drop',
+              },
+            },
+            {
+              category: 'FRAME SYNCHRONY',
+              title: 'Real-time edge telemetry',
+              value: '98.6%',
+              icon: ShieldCheck,
+              colorTheme: 'cyan',
+              visual: 'segmented-bar',
+              visualMeta: {
+                subLabel: 'Optical Sync',
+                subNote: '4K Multi-Stream Locked',
+              },
+            },
+            {
+              category: 'SENTINEL FLAGS',
+              title: 'Real-time threat queue',
+              value: rawAlerts || 4,
+              badge: { text: 'ACTIVE', variant: 'rose' },
+              icon: AlertTriangle,
+              colorTheme: 'rose',
+              visual: 'action-link',
+              visualMeta: {
+                subNote: 'Continuous threat triage',
+                actionLabel: 'Explore Grid',
+                actionHref: '/dashboard',
+              },
+            },
+          ]}
+        />
       </section>
 
       {/* ── Section: Dual-Role Entry Points (Admin vs Citizen User) ── */}
@@ -307,7 +344,7 @@ export default function LandingPage() {
         <div className="text-center space-y-2.5 mb-12">
           <Badge variant="cyan" size="md">DUAL-ROLE PLATFORM</Badge>
           <h2 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)] font-display tracking-tight">
-            Choose Your Intelligence Workspace
+            Choose Your <span className="bg-gradient-to-r from-[var(--brand-teal)] via-cyan-400 to-indigo-400 bg-clip-text text-transparent">Intelligence Workspace</span>
           </h2>
           <p className="text-[var(--text-secondary)] max-w-xl mx-auto text-xs font-body">
             NagarDrishti unifies municipal command operations with direct citizen field intelligence.
@@ -364,7 +401,7 @@ export default function LandingPage() {
         <div className="text-center space-y-3 mb-14">
           <Badge variant="cyan" size="md">NEURAL PIPELINE</Badge>
           <h2 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)] font-display tracking-tight">
-            Detect → Recognize → Connect → Understand
+            Detect <span className="text-cyan-400">→</span> Recognize <span className="text-[var(--brand-teal)]">→</span> Connect <span className="text-violet-400">→</span> <span className="bg-gradient-to-r from-[var(--brand-teal)] via-cyan-400 to-violet-400 bg-clip-text text-transparent">Understand</span>
           </h2>
           <p className="text-[var(--text-secondary)] max-w-xl mx-auto text-xs font-body">
             Four synchronized intelligence layers turn raw camera streams into coherent city-wide vector telemetry.
@@ -379,7 +416,7 @@ export default function LandingPage() {
         <div className="text-center space-y-3 mb-14">
           <Badge variant="cyan" size="md">PLATFORM CAPABILITIES</Badge>
           <h2 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)] font-display tracking-tight">
-            Integrated Command Intelligence
+            Integrated <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-clip-text text-transparent">Command Intelligence</span>
           </h2>
           <p className="text-[var(--text-secondary)] max-w-xl mx-auto text-xs font-body">
             Comprehensive tooling designed for municipal operations centers and public safety teams.
@@ -394,7 +431,7 @@ export default function LandingPage() {
         <div className="text-center space-y-2.5 mb-16">
           <Badge variant="emerald" size="md">MISSION IMPACT</Badge>
           <h2 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)] font-display tracking-tight">
-            Built for Authorized Public Safety &amp; Management
+            Built for <span className="bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">Authorized Public Safety</span> &amp; Management
           </h2>
           <p className="text-[var(--text-secondary)] max-w-2xl mx-auto text-xs font-body">
             NagarDrishti is purpose-engineered strictly for authorized traffic management, emergency response coordination, and municipal planning.
@@ -439,7 +476,7 @@ export default function LandingPage() {
         <GlassCard padding="lg" glow="spectral" accent="spectral" className="p-10 sm:p-14 text-center space-y-6 relative overflow-hidden">
           <div className="space-y-3 max-w-2xl mx-auto">
             <h2 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)] font-display tracking-tight">
-              Ready to Launch the Command Center?
+              Ready to Launch the <span className="bg-gradient-to-r from-[var(--brand-teal)] via-cyan-400 to-sky-400 bg-clip-text text-transparent">Command Center?</span>
             </h2>
             <p className="text-xs sm:text-sm text-[var(--text-secondary)] font-body leading-relaxed">
               Access real-time optical node telemetry, vehicle intelligence timelines, citizen incident queues, and city-wide traffic insights.

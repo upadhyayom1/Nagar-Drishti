@@ -163,23 +163,41 @@ def predict_blacklisted_next(vehicle_id: str):
 # forecast
 
 from fastapi import FastAPI, Query, HTTPException
+from pydantic import BaseModel
+from typing import List, Optional
 from forecasting.predictor import TrafficCongestionPredictor
+import pandas as pd
+
+class TrafficCount(BaseModel):
+    camera_id: str
+    time_bin: str
+    vehicle_count: int
+    zone_id: Optional[str] = "Unassigned"
+
+class ForecastRequest(BaseModel):
+    recent_traffic: List[TrafficCount] = []
 
 congestion_predictor = TrafficCongestionPredictor()
 
-@app.get("/api/forecast/congestion")
-def get_traffic_congestion_forecast(
+@app.post("/api/forecast/congestion")
+def get_traffic_congestion_forecast_post(
+    req: ForecastRequest,
     minutes: int = Query(30, description="Arbitrary future time horizon in minutes (e.g., 15, 30, 60, 75)"),
     threshold: int = Query(15, description="Vehicle volume threshold to flag a bottleneck")
 ):
     """
-    Predicts traffic bottlenecks and vehicle flow densities for any custom 
-    time window ahead, isolated safely from base tracking pipelines.
+    Predicts traffic bottlenecks and vehicle flow densities using live traffic data from the backend.
     """
     try:
+        live_df = None
+        if req.recent_traffic:
+            live_df = pd.DataFrame([t.dict() for t in req.recent_traffic])
+            live_df["time_bin"] = pd.to_datetime(live_df["time_bin"])
+            
         forecast_result = congestion_predictor.predict_congestion(
             horizon_mins=minutes, 
-            capacity_threshold=threshold
+            capacity_threshold=threshold,
+            live_data=live_df
         )
         return forecast_result
     except Exception as e:

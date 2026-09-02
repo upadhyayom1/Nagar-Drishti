@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useQuery } from '@tanstack/react-query';
 import { Car, Gauge, TrendingUp, AlertTriangle, Download, RefreshCw, CheckCircle2 } from 'lucide-react';
-import { StatCard }    from '@/components/ui/StatCard';
+import { BentoStatDeck } from '@/components/ui/BentoStatDeck';
 import { GlassCard }   from '@/components/ui/GlassCard';
 import { Badge }       from '@/components/ui/Badge';
 import { Button }      from '@/components/ui/Button';
@@ -109,37 +109,67 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* KPI Stat Cards — Bug #1: Congestion Index clamped to 100, raw shown in subtitle tooltip */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label={`Total Volume (${timeRange})`}
-          value={stats?.totalVehiclesToday?.toLocaleString('en-IN') ?? 2847}
-          icon={Car}
-          colorTheme="violet"
-        />
-        <StatCard
-          label="Network Velocity"
-          value={stats ? `${stats.avgSpeed} km/h` : '38.5 km/h'}
-          icon={Gauge}
-          colorTheme="cyan"
-        />
-        {/* Congestion Index — clamped display, raw value in subtitle */}
-        <div title={congestion.raw > 100 ? `Raw value: ${congestion.raw} (clamped to 100)` : undefined}>
-          <StatCard
-            label="Congestion Index"
-            value={`${congestion.display} / 100`}
-            icon={TrendingUp}
-            subtitle={congestion.raw > 100 ? `Raw: ${congestion.raw} (normalized)` : 'Network density score'}
-            colorTheme="amber"
-          />
-        </div>
-        <StatCard
-          label="Incident Anomalies"
-          value={stats?.incidentsToday ?? 3}
-          icon={AlertTriangle}
-          colorTheme="rose"
-        />
-      </div>
+      {/* ── KPI Stat Bento Grid ── */}
+      <BentoStatDeck
+        items={[
+          {
+            hero: true,
+            category: 'VOLUME CENSUS',
+            title: `Total Volume (${timeRange.toUpperCase()})`,
+            badge: { text: 'LIVE ANPR', variant: 'cyan' },
+            value: stats?.totalVehiclesToday ?? 0,
+            unit: 'detections',
+            icon: Car,
+            colorTheme: 'brand',
+            bars: {
+              label: 'Diurnal Density Rhythm (Hourly)',
+              rightText: `${hourlyData.length || 24} Time Samples`,
+            },
+          },
+          {
+            category: 'CITY VELOCITY',
+            title: 'Transit velocity curve',
+            value: stats?.avgSpeed ?? 0,
+            unit: 'km/h',
+            icon: Gauge,
+            colorTheme: 'cyan',
+            visual: 'segmented-bar',
+            visualMeta: {
+              subLabel: 'Congestion State',
+              subNote: 'Nominal Flow',
+            },
+          },
+          {
+            category: 'CONGESTION INDEX',
+            title: 'Network density score',
+            value: congestion.display,
+            unit: '/ 100',
+            icon: TrendingUp,
+            colorTheme: 'amber',
+            visual: 'ring',
+            visualMeta: {
+              ringValue: congestion.display,
+              ringText: `${congestion.display}`,
+              subLabel: 'Grid Pressure',
+              subNote: congestion.raw > 100 ? 'Normalized Peak' : 'Stable Bandwidth',
+            },
+          },
+          {
+            category: 'INCIDENT ANOMALIES',
+            title: 'Real-time anomaly queue',
+            value: stats?.incidentsToday ?? 0,
+            badge: { text: 'ACTIVE', variant: 'rose' },
+            icon: AlertTriangle,
+            colorTheme: 'rose',
+            visual: 'action-link',
+            visualMeta: {
+              subNote: 'Flagged sensor events',
+              actionLabel: 'Review',
+              actionHref: '#anomalies',
+            },
+          },
+        ]}
+      />
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">

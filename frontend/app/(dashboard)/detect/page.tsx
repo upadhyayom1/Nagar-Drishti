@@ -171,7 +171,7 @@ export default function PlateDetectionPage() {
             >
               {cameras.map((camera) => (
                 <option key={camera.id} value={camera.id} className="bg-[var(--bg-elevated)] text-[var(--text-primary)]">
-                  {camera.cameraCode} · {camera.name}
+                  {camera.name}
                 </option>
               ))}
             </select>
@@ -201,7 +201,7 @@ export default function PlateDetectionPage() {
                 <X size={16} />
               </button>
               <div className="flex items-center gap-2 px-3 py-2 text-xs font-mono text-[var(--text-secondary)]">
-                <>{file.type.startsWith('video/') ? <FileVideo size={14} /> : <ImageIcon size={14} />}</> {file.name}
+                {file.type.startsWith('video/') ? <FileVideo size={14} /> : <ImageIcon size={14} />} {file.name}
               </div>
             </div>
           )}
@@ -222,9 +222,9 @@ export default function PlateDetectionPage() {
             onClick={runRecognition}
           >
             {isProcessing ? (
-              <><Loader2 size={16} className="animate-spin" /> Analysing evidence…</>
+              <span className="flex items-center gap-2"><Loader2 size={16} className="animate-spin" /> Analysing evidence…</span>
             ) : (
-              <><ScanLine size={16} /> Run plate detection</>
+              <span className="flex items-center gap-2"><ScanLine size={16} /> Run plate detection</span>
             )}
           </Button>
         </GlassCard>

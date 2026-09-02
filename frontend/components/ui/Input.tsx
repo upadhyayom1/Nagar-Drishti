@@ -24,20 +24,22 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           className={cn(
-            'w-full rounded-xl bg-[var(--surface-glass)] backdrop-blur-xl',
-            'border border-[var(--border-glass)] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]',
-            'px-4 py-2 text-xs text-[var(--text-primary)] font-mono',
+            'w-full rounded-full backdrop-blur-2xl',
+            'bg-[var(--bg-elevated)] text-[var(--text-primary)] font-mono font-medium',
+            'border border-[var(--glass-border)] hover:border-[var(--brand-teal)]/40',
+            'shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),0_2px_10px_rgba(0,0,0,0.15)]',
+            'px-4 py-2 text-xs',
             'placeholder:text-[var(--text-tertiary)] placeholder:font-body placeholder:text-xs',
-            'transition-all duration-150 ease-out outline-none',
-            'focus:border-[var(--accent-cyan)]/70 focus:bg-white/[0.05] focus:shadow-[0_0_20px_rgba(34,211,238,0.2)]',
+            'transition-all duration-200 ease-out outline-none',
+            'focus:border-[var(--brand-teal)] focus:ring-1 focus:ring-[var(--brand-teal)]/30 focus:shadow-[0_0_16px_rgba(0,245,155,0.2)]',
             hasIcon ? 'pl-9' : undefined,
-            shortcutHint ? 'pr-20' : undefined,
+            shortcutHint ? 'pr-24' : undefined,
             className,
           )}
           {...props}
         />
         {shortcutHint && (
-          <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-md bg-white/[0.04] border border-[var(--border-glass)] text-[9px] font-mono text-[var(--text-secondary)] tracking-wider uppercase">
+          <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 px-2.5 py-0.5 rounded-full bg-[var(--bg-elevated-2)] border border-[var(--glass-border)] text-[9px] font-mono font-bold text-[var(--text-secondary)] tracking-wider uppercase shadow-sm">
             {shortcutHint}
           </div>
         )}

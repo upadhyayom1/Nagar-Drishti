@@ -75,7 +75,7 @@ export default function FieldSubmissionsPage() {
         <div>
           <h1 className="text-2xl font-bold font-display text-[var(--text-primary)]">Citizen Field Submissions</h1>
           <p className="text-xs font-mono text-[var(--text-secondary)] mt-0.5 uppercase tracking-wider">
-            Incoming citizen incident uploads · <span className="text-[var(--status-critical)] font-bold">{highPriorityCount} High Priority</span> · {pendingCount} Pending Dispatch
+            Incoming citizen incident uploads · <span className="text-rose-400 font-bold">{highPriorityCount} High Priority</span> · {pendingCount} Pending Dispatch
           </p>
         </div>
 
@@ -100,7 +100,7 @@ export default function FieldSubmissionsPage() {
             onClick={() => setFilterPriority(tab)}
             className={`text-xs font-display font-semibold px-3.5 py-1.5 rounded-xl border transition-all duration-150 capitalize ${
               filterPriority === tab
-                ? 'bg-[var(--brand-teal)]/15 text-[var(--brand-teal)] border-[var(--brand-teal)]/40 shadow-[0_0_15px_rgba(31,217,168,0.2)] font-bold'
+                ? 'bg-[var(--brand-teal)]/15 text-[var(--brand-teal)] border-[var(--brand-teal)]/40 shadow-[0_0_15px_rgba(61,118,121,0.2)] font-bold'
                 : 'bg-white/[0.03] text-[var(--text-secondary)] border-[var(--glass-border)] hover:border-white/20 hover:text-[var(--text-primary)]'
             }`}
           >
@@ -127,10 +127,10 @@ export default function FieldSubmissionsPage() {
               >
                 <GlassCard
                   hover
-                  glow={isHigh ? 'critical' : 'teal'}
+                  glow={isHigh ? 'rose' : 'teal'}
                   className={`p-5 border transition-all ${
                     isHigh
-                      ? 'border-[var(--status-critical)]/40 shadow-[0_0_24px_rgba(255,77,79,0.12)]'
+                      ? 'border-rose-500/40 shadow-[0_0_24px_rgba(244,63,94,0.12)]'
                       : 'border-[var(--glass-border)]'
                   }`}
                 >
@@ -139,7 +139,7 @@ export default function FieldSubmissionsPage() {
                     {/* Media Type / Priority Icon Capsule */}
                     <div className={`p-3.5 rounded-2xl shrink-0 border border-white/10 ${
                       isHigh
-                        ? 'bg-[var(--status-critical)]/15 text-[var(--status-critical)]'
+                        ? 'bg-rose-500/15 text-rose-400'
                         : 'bg-[var(--brand-teal)]/15 text-[var(--brand-teal)]'
                     }`}>
                       {isHigh ? <ShieldAlert size={22} /> : <AlertTriangle size={22} />}
@@ -184,7 +184,7 @@ export default function FieldSubmissionsPage() {
                         {sub.vehiclePlate && (
                           <Link
                             href={`/vehicles/${sub.vehiclePlate}`}
-                            className="flex items-center gap-1 text-[var(--signal-cyan)] font-bold bg-[var(--signal-cyan)]/10 px-2 py-0.5 rounded border border-[var(--signal-cyan)]/25 hover:underline"
+                            className="flex items-center gap-1 text-cyan-400 font-bold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/25 hover:underline"
                           >
                             <Car size={13} /> {sub.vehiclePlate}
                           </Link>

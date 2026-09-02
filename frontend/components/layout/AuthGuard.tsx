@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -51,7 +51,7 @@ export function AuthGuard({ children, allowedRoles }: { children: React.ReactNod
     return (
       <div className="flex items-center justify-center min-h-screen bg-[var(--bg-void)] text-[var(--text-primary)]">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 via-cyan-400 to-pink-500 flex items-center justify-center p-0.5 animate-pulse shadow-[0_0_24px_rgba(0,240,255,0.4)]">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 via-cyan-400 to-pink-500 flex items-center justify-center p-0.5 animate-pulse shadow-[0_0_24px_rgba(61,118,121,0.4)]">
             <div className="w-full h-full rounded-[10px] bg-[var(--bg-elevated)] flex items-center justify-center">
               <Loader2 className="animate-spin text-cyan-400" size={24} />
             </div>

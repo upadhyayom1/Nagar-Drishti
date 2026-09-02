@@ -46,10 +46,14 @@ class TrafficCongestionPredictor:
     def train_model(self, horizon_mins: int = 30):
         return self._get_model(horizon_mins) is not None
 
-    def predict_congestion(self, horizon_mins: int = 30, capacity_threshold: int = 15):
+    def predict_congestion(self, horizon_mins: int = 30, capacity_threshold: int = 15, live_data: pd.DataFrame = None):
         horizon_mins = int(max(15, horizon_mins))
         capacity_threshold = max(1, int(capacity_threshold))
-        latest_data = load_and_aggregate_detections()
+        
+        if live_data is not None and not live_data.empty:
+            latest_data = live_data
+        else:
+            latest_data = load_and_aggregate_detections()
 
         if latest_data.empty:
             return {
@@ -99,7 +103,7 @@ class TrafficCongestionPredictor:
                 "camera_id": str(camera_id),
                 "zone_id": zone,
                 "current_vehicle_count": int(round(current_count)),
-                "predicted_vehicle_count": round(pred_count, 2),
+                "predicted_vehicle_count": int(round(pred_count)),
                 "congestion_risk": risk,
                 "forecast_time": target_time.isoformat(),
             })

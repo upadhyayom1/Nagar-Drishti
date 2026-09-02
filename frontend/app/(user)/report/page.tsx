@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -91,7 +91,7 @@ export default function CitizenReportPage() {
         className="py-12"
       >
         <GlassCard padding="lg" glow="teal" className="text-center max-w-xl mx-auto space-y-5 p-8 sm:p-10 border border-[var(--brand-teal)]/30">
-          <div className="w-16 h-16 rounded-2xl bg-[var(--brand-teal)]/15 border border-[var(--brand-teal)]/30 flex items-center justify-center mx-auto text-[var(--brand-teal)] shadow-[0_0_24px_rgba(31,217,168,0.3)]">
+          <div className="w-16 h-16 rounded-2xl bg-[var(--brand-teal)]/15 border border-[var(--brand-teal)]/30 flex items-center justify-center mx-auto text-[var(--brand-teal)] shadow-[0_0_24px_rgba(61,118,121,0.3)]">
             <CheckCircle2 size={32} />
           </div>
 
@@ -167,7 +167,7 @@ export default function CitizenReportPage() {
                 onClick={() => setPriority('HIGH')}
                 className={`p-3 rounded-xl border text-left transition-all duration-150 flex items-start gap-3 ${
                   priority === 'HIGH'
-                    ? 'bg-[var(--status-critical)]/15 border-[var(--status-critical)]/50 shadow-[0_0_20px_rgba(255,77,79,0.2)] text-white'
+                    ? 'bg-[var(--status-critical)]/15 border-[var(--status-critical)]/50 shadow-[0_0_20px_rgba(204,102,102,0.2)] text-white'
                     : 'bg-white/[0.02] border-[var(--glass-border)] text-[var(--text-secondary)] hover:bg-white/[0.04]'
                 }`}
               >
@@ -187,7 +187,7 @@ export default function CitizenReportPage() {
                 onClick={() => setPriority('LOW')}
                 className={`p-3 rounded-xl border text-left transition-all duration-150 flex items-start gap-3 ${
                   priority === 'LOW'
-                    ? 'bg-[var(--brand-teal)]/15 border-[var(--brand-teal)]/50 shadow-[0_0_20px_rgba(31,217,168,0.2)] text-white'
+                    ? 'bg-[var(--brand-teal)]/15 border-[var(--brand-teal)]/50 shadow-[0_0_20px_rgba(61,118,121,0.2)] text-white'
                     : 'bg-white/[0.02] border-[var(--glass-border)] text-[var(--text-secondary)] hover:bg-white/[0.04]'
                 }`}
               >
@@ -342,9 +342,9 @@ export default function CitizenReportPage() {
               variant="primary"
               size="lg"
               disabled={isSubmitting}
-              className="w-full shadow-[0_0_25px_rgba(31,217,168,0.35)]"
+              className="w-full shadow-[0_0_25px_rgba(61,118,121,0.35)]"
             >
-              {isSubmitting ? 'Transmitting Field Data…' : 'Submit Incident Report to Dispatch'}
+              {isSubmitting ? 'Transmitting Field Data"¦' : 'Submit Incident Report to Dispatch'}
             </Button>
           </div>
         </form>

@@ -449,7 +449,7 @@ class SimulationEngine {
               plateText: v.plateNumber,
               timestamp: new Date(this.time),
               source: 'SIMULATION',
-              speed: v.speed,
+              speed: simDeltaSec > 0 ? Math.round((calculateDistanceMeters(previousCoords[0], previousCoords[1], v.coords[0], v.coords[1]) / simDeltaSec) * 3.6 * 10) / 10 : v.speed,
               vehicleConfidence: 0.95 + (Math.random() * 0.04),
               ocrConfidence: 0.90 + (Math.random() * 0.09),
               lane: Math.floor(Math.random() * 3) + 1,

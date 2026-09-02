@@ -44,61 +44,61 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         name: 'Command Center',
         href: '/dashboard',
         icon: LayoutDashboard,
-        color: '#00f0ff',
-        bgActive: 'bg-cyan-500/15',
-        borderActive: 'border-cyan-400/60',
-        glowShadow: 'shadow-[0_0_22px_rgba(0,240,255,0.35)]',
-        leftPillColor: 'bg-[#00f0ff] shadow-[0_0_10px_#00f0ff]',
-        iconColor: 'text-cyan-400 drop-shadow-[0_0_8px_rgba(0,240,255,0.7)]',
-        hoverClass: 'hover:border-cyan-400/50 hover:bg-cyan-500/10 hover:shadow-[0_0_16px_rgba(0,240,255,0.2)] hover:text-cyan-400',
+        color: '#06b6d4',
+        bgActive: 'bg-[var(--bg-elevated-2)]',
+        borderActive: 'border-cyan-500/30',
+        glowShadow: 'shadow-[0_0_15px_rgba(6,182,212,0.15)]',
+        leftPillColor: 'bg-cyan-400 shadow-[0_0_12px_#06b6d4]',
+        iconColor: 'text-cyan-400 dark:text-cyan-300',
+        hoverClass: 'hover:bg-[var(--bg-elevated)] hover:text-cyan-400',
       },
       {
         name: 'Live Cameras',
         href: '/cameras',
         icon: Camera,
-        color: '#00E6B0',
-        bgActive: 'bg-emerald-500/15',
-        borderActive: 'border-emerald-400/60',
-        glowShadow: 'shadow-[0_0_22px_rgba(0,230,176,0.35)]',
-        leftPillColor: 'bg-[#00E6B0] shadow-[0_0_10px_#00E6B0]',
-        iconColor: 'text-emerald-400 drop-shadow-[0_0_8px_rgba(0,230,176,0.7)]',
-        hoverClass: 'hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:shadow-[0_0_16px_rgba(0,230,176,0.2)] hover:text-emerald-400',
+        color: '#00f59b',
+        bgActive: 'bg-[var(--bg-elevated-2)]',
+        borderActive: 'border-emerald-500/30',
+        glowShadow: 'shadow-[0_0_15px_rgba(0,245,155,0.15)]',
+        leftPillColor: 'bg-[#00f59b] shadow-[0_0_12px_#00f59b]',
+        iconColor: 'text-emerald-500 dark:text-[#00f59b]',
+        hoverClass: 'hover:bg-[var(--bg-elevated)] hover:text-[#00f59b]',
       },
       {
         name: 'Vehicle Intelligence',
         href: '/vehicles',
         icon: Car,
-        color: '#38bdf8',
-        bgActive: 'bg-sky-500/15',
-        borderActive: 'border-sky-400/60',
-        glowShadow: 'shadow-[0_0_22px_rgba(56,189,248,0.35)]',
-        leftPillColor: 'bg-[#38bdf8] shadow-[0_0_10px_#38bdf8]',
-        iconColor: 'text-sky-400 drop-shadow-[0_0_8px_rgba(56,189,248,0.7)]',
-        hoverClass: 'hover:border-sky-400/50 hover:bg-sky-500/10 hover:shadow-[0_0_16px_rgba(56,189,248,0.2)] hover:text-sky-400',
+        color: '#3b82f6',
+        bgActive: 'bg-[var(--bg-elevated-2)]',
+        borderActive: 'border-blue-500/30',
+        glowShadow: 'shadow-[0_0_15px_rgba(59,130,246,0.15)]',
+        leftPillColor: 'bg-blue-500 shadow-[0_0_12px_#3b82f6]',
+        iconColor: 'text-blue-500 dark:text-blue-400',
+        hoverClass: 'hover:bg-[var(--bg-elevated)] hover:text-blue-400',
       },
       {
         name: 'AI Plate Detection',
         href: '/detect',
         icon: ScanLine,
-        color: '#22d3ee',
-        bgActive: 'bg-cyan-500/15',
-        borderActive: 'border-cyan-400/60',
-        glowShadow: 'shadow-[0_0_22px_rgba(34,211,238,0.35)]',
-        leftPillColor: 'bg-cyan-400 shadow-[0_0_10px_#22d3ee]',
-        iconColor: 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.7)]',
-        hoverClass: 'hover:border-cyan-400/50 hover:bg-cyan-500/10 hover:shadow-[0_0_16px_rgba(34,211,238,0.2)] hover:text-cyan-400',
+        color: '#a855f7',
+        bgActive: 'bg-[var(--bg-elevated-2)]',
+        borderActive: 'border-purple-500/30',
+        glowShadow: 'shadow-[0_0_15px_rgba(168,85,247,0.15)]',
+        leftPillColor: 'bg-purple-500 shadow-[0_0_12px_#a855f7]',
+        iconColor: 'text-purple-500 dark:text-purple-400',
+        hoverClass: 'hover:bg-[var(--bg-elevated)] hover:text-purple-400',
       },
       {
         name: 'Traffic Analytics',
         href: '/analytics',
         icon: BarChart3,
-        color: '#8b5cf6',
-        bgActive: 'bg-violet-500/15',
-        borderActive: 'border-violet-400/60',
-        glowShadow: 'shadow-[0_0_22px_rgba(139,92,246,0.35)]',
-        leftPillColor: 'bg-[#8b5cf6] shadow-[0_0_10px_#8b5cf6]',
-        iconColor: 'text-violet-400 drop-shadow-[0_0_8px_rgba(139,92,246,0.7)]',
-        hoverClass: 'hover:border-violet-400/50 hover:bg-violet-500/10 hover:shadow-[0_0_16px_rgba(139,92,246,0.2)] hover:text-violet-400',
+        color: '#f59e0b',
+        bgActive: 'bg-[var(--bg-elevated-2)]',
+        borderActive: 'border-amber-500/30',
+        glowShadow: 'shadow-[0_0_15px_rgba(245,158,11,0.15)]',
+        leftPillColor: 'bg-amber-400 shadow-[0_0_12px_#f59e0b]',
+        iconColor: 'text-amber-500 dark:text-amber-400',
+        hoverClass: 'hover:bg-[var(--bg-elevated)] hover:text-amber-400',
       },
       {
         name: 'Traffic Forecast',
@@ -119,12 +119,12 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         href: '/network',
         icon: Network,
         color: '#ec4899',
-        bgActive: 'bg-pink-500/15',
-        borderActive: 'border-pink-400/60',
-        glowShadow: 'shadow-[0_0_22px_rgba(236,72,153,0.35)]',
-        leftPillColor: 'bg-[#ec4899] shadow-[0_0_10px_#ec4899]',
-        iconColor: 'text-pink-400 drop-shadow-[0_0_8px_rgba(236,72,153,0.7)]',
-        hoverClass: 'hover:border-pink-400/50 hover:bg-pink-500/10 hover:shadow-[0_0_16px_rgba(236,72,153,0.2)] hover:text-pink-400',
+        bgActive: 'bg-[var(--bg-elevated-2)]',
+        borderActive: 'border-pink-500/30',
+        glowShadow: 'shadow-[0_0_15px_rgba(236,72,153,0.15)]',
+        leftPillColor: 'bg-pink-500 shadow-[0_0_12px_#ec4899]',
+        iconColor: 'text-pink-500 dark:text-pink-400',
+        hoverClass: 'hover:bg-[var(--bg-elevated)] hover:text-pink-400',
       },
     ],
   },
@@ -136,49 +136,49 @@ const navGroups: { label: string; items: NavItem[] }[] = [
         name: 'Field Submissions',
         href: '/submissions',
         icon: Inbox,
-        color: '#f59e0b',
-        bgActive: 'bg-amber-500/15',
-        borderActive: 'border-amber-400/60',
-        glowShadow: 'shadow-[0_0_22px_rgba(245,158,11,0.35)]',
-        leftPillColor: 'bg-[#f59e0b] shadow-[0_0_10px_#f59e0b]',
-        iconColor: 'text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.7)]',
-        hoverClass: 'hover:border-amber-400/50 hover:bg-amber-500/10 hover:shadow-[0_0_16px_rgba(245,158,11,0.2)] hover:text-amber-400',
+        color: '#14b8a6',
+        bgActive: 'bg-[var(--bg-elevated-2)]',
+        borderActive: 'border-teal-500/30',
+        glowShadow: 'shadow-[0_0_15px_rgba(20,184,166,0.15)]',
+        leftPillColor: 'bg-teal-400 shadow-[0_0_12px_#14b8a6]',
+        iconColor: 'text-teal-500 dark:text-teal-400',
+        hoverClass: 'hover:bg-[var(--bg-elevated)] hover:text-teal-400',
       },
       {
         name: 'Sentinel Alerts',
         href: '/alerts',
         icon: Bell,
-        color: '#f43f5e',
-        bgActive: 'bg-rose-500/15',
-        borderActive: 'border-rose-400/60',
-        glowShadow: 'shadow-[0_0_22px_rgba(244,63,94,0.35)]',
-        leftPillColor: 'bg-[#f43f5e] shadow-[0_0_10px_#f43f5e]',
-        iconColor: 'text-rose-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.7)]',
-        hoverClass: 'hover:border-rose-400/50 hover:bg-rose-500/10 hover:shadow-[0_0_16px_rgba(244,63,94,0.2)] hover:text-rose-400',
+        color: '#ff3355',
+        bgActive: 'bg-[var(--bg-elevated-2)]',
+        borderActive: 'border-red-500/30',
+        glowShadow: 'shadow-[0_0_15px_rgba(255,51,85,0.15)]',
+        leftPillColor: 'bg-[#ff3355] shadow-[0_0_12px_#ff3355]',
+        iconColor: 'text-rose-500 dark:text-[#ff3355]',
+        hoverClass: 'hover:bg-[var(--bg-elevated)] hover:text-rose-400',
       },
       {
         name: 'Threat Watchlist',
         href: '/blacklist',
         icon: Shield,
-        color: '#d946ef',
-        bgActive: 'bg-fuchsia-500/15',
-        borderActive: 'border-fuchsia-400/60',
-        glowShadow: 'shadow-[0_0_22px_rgba(217,70,239,0.35)]',
-        leftPillColor: 'bg-[#d946ef] shadow-[0_0_10px_#d946ef]',
-        iconColor: 'text-fuchsia-400 drop-shadow-[0_0_8px_rgba(217,70,239,0.7)]',
-        hoverClass: 'hover:border-fuchsia-400/50 hover:bg-fuchsia-500/10 hover:shadow-[0_0_16px_rgba(217,70,239,0.2)] hover:text-fuchsia-400',
+        color: '#f97316',
+        bgActive: 'bg-[var(--bg-elevated-2)]',
+        borderActive: 'border-orange-500/30',
+        glowShadow: 'shadow-[0_0_15px_rgba(249,115,22,0.15)]',
+        leftPillColor: 'bg-orange-500 shadow-[0_0_12px_#f97316]',
+        iconColor: 'text-orange-500 dark:text-orange-400',
+        hoverClass: 'hover:bg-[var(--bg-elevated)] hover:text-orange-400',
       },
       {
         name: 'System Diagnostics',
         href: '/system',
         icon: Settings,
-        color: '#14b8a6',
-        bgActive: 'bg-teal-500/15',
-        borderActive: 'border-teal-400/60',
-        glowShadow: 'shadow-[0_0_22px_rgba(20,184,166,0.35)]',
-        leftPillColor: 'bg-[#14b8a6] shadow-[0_0_10px_#14b8a6]',
-        iconColor: 'text-teal-400 drop-shadow-[0_0_8px_rgba(20,184,166,0.7)]',
-        hoverClass: 'hover:border-teal-400/50 hover:bg-teal-500/10 hover:shadow-[0_0_16px_rgba(20,184,166,0.2)] hover:text-teal-400',
+        color: '#84cc16',
+        bgActive: 'bg-[var(--bg-elevated-2)]',
+        borderActive: 'border-lime-500/30',
+        glowShadow: 'shadow-[0_0_15px_rgba(132,204,22,0.15)]',
+        leftPillColor: 'bg-lime-400 shadow-[0_0_12px_#84cc16]',
+        iconColor: 'text-lime-600 dark:text-lime-400',
+        hoverClass: 'hover:bg-[var(--bg-elevated)] hover:text-lime-400',
       },
     ],
   },
@@ -192,21 +192,24 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex flex-col h-full py-3.5 select-none font-body overflow-hidden">
 
-      {/* Brand Mark Header */}
+      {/* Brand Mark Header with subtle teal separator */}
       <div className={cn('mb-4 shrink-0', sidebarCollapsed ? 'px-2 flex justify-center' : 'px-3.5')}>
         <Logo size="sm" showText={!sidebarCollapsed} />
+        {!sidebarCollapsed && (
+          <div className="mt-3 h-px bg-gradient-to-r from-teal-500/40 via-teal-400/20 to-transparent rounded-full" />
+        )}
       </div>
 
       {/* Navigation Links */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden space-y-4 px-2">
         {navGroups.map((group) => (
-          <div key={group.label}>
-            {!sidebarCollapsed && (
-              <p className="text-[10px] font-mono font-bold text-cyan-500 dark:text-cyan-400/90 uppercase tracking-[0.18em] px-2.5 mb-2 flex items-center gap-1.5">
-                <span className="w-1 h-1 rounded-full bg-cyan-400 shadow-[0_0_6px_#00f0ff] shrink-0" />
-                {group.label}
-              </p>
-            )}
+            <div key={group.label}>
+              {!sidebarCollapsed && (
+                <p className="text-[10px] font-mono font-medium uppercase tracking-[0.18em] px-2.5 mb-2 text-[var(--text-tertiary)] flex items-center gap-1.5">
+                  <span className="w-1 h-1 rounded-full bg-neutral-600 shrink-0" />
+                  {group.label}
+                </p>
+              )}
 
             <div className="space-y-1 relative">
               {group.items.map((item) => {
@@ -222,16 +225,16 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                     onClick={onNavigate}
                     title={sidebarCollapsed ? item.name : undefined}
                     className={cn(
-                      'flex items-center gap-2.5 rounded-xl transition-all duration-200 outline-none group relative overflow-hidden border',
+                      'flex items-center gap-2.5 rounded-2xl transition-all duration-200 outline-none group relative overflow-hidden border',
                       sidebarCollapsed
                         ? 'justify-center px-2 py-2.5'
-                        : 'px-3 py-2',
+                        : 'px-3 py-2.5',
                       isActive
                         ? cn(
                             item.bgActive,
                             item.borderActive,
                             item.glowShadow,
-                            'font-semibold text-[var(--text-primary)]'
+                            'font-semibold text-[var(--text-primary)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]'
                           )
                         : cn(
                             'text-[var(--text-secondary)] border-transparent font-medium hover:scale-[1.01]',
