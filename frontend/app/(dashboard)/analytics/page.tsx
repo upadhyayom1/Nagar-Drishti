@@ -119,8 +119,6 @@ export default function AnalyticsPage() {
             badge: { text: 'LIVE ANPR', variant: 'cyan' },
             value: stats?.totalVehiclesToday ?? 0,
             unit: 'detections',
-            trend: { text: '+8.2% volume', isPositive: true },
-            note: 'Peak: 3,420/hr (Corridor 4)',
             icon: Car,
             colorTheme: 'brand',
             bars: {
