@@ -8,6 +8,8 @@ async function getDeduplicatedActiveAlerts({ severity, type } = {}) {
       const mappedType = typeMap[String(type).toUpperCase()];
       if (!mappedType) return [];
       where.type = mappedType;
+    } else {
+      where.type = { in: ['CONGESTION', 'BLACKLIST_MATCH'] };
     }
     const alerts = await prisma.alert.findMany({
       where,
