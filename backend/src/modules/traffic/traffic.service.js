@@ -12,9 +12,10 @@ function parseTrafficWindow({ from, to } = {}) {
 }
 
 function getTrafficLevel({ detectionCount, vehicleCount, durationMinutes }) {
-  if (vehicleCount >= 30) return 'congested';
-  if (vehicleCount >= 20) return 'high';
-  if (vehicleCount >= 10) return 'moderate';
+  const scale = Math.max(1, (durationMinutes || 5) / 5);
+  if (vehicleCount >= 30 * scale) return 'congested';
+  if (vehicleCount >= 20 * scale) return 'high';
+  if (vehicleCount >= 10 * scale) return 'moderate';
   return 'low';
 }
 

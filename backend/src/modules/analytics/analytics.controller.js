@@ -35,10 +35,11 @@ exports.getOverview = async (req, res) => {
       }),
     ]);
 
-    // This is deliberately a normalized observation index, not a physical road-capacity claim.
+    // This is a normalized observation index based on detection volume vs practical capacity.
     const durationHours = Math.max((window.to - window.from) / 3600000, 1 / 60);
-    const hourlyUniqueVehicleRate = (uniqueVehicleRows.length * 60) / (durationHours * 60);
-    const congestionIndex = Math.min(100, Math.round((hourlyUniqueVehicleRate / Math.max(activeCameras, 1)) * 10));
+    const avgDetectionsPerHourPerCamera = totalDetectionsCount / durationHours / Math.max(activeCameras, 1);
+    // 240 detections per hour (4 per min per camera) is considered highly congested (100%)
+    const congestionIndex = Math.min(100, Math.round((avgDetectionsPerHourPerCamera / 240) * 100));
 
     const engine = global.simulationEngine;
     const running = Boolean(engine?.running);
