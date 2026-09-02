@@ -18,7 +18,7 @@ function getTrafficLevel({ detectionCount, vehicleCount, durationMinutes }) {
   return 'low';
 }
 
-async function getTrafficSnapshot(windowInput = {}, cameraId) {
+async function getTrafficSnapshot(windowInput = {}, cameraIdentifier) {
   let { from, to } = windowInput;
 
   if (!to) {
@@ -26,10 +26,31 @@ async function getTrafficSnapshot(windowInput = {}, cameraId) {
   }
 
   const window = parseTrafficWindow({ from, to });
-  const where = { timestamp: { gte: window.from, lte: window.to }, ...(cameraId ? { cameraId } : {}) };
+
+  // Resolve camera identifier to internal ID if provided
+  let resolvedCameraId = undefined;
+  if (cameraIdentifier) {
+    const cam = await prisma.camera.findFirst({
+      where: {
+        OR: [
+          { id: cameraIdentifier },
+          { cameraCode: cameraIdentifier },
+          { name: { equals: cameraIdentifier, mode: 'insensitive' } }
+        ]
+      }
+    });
+    if (cam) {
+      resolvedCameraId = cam.id;
+    } else {
+      // If not found, fallback to just passing it (will likely result in 0 traffic)
+      resolvedCameraId = cameraIdentifier;
+    }
+  }
+
+  const where = { timestamp: { gte: window.from, lte: window.to }, ...(resolvedCameraId ? { cameraId: resolvedCameraId } : {}) };
 
   const cameras = await prisma.camera.findMany({
-    where: cameraId ? { id: cameraId } : undefined,
+    where: resolvedCameraId ? { id: resolvedCameraId } : undefined,
     include: { zone: { select: { name: true } }, road: { select: { name: true } } },
     orderBy: { cameraCode: 'asc' },
   });

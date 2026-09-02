@@ -204,7 +204,7 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
                     </div>
                     <div className="flex-1 p-3.5 rounded-xl bg-[var(--bg-elevated)]/60 border border-[var(--glass-border)] hover:border-cyan-400/40 transition-all">
                       <div className="flex items-center justify-between mb-1.5">
-                        <Link href={`/cameras/${d.cameraId}`} className="text-sm font-semibold text-[var(--text-primary)] hover:text-cyan-400 transition-colors font-display">
+                        <Link href={`/cameras/${encodeURIComponent(d.cameraName)}`} className="text-sm font-semibold text-[var(--text-primary)] hover:text-cyan-400 transition-colors font-display">
                           {d.cameraName}
                         </Link>
                         <span className="text-[10px] font-mono text-[var(--text-tertiary)]">{formatDateTime(d.timestamp)}</span>

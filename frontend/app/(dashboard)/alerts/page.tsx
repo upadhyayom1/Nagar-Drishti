@@ -101,7 +101,7 @@ function AlertCard({
                     </Button>
                   </Link>
                 )}
-                <Link href={`/cameras/${alert.cameraId}`}>
+                <Link href={`/cameras/${encodeURIComponent(alert.cameraName)}`}>
                   <Button variant="ghost" size="sm">
                     <Camera size={13} /> View Sensor
                   </Button>

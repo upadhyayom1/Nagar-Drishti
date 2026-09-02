@@ -38,7 +38,7 @@ function CameraCard({ camera }: { camera: Camera }) {
     camera.trafficLevel === 'high'      ? 'warn' : 'ok';
 
   return (
-    <Link href={`/cameras/${camera.id}`} className="block h-full group">
+    <Link href={`/cameras/${encodeURIComponent(camera.name)}`} className="block h-full group">
       <div className="h-full rounded-3xl p-3.5 flex flex-col justify-between transition-all duration-300 relative overflow-hidden border border-[var(--glass-border)] bg-[var(--bg-elevated)] backdrop-blur-2xl shadow-[var(--glass-shadow)] hover:border-[var(--brand-teal)]/50 hover:shadow-[0_20px_45px_rgba(0,0,0,0.4),0_0_25px_rgba(0,245,155,0.15)] hover:-translate-y-1.5">
 
         {/* Specular top rim highlight */}

@@ -137,6 +137,20 @@ exports.getVehicleHeatmap = async (req, res) => {
 exports.getCameraDetections = async (req, res) => {
   try {
     const { cameraId } = req.params;
+    
+    // Resolve camera identifier to internal ID
+    const cam = await prisma.camera.findFirst({
+      where: {
+        OR: [
+          { id: cameraId },
+          { cameraCode: cameraId },
+          { name: { equals: cameraId, mode: 'insensitive' } }
+        ]
+      }
+    });
+    if (!cam) return res.status(404).json({ success: false, message: 'Camera not found' });
+    const resolvedId = cam.id;
+
     const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 100);
     const live = String(req.query.live || '').toLowerCase() === 'true' || req.query.live === '1';
     const cursor = req.query.cursor ? String(req.query.cursor) : undefined;
@@ -146,7 +160,7 @@ exports.getCameraDetections = async (req, res) => {
     const currentTime = running ? engine.getState().simulationTime : new Date();
 
     const windowMinutes = Math.min(Math.max(Number(req.query.windowMinutes) || 2, 1), 60);
-    const where = { cameraId };
+    const where = { cameraId: resolvedId };
     if (live) {
       where.timestamp = { gte: new Date(currentTime.getTime() - windowMinutes * 60 * 1000), lte: currentTime };
     }
