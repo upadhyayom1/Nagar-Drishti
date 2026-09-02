@@ -14,7 +14,8 @@ import { useInView } from 'react-intersection-observer';
 import type { Detection } from '@/types';
 
 export default function CameraDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+  const { id: rawId } = use(params);
+  const id = decodeURIComponent(rawId);
   const { data: camera }          = useQuery({ queryKey: ['camera', id],     queryFn: () => cameraService.getCameraById(id) });
   
   const {
