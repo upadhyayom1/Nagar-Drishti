@@ -8,6 +8,8 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
 import type { TrafficStats } from '@/types';
+import { useQuery } from '@tanstack/react-query';
+import { analyticsService } from '@/services/analyticsService';
 import Link from 'next/link';
 
 interface StatBentoGridProps {
@@ -40,8 +42,22 @@ const itemVariants: Variants = {
 export function StatBentoGrid({ stats, totalNodes = 0, className }: StatBentoGridProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
-  // Simulated 12-hour diurnal volume bar distribution (scaled 20% to 95%)
-  const hourlyBars = [32, 45, 60, 78, 92, 85, 64, 70, 88, 95, 82, 68];
+  const { data: hourlyData } = useQuery({
+    queryKey: ['hourlyTraffic'],
+    queryFn: () => analyticsService.getHourlyTraffic(),
+    refetchInterval: 15_000,
+  });
+
+  const hourlyBars = hourlyData && hourlyData.length > 0
+    ? hourlyData.slice(-12).map(d => {
+        const max = Math.max(...hourlyData.map(h => h.vehicles), 1);
+        return Math.max(10, (d.vehicles / max) * 100);
+      })
+    : [32, 45, 60, 78, 92, 85, 64, 70, 88, 95, 82, 68];
+
+  const hourlyLabels = hourlyData && hourlyData.length > 0
+    ? hourlyData.slice(-12).map(d => ({ hour: d.hour, veh: d.vehicles }))
+    : Array.from({ length: 12 }).map((_, i) => ({ hour: `${i + 1}:00`, veh: Math.round(([32, 45, 60, 78, 92, 85, 64, 70, 88, 95, 82, 68][i] / 100) * 340) }));
 
   const totalVehicles = stats?.totalVehiclesToday ?? 0;
   const activeCameras = stats?.activeCameras ?? 0;
@@ -122,7 +138,7 @@ export function StatBentoGrid({ stats, totalNodes = 0, className }: StatBentoGri
                   <div
                     key={i}
                     className="h-full flex items-end justify-center group/bar relative"
-                    title={`Hour ${i + 1}: ${Math.round((height / 100) * 340)} veh/hr`}
+                    title={`Hour ${hourlyLabels[i]?.hour}: ${hourlyLabels[i]?.veh} veh/hr`}
                   >
                     <motion.div
                       initial={{ height: 0 }}
@@ -298,7 +314,7 @@ export function StatBentoGrid({ stats, totalNodes = 0, className }: StatBentoGri
 
             {/* Threat indicator details */}
             <div className="mt-4 pt-3 border-t border-[var(--glass-border)] flex items-center justify-between text-[10px] font-mono">
-              <span className="text-[var(--text-secondary)]">3 Watch · 1 Critical</span>
+              <span className="text-[var(--text-secondary)]">{activeAlerts > 0 ? `${activeAlerts} Active Alerts` : 'No Active Threats'}</span>
               <Link
                 href="/alerts"
                 className="text-[var(--status-critical)] font-bold hover:underline flex items-center gap-0.5"
