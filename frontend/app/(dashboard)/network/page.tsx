@@ -18,10 +18,10 @@ const SankeyChartWrapper = dynamic(
 const formatDuration = (seconds: number) => seconds ? `${Math.floor(seconds / 60)}m ${seconds % 60}s` : 'No observations';
 
 export default function MovementNetworkPage() {
-  const { data: network, isLoading } = useQuery({ queryKey: ['network'], queryFn: analyticsService.getNetwork, refetchInterval: 30_000 });
+  const { data: network, isLoading } = useQuery({ queryKey: ['network'], queryFn: () => analyticsService.getNetwork(), refetchInterval: 30_000 });
   const routes = network?.corridors ?? [];
   const summary = network?.summary;
-  const totalFlow = routes.reduce((total, route) => total + route.volume, 0);
+  const totalFlow = routes.reduce((total: number, route: any) => total + route.volume, 0);
   const peak = routes[0];
 
   const sankeyData = useMemo(() => {
@@ -29,13 +29,13 @@ export default function MovementNetworkPage() {
     const nodesMap = new Map<string, { name: string; code: string; index: number }>();
     let nodeIndex = 0;
 
-    routes.forEach((r) => {
+    routes.forEach((r: any) => {
       if (!nodesMap.has(r.origin.id)) nodesMap.set(r.origin.id, { ...r.origin, index: nodeIndex++ });
       if (!nodesMap.has(r.destination.id)) nodesMap.set(r.destination.id, { ...r.destination, index: nodeIndex++ });
     });
 
     const nodes = Array.from(nodesMap.values()).map((n) => ({ name: n.name, code: n.code }));
-    const links = routes.map((r) => ({
+    const links = routes.map((r: any) => ({
       source: nodesMap.get(r.origin.id)!.index,
       target: nodesMap.get(r.destination.id)!.index,
       value: r.volume,
@@ -121,7 +121,7 @@ export default function MovementNetworkPage() {
             ) : routes.length === 0 ? (
               <p className="text-xs font-mono text-[var(--text-secondary)]">No camera-to-camera transitions recorded yet.</p>
             ) : (
-              routes.map((route) => (
+              routes.map((route: any) => (
                 <div key={`${route.origin.id}-${route.destination.id}`} className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-xl bg-white/[0.03] border border-[var(--glass-border)] hover:border-teal-400/40 transition-all gap-3">
                   <div className="flex items-center gap-2.5 flex-wrap">
                     <span className="font-mono text-xs text-teal-400 font-bold">{route.origin.name}</span>
