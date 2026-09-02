@@ -86,7 +86,7 @@ function CameraCard({ camera }: { camera: Camera }) {
           {/* Bottom-Left: Camera ID Chip */}
           <div className="absolute bottom-2.5 left-2.5 z-10">
             <span className="text-[9px] font-mono bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-md text-[var(--brand-teal)] font-bold border border-[var(--brand-teal)]/40 shadow-sm">
-              {camera.cameraCode}
+              {camera.name}
             </span>
           </div>
 

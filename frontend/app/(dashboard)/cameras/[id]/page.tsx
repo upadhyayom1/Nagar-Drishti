@@ -74,7 +74,7 @@ export default function CameraDetailPage({ params }: { params: Promise<{ id: str
           <p className="text-xs font-mono text-[var(--text-secondary)] mt-1">{camera.location} · Sector Zone: {camera.zone}</p>
         </div>
         <span className="text-xs font-mono text-cyan-400 font-bold bg-cyan-500/10 px-3.5 py-1.5 rounded-xl border border-cyan-400/30 shadow-[0_0_15px_rgba(0,240,255,0.25)]">
-          NODE: {camera.id}
+          NODE: {camera.name}
         </span>
       </div>
 
@@ -128,7 +128,7 @@ export default function CameraDetailPage({ params }: { params: Promise<{ id: str
 
             <div className="absolute bottom-3 left-3">
               <span className="text-[10px] font-mono bg-black/80 backdrop-blur-md px-3 py-1 rounded-xl text-cyan-400 font-bold border border-cyan-400/30 shadow-lg">
-                {camera.cameraCode} · LAT {camera.lat.toFixed(4)}, LNG {camera.lng.toFixed(4)}
+                {camera.name} · LAT {camera.lat.toFixed(4)}, LNG {camera.lng.toFixed(4)}
               </span>
             </div>
           </GlassCard>

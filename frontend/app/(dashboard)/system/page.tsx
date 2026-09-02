@@ -126,8 +126,8 @@ export default function SystemDiagnosticsPage() {
                 {nodes.map((node) => (
                   <tr key={node.id} className="hover:bg-white/[0.04] transition-colors">
                     <td className="p-3.5">
-                      <p className="font-mono font-bold text-cyan-500 dark:text-cyan-400 text-xs">{node.cameraCode}</p>
-                      <p className="text-[10px] text-[var(--text-secondary)] mt-0.5 font-body">{node.name}</p>
+                      <p className="font-mono font-bold text-cyan-500 dark:text-cyan-400 text-xs">{node.name}</p>
+                      
                     </td>
                     <td className="p-3.5 text-xs text-[var(--text-primary)] font-medium font-body">{node.zone}</td>
                     <td className="p-3.5"><Badge variant={statusVariant(node.status)} size="sm" dot>{node.status.toLowerCase()}</Badge></td>

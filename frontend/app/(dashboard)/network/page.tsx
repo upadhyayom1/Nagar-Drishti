@@ -98,7 +98,7 @@ export default function MovementNetworkPage() {
           },
           {
             category: 'PEAK CORRIDOR',
-            title: peak ? `${peak.origin.code} → ${peak.destination.code}` : 'Awaiting data...',
+            title: peak ? `${peak.origin.name} → ${peak.destination.name}` : 'Awaiting data...',
             value: summary?.peakVolume || 0,
             unit: 'veh/hr',
             icon: Zap,
@@ -130,9 +130,9 @@ export default function MovementNetworkPage() {
               routes.map((route) => (
                 <div key={`${route.origin.id}-${route.destination.id}`} className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-xl bg-white/[0.03] border border-[var(--glass-border)] hover:border-teal-400/40 transition-all gap-3">
                   <div className="flex items-center gap-2.5 flex-wrap">
-                    <span className="font-mono text-xs text-teal-400 font-bold">{route.origin.code} ({route.origin.name})</span>
+                    <span className="font-mono text-xs text-teal-400 font-bold">{route.origin.name}</span>
                     <ArrowRightLeft size={13} className="text-[var(--text-tertiary)] shrink-0" />
-                    <span className="font-mono text-xs text-violet-400 font-bold">{route.destination.code} ({route.destination.name})</span>
+                    <span className="font-mono text-xs text-violet-400 font-bold">{route.destination.name}</span>
                   </div>
                   <div className="flex items-center gap-5 justify-between sm:justify-end">
                     <div className="text-right">
