@@ -1,5 +1,30 @@
 const { prisma } = require('../../lib/prisma');
 const { recordDetection } = require('./detection.service');
+const turf = require('@turf/turf');
+
+function calculateHaversineDistance(lon1, lat1, lon2, lat2) {
+  if (![lon1, lat1, lon2, lat2].every(Number.isFinite)) return null;
+  return turf.distance([lon1, lat1], [lon2, lat2], { units: 'meters' });
+}
+
+function calculateDynamicSpeed(current, previous) {
+  if (!previous) return null;
+  const currentLat = current.latitude ?? current.camera?.latitude;
+  const currentLon = current.longitude ?? current.camera?.longitude;
+  const prevLat = previous.latitude ?? previous.camera?.latitude;
+  const prevLon = previous.longitude ?? previous.camera?.longitude;
+
+  if (Number.isFinite(currentLat) && Number.isFinite(currentLon) && Number.isFinite(prevLat) && Number.isFinite(prevLon)) {
+    const distMeters = calculateHaversineDistance(prevLon, prevLat, currentLon, currentLat);
+    const timeSeconds = (new Date(current.timestamp).getTime() - new Date(previous.timestamp).getTime()) / 1000;
+    if (distMeters != null && timeSeconds > 0) {
+      let speedMs = distMeters / timeSeconds;
+      let calculatedSpeed = Math.round(speedMs * 3.6 * 10) / 10;
+      if (calculatedSpeed <= 200) return calculatedSpeed;
+    }
+  }
+  return null;
+}
 
 function parseOptionalNumber(value) {
   if (value === null || value === undefined || value === '') return null;
@@ -85,10 +110,22 @@ exports.getVehicleDetections = async (req, res) => {
       nextCursor = nextItem.id;
     }
     
+    const items = detections.slice(0, limit).map((detection, index) => {
+      // In a descending sorted array, index + 1 is the previous chronological detection
+      const previousDetection = detections[index + 1];
+      const dynamicSpeed = calculateDynamicSpeed(detection, previousDetection);
+      
+      const serialized = serializeDetection(detection);
+      if (dynamicSpeed !== null) {
+        serialized.speed = dynamicSpeed;
+      }
+      return serialized;
+    });
+
     res.status(200).json({ 
       success: true, 
       data: {
-        items: detections.map(serializeDetection),
+        items,
         nextCursor
       }
     });
