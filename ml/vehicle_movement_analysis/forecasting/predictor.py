@@ -99,7 +99,7 @@ class TrafficCongestionPredictor:
                 "camera_id": str(camera_id),
                 "zone_id": zone,
                 "current_vehicle_count": int(round(current_count)),
-                "predicted_vehicle_count": round(pred_count, 2),
+                "predicted_vehicle_count": int(round(pred_count)),
                 "congestion_risk": risk,
                 "forecast_time": target_time.isoformat(),
             })

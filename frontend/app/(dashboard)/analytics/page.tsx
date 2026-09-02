@@ -117,7 +117,7 @@ export default function AnalyticsPage() {
             category: 'VOLUME CENSUS',
             title: `Total Volume (${timeRange.toUpperCase()})`,
             badge: { text: 'LIVE ANPR', variant: 'cyan' },
-            value: stats?.totalVehiclesToday ?? 2847,
+            value: stats?.totalVehiclesToday ?? 0,
             unit: 'detections',
             trend: { text: '+8.2% volume', isPositive: true },
             note: 'Peak: 3,420/hr (Corridor 4)',
@@ -131,7 +131,7 @@ export default function AnalyticsPage() {
           {
             category: 'CITY VELOCITY',
             title: 'Transit velocity curve',
-            value: stats?.avgSpeed ?? 38.5,
+            value: stats?.avgSpeed ?? 0,
             unit: 'km/h',
             icon: Gauge,
             colorTheme: 'cyan',
@@ -159,7 +159,7 @@ export default function AnalyticsPage() {
           {
             category: 'INCIDENT ANOMALIES',
             title: 'Real-time anomaly queue',
-            value: stats?.incidentsToday ?? 3,
+            value: stats?.incidentsToday ?? 0,
             badge: { text: 'ACTIVE', variant: 'rose' },
             icon: AlertTriangle,
             colorTheme: 'rose',

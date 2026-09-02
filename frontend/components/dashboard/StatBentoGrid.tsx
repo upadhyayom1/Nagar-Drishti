@@ -12,6 +12,7 @@ import Link from 'next/link';
 
 interface StatBentoGridProps {
   stats?: TrafficStats;
+  totalNodes?: number;
   className?: string;
 }
 
@@ -36,16 +37,17 @@ const itemVariants: Variants = {
   },
 };
 
-export function StatBentoGrid({ stats, className }: StatBentoGridProps) {
+export function StatBentoGrid({ stats, totalNodes = 0, className }: StatBentoGridProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   // Simulated 12-hour diurnal volume bar distribution (scaled 20% to 95%)
   const hourlyBars = [32, 45, 60, 78, 92, 85, 64, 70, 88, 95, 82, 68];
 
-  const totalVehicles = stats?.totalVehiclesToday ?? 2847;
-  const activeCameras = stats?.activeCameras ?? 10;
-  const avgSpeed = stats?.avgSpeed ?? 38.5;
-  const activeAlerts = stats?.activeAlerts ?? 4;
+  const totalVehicles = stats?.totalVehiclesToday ?? 0;
+  const activeCameras = stats?.activeCameras ?? 0;
+  const avgSpeed = stats?.avgSpeed ?? 0;
+  const activeAlerts = stats?.activeAlerts ?? 0;
+  const totalCameras = totalNodes || activeCameras; // Fallback to activeCameras if not provided
 
   return (
     <div className={cn('space-y-4 font-body select-none', className)}>
@@ -105,22 +107,14 @@ export function StatBentoGrid({ stats, className }: StatBentoGridProps) {
                 </span>
               </div>
 
-              {/* Trend & metrics */}
-              <div className="flex items-center gap-3 mt-2 flex-wrap">
-                <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-[var(--status-ok)] bg-[var(--brand-teal)]/15 border border-[var(--brand-teal)]/30 px-2.5 py-0.5 rounded-full shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
-                  <ArrowUpRight size={13} /> +12.4% flow
-                </span>
-                <span className="text-[10px] font-mono text-[var(--text-secondary)]">
-                  Peak: <strong className="text-[var(--text-primary)]">3,420/hr</strong> (Zone B)
-                </span>
-              </div>
+
             </div>
 
             {/* Diurnal Traffic Pulse Micro-Bars Visual */}
             <div className="mt-6 pt-3 border-t border-[var(--glass-border)]">
               <div className="flex items-center justify-between text-[9px] font-mono text-[var(--text-secondary)] mb-2">
                 <span>Diurnal Volume Rhythm (Past 12h)</span>
-                <span className="text-[var(--brand-teal)] font-bold">98.4% ANPR Accuracy</span>
+                <span className="text-[var(--brand-teal)] font-bold">{stats?.anprAccuracy != null ? stats.anprAccuracy : 98.4}% ANPR Accuracy</span>
               </div>
 
               <div className="grid grid-cols-12 gap-1.5 h-9 items-end">
@@ -170,7 +164,7 @@ export function StatBentoGrid({ stats, className }: StatBentoGridProps) {
                   <StatCounter value={activeCameras} duration={900} />
                 </span>
                 <span className="text-xs font-mono text-[var(--text-tertiary)] font-semibold uppercase">
-                  / 10
+                  / {totalCameras}
                 </span>
               </div>
 
@@ -198,12 +192,14 @@ export function StatBentoGrid({ stats, className }: StatBentoGridProps) {
                     />
                   </svg>
                   <span className="absolute inset-0 flex items-center justify-center text-[8.5px] font-mono font-bold text-[var(--brand-teal)]">
-                    100%
+                    {totalCameras > 0 ? Math.round((activeCameras / totalCameras) * 100) : 0}%
                   </span>
                 </div>
                 <div>
                   <span className="text-[10px] font-mono text-[var(--text-primary)] font-bold block leading-tight">6 Sectors</span>
-                  <span className="text-[9px] font-mono text-[var(--text-tertiary)] block">100% Online</span>
+                  <span className="text-[9px] font-mono text-[var(--text-tertiary)] block">
+                    {totalCameras > 0 ? Math.round((activeCameras / totalCameras) * 100) : 0}% Online
+                  </span>
                 </div>
               </div>
               <span className="text-[9px] font-mono text-[var(--brand-teal)] bg-[var(--brand-teal)]/15 border border-[var(--brand-teal)]/30 px-2 py-0.5 rounded-full shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] font-bold">
@@ -332,15 +328,15 @@ export function StatBentoGrid({ stats, className }: StatBentoGridProps) {
             <div className="flex items-center gap-4 text-xs font-mono flex-wrap">
               <span className="flex items-center gap-1.5 text-[var(--brand-teal)] font-bold">
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-teal)] shadow-[0_0_10px_var(--brand-teal)]" />
-                10 Nodes Online (100%)
+                {activeCameras} Nodes Online ({totalCameras > 0 ? Math.round((activeCameras / totalCameras) * 100) : 0}%)
               </span>
               <span className="flex items-center gap-1.5 text-[var(--brand-teal)] font-bold">
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-teal)] shadow-[0_0_10px_var(--brand-teal)]" />
-                98.6% Frame Sync
+                {stats?.frameSyncPercentage != null ? stats.frameSyncPercentage : 98.6}% Frame Sync
               </span>
               <span className="flex items-center gap-1.5 text-[var(--text-secondary)] font-semibold hidden sm:inline-flex">
                 <Zap size={11} />
-                38ms Latency
+                {stats?.latencyMs != null ? stats.latencyMs : 38}ms Latency
               </span>
               <span className="flex items-center gap-1.5 text-[var(--status-critical)] font-bold">
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--status-critical)] shadow-[0_0_10px_var(--status-critical)]" />

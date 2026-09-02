@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRightLeft, Route, Activity, Zap, TrendingUp, Radio } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -7,6 +8,12 @@ import { Badge } from '@/components/ui/Badge';
 import { PageWrapper } from '@/components/layout/PageWrapper';
 import { BentoStatDeck } from '@/components/ui/BentoStatDeck';
 import { analyticsService } from '@/services/analyticsService';
+import dynamic from 'next/dynamic';
+
+const SankeyChartWrapper = dynamic(
+  () => import('@/components/charts/SankeyChartWrapper').then((m) => ({ default: m.SankeyChartWrapper })),
+  { ssr: false }
+);
 
 const formatDuration = (seconds: number) => seconds ? `${Math.floor(seconds / 60)}m ${seconds % 60}s` : 'No observations';
 
@@ -16,6 +23,26 @@ export default function MovementNetworkPage() {
   const summary = network?.summary;
   const totalFlow = routes.reduce((total, route) => total + route.volume, 0);
   const peak = routes[0];
+
+  const sankeyData = useMemo(() => {
+    if (!routes || routes.length === 0) return { nodes: [], links: [] };
+    const nodesMap = new Map<string, { name: string; code: string; index: number }>();
+    let nodeIndex = 0;
+
+    routes.forEach((r) => {
+      if (!nodesMap.has(r.origin.id)) nodesMap.set(r.origin.id, { ...r.origin, index: nodeIndex++ });
+      if (!nodesMap.has(r.destination.id)) nodesMap.set(r.destination.id, { ...r.destination, index: nodeIndex++ });
+    });
+
+    const nodes = Array.from(nodesMap.values()).map((n) => ({ name: n.name, code: n.code }));
+    const links = routes.map((r) => ({
+      source: nodesMap.get(r.origin.id)!.index,
+      target: nodesMap.get(r.destination.id)!.index,
+      value: r.volume,
+    }));
+
+    return { nodes, links };
+  }, [routes]);
 
   return (
     <PageWrapper className="space-y-6 font-body">
@@ -52,7 +79,7 @@ export default function MovementNetworkPage() {
             visual: 'ring',
             visualMeta: {
               ringValue: 100,
-              ringText: '6/6',
+              ringText: `${summary?.corridorCount ?? 6}/${summary?.corridorCount ?? 6}`,
               subLabel: 'Network Mesh',
               subNote: 'Full Route Coverage',
             },
@@ -121,19 +148,28 @@ export default function MovementNetworkPage() {
         </GlassCard>
 
         <GlassCard variant="soft" padding="md" className="flex flex-col">
-          <h2 className="text-sm font-display font-bold text-[var(--text-primary)] mb-1">Origin-Destination Flow</h2>
-          <p className="text-[10px] font-mono text-[var(--text-secondary)] mb-4">Transitions grouped by source and target camera</p>
-          <div className="flex-1 min-h-[240px] rounded-xl bg-white/[0.03] border border-[var(--glass-border)] flex flex-col items-center justify-center p-5 text-center">
-            <div className="w-12 h-12 rounded-xl bg-teal-500/10 border border-teal-400/30 flex items-center justify-center mb-3 text-teal-400 shadow-[0_0_20px_rgba(13,148,136,0.2)]">
-              <Route size={24} />
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-display font-bold text-[var(--text-primary)] mb-1">Origin-Destination Flow</h2>
+              <p className="text-[10px] font-mono text-[var(--text-secondary)]">Transitions grouped by source and target camera</p>
             </div>
-            <p className="text-xs font-bold text-[var(--text-primary)] mb-1 font-display">{routes.length ? 'Observed Network Ready' : 'Awaiting Transitions'}</p>
-            <p className="text-[10px] font-mono text-[var(--text-secondary)]">
-              {routes.length ? `${totalFlow.toLocaleString()} transitions available for spatial analysis.` : 'Network ingestion stream active.'}
-            </p>
-            <div className="mt-3.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[9px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5">
-              <Radio size={11} className="animate-pulse" /> Live Network Stream
+            <div className="px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[9px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <Radio size={9} className="animate-pulse" /> Live
             </div>
+          </div>
+          
+          <div className="flex-1 min-h-[400px] rounded-xl bg-white/[0.02] border border-[var(--glass-border)] flex flex-col items-center justify-center relative overflow-hidden">
+            {routes.length > 0 ? (
+              <SankeyChartWrapper data={sankeyData} height={400} />
+            ) : (
+              <div className="text-center p-5">
+                <div className="w-12 h-12 rounded-xl bg-teal-500/10 border border-teal-400/30 flex items-center justify-center mb-3 mx-auto text-teal-400 shadow-[0_0_20px_rgba(13,148,136,0.2)]">
+                  <Route size={24} />
+                </div>
+                <p className="text-xs font-bold text-[var(--text-primary)] mb-1 font-display">Awaiting Transitions</p>
+                <p className="text-[10px] font-mono text-[var(--text-secondary)]">Network ingestion stream active.</p>
+              </div>
+            )}
           </div>
         </GlassCard>
       </div>

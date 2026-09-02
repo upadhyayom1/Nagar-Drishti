@@ -82,7 +82,7 @@ export default function DashboardPage() {
     <PageWrapper className="space-y-6">
 
       {/* ── Elevated Bento Grid: KPI Telemetry Deck with Diurnal Pulse & Status Gauges ── */}
-      <StatBentoGrid stats={stats} />
+      <StatBentoGrid stats={stats} totalNodes={cameras.length} />
 
       {/* ── Interactive Map + Alerts Row ─────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">

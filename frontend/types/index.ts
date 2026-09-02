@@ -96,6 +96,14 @@ export interface TrafficStats {
   activeAlerts: number;
   congestionIndex: number;
   incidentsToday: number;
+  trendPercentage?: number;
+  peakZone?: {
+    name: string;
+    ratePerHour: number;
+  };
+  anprAccuracy?: number;
+  latencyMs?: number;
+  frameSyncPercentage?: number;
 }
 
 export interface HourlyTraffic {
