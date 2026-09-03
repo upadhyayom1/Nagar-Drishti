@@ -38,7 +38,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           sidebarCollapsed ? 'w-[76px]' : 'w-[76px] xl:w-[260px]',
         )}
       >
-        <div className="w-full h-full glass-panel flex flex-col overflow-hidden">
+        <div className="w-full h-full glass-panel flex flex-col overflow-hidden border-white/[0.04] dark:border-white/[0.04]">
           <Sidebar />
         </div>
       </aside>
@@ -80,7 +80,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Inner Scrollable Page Viewport */}
         <main
-          className="flex-1 overflow-y-auto rounded-3xl p-3 sm:p-5 relative z-10 bg-[var(--glass-surface)] backdrop-blur-2xl border border-[var(--glass-border)] shadow-[var(--glass-shadow)]"
+          className="flex-1 overflow-y-auto rounded-3xl p-3 sm:p-5 relative z-10 bg-[var(--glass-surface)] backdrop-blur-2xl border border-white/[0.05] dark:border-white/[0.05] shadow-[var(--glass-shadow)]"
         >
           {children}
         </main>
