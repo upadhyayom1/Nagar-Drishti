@@ -9,7 +9,6 @@ import { Badge }       from '@/components/ui/Badge';
 import { PageWrapper } from '@/components/layout/PageWrapper';
 import { cameraService } from '@/services/cameraService';
 import { formatTime } from '@/lib/utils';
-import { getCameraFeedImage } from '@/lib/cameraImages';
 import { useInView } from 'react-intersection-observer';
 import type { Detection } from '@/types';
 
@@ -84,11 +83,7 @@ export default function CameraDetailPage({ params }: { params: Promise<{ id: str
           {/* Main Optical Video Stream with Simulated Bounding Box + OCR Overlays */}
           <GlassCard padding="none" className="relative aspect-video overflow-hidden border border-cyan-500/30 shadow-[0_0_30px_rgba(0,240,255,0.15)] rounded-3xl">
             <div className="absolute inset-0 bg-[#060913] flex items-center justify-center">
-              <img
-                src={getCameraFeedImage(camera.cameraCode, camera.name).url}
-                alt={camera.name}
-                className="w-full h-full object-cover brightness-[0.88] contrast-[1.05]"
-              />
+              {/* Image removed to show pure simulated scanning background */}
             </div>
 
             {/* Glowing Scan-line sweep animation */}
