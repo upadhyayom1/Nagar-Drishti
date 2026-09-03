@@ -43,10 +43,9 @@ const getForecast = async (req, res) => {
     // 1. Gather live traffic data for the last 60 minutes for the ML model's lag features
     const now = new Date();
     const coeff = 1000 * 60 * 15; // 15-minute bins
-    const roundedNow = new Date(Math.floor(now.getTime() / coeff) * coeff);
     
-    // We want the last 4 buckets (60 mins total)
-    const startTime = new Date(roundedNow.getTime() - (4 * coeff));
+    // We want the last 4 full 15-minute rolling buckets (60 mins total)
+    const startTime = new Date(now.getTime() - (4 * coeff));
 
     // Fetch live detections
     const recentDetections = await prisma.detection.findMany({
@@ -57,17 +56,22 @@ const getForecast = async (req, res) => {
     const cameras = await prisma.camera.findMany({ include: { zone: true } });
     const cameraMap = new Map(cameras.map(c => [c.id, c]));
 
-    // Group into 15-minute buckets per camera
+    // Group into rolling 15-minute buckets per camera
     const grouped = {};
     for (const d of recentDetections) {
-      const binTime = new Date(Math.floor(d.timestamp.getTime() / coeff) * coeff);
-      const binKey = `${d.cameraId}_${binTime.toISOString()}`;
+      const ageMs = now.getTime() - d.timestamp.getTime();
+      const intervalsAgo = Math.floor(ageMs / coeff);
+      if (intervalsAgo < 0 || intervalsAgo > 3) continue;
+      
+      const binTime = new Date(now.getTime() - (intervalsAgo * coeff)).toISOString();
+      const binKey = `${d.cameraId}_${intervalsAgo}`;
       if (!grouped[binKey]) {
         grouped[binKey] = {
           camera_id: d.cameraId,
-          time_bin: binTime.toISOString(),
+          time_bin: binTime,
           vehicle_set: new Set(),
-          zone_id: cameraMap.get(d.cameraId)?.zone?.name || 'Unassigned'
+          zone_id: cameraMap.get(d.cameraId)?.zone?.name || 'Unassigned',
+          intervalsAgo
         };
       }
       grouped[binKey].vehicle_set.add(d.vehicleId);
@@ -83,8 +87,14 @@ const getForecast = async (req, res) => {
     // Generate zero-filled buckets for all cameras to ensure complete lags
     for (const cam of cameras) {
       for (let i = 0; i < 4; i++) {
-        const binTime = new Date(roundedNow.getTime() - (i * coeff)).toISOString();
-        if (!recent_traffic.find(t => t.camera_id === cam.id && t.time_bin === binTime)) {
+        const binTime = new Date(now.getTime() - (i * coeff)).toISOString();
+        // Check if we already added a bucket for this interval for this camera
+        const hasBucket = recent_traffic.some(t => {
+           const tAge = now.getTime() - new Date(t.time_bin).getTime();
+           return t.camera_id === cam.id && Math.floor(tAge / coeff) === i;
+        });
+        
+        if (!hasBucket) {
           recent_traffic.push({
             camera_id: cam.id,
             time_bin: binTime,

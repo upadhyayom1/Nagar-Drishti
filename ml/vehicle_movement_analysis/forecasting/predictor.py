@@ -5,10 +5,9 @@ from forecasting.feature_extractor import build_supervised_features, load_and_ag
 
 
 FEATURE_COLS = [
-    "vehicle_count",
-    "lag_1",
-    "lag_2",
-    "rolling_mean_4",
+    "lag_1_ratio",
+    "lag_2_ratio",
+    "rolling_mean_4_ratio",
     "horizon_parameter_mins",
     "hour_of_day",
     "day_of_week",
@@ -36,8 +35,8 @@ class TrafficCongestionPredictor:
             random_state=42,
             n_jobs=-1,
         )
-        X = df_train[FEATURE_COLS].replace([np.inf, -np.inf], np.nan).fillna(0)
-        y = df_train["target_future_count"].replace([np.inf, -np.inf], np.nan).fillna(0)
+        X = df_train[FEATURE_COLS].replace([np.inf, -np.inf], np.nan).fillna(1.0)
+        y = df_train["target_ratio"].replace([np.inf, -np.inf], np.nan).fillna(1.0)
         model.fit(X, y)
         self.models[horizon] = model
         self.training_rows[horizon] = len(df_train)
@@ -72,20 +71,21 @@ class TrafficCongestionPredictor:
             lag_1 = float(group.iloc[-2]["vehicle_count"]) if len(group) > 1 else current_count
             lag_2 = float(group.iloc[-3]["vehicle_count"]) if len(group) > 2 else lag_1
             rolling = float(group["vehicle_count"].tail(4).mean())
-            target_time = pd.Timestamp(last_row["time_bin"]) + pd.Timedelta(minutes=horizon_mins)
+            current_time = pd.Timestamp(last_row["time_bin"])
+            target_time = current_time + pd.Timedelta(minutes=horizon_mins)
 
             sample = pd.DataFrame([{
-                "vehicle_count": current_count,
-                "lag_1": lag_1,
-                "lag_2": lag_2,
-                "rolling_mean_4": rolling,
+                "lag_1_ratio": (lag_1 + 1) / (current_count + 1),
+                "lag_2_ratio": (lag_2 + 1) / (current_count + 1),
+                "rolling_mean_4_ratio": (rolling + 1) / (current_count + 1),
                 "horizon_parameter_mins": horizon_mins,
-                "hour_of_day": int(target_time.hour),
-                "day_of_week": int(target_time.dayofweek),
+                "hour_of_day": int(current_time.hour),
+                "day_of_week": int(current_time.dayofweek),
             }])
 
             if model is not None:
-                pred_count = float(model.predict(sample[FEATURE_COLS])[0])
+                pred_ratio = float(model.predict(sample[FEATURE_COLS])[0])
+                pred_count = max(0.0, (current_count + 1) * pred_ratio - 1)
             else:
                 # Conservative fallback when there is not enough history to train.
                 trend = current_count - lag_1
