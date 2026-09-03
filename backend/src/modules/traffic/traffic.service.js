@@ -120,11 +120,11 @@ async function evaluateCongestionAlert(cameraId, timestamp = new Date()) {
     orderBy: { createdAt: 'desc' },
   });
 
-  // Thresholds: 100 vehicles = HIGH, 150 vehicles = CRITICAL in the 5-minute window
+  // Thresholds: 20 vehicles = HIGH, 30 vehicles = CRITICAL in the 5-minute window
   const vehicleCount = camera ? camera.vehicleCount : 0;
   
-  // Hysteresis: Only resolve the alert if traffic drops significantly below the threshold (e.g. < 50)
-  if (!camera || vehicleCount < 50) {
+  // Hysteresis: Only resolve the alert if traffic drops significantly below the threshold (e.g. < 10)
+  if (!camera || vehicleCount < 10) {
     if (existingActiveAlert) {
       return prisma.alert.update({
         where: { id: existingActiveAlert.id },
@@ -135,11 +135,11 @@ async function evaluateCongestionAlert(cameraId, timestamp = new Date()) {
   }
 
   // If no alert exists and we haven't hit the threshold yet, do nothing
-  if (!existingActiveAlert && vehicleCount < 100) {
+  if (!existingActiveAlert && vehicleCount < 20) {
     return null;
   }
 
-  const severity = vehicleCount >= 150 ? 'CRITICAL' : 'HIGH';
+  const severity = vehicleCount >= 30 ? 'CRITICAL' : 'HIGH';
   const message = `Heavy traffic congestion detected at ${camera.name || camera.cameraCode} with ${vehicleCount} vehicles tracked in the last 5 minutes.`;
   
   if (existingActiveAlert) {

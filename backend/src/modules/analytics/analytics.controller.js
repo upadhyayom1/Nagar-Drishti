@@ -43,13 +43,22 @@ exports.getOverview = async (req, res) => {
 
     const engine = global.simulationEngine;
     const running = Boolean(engine?.running);
-    const activeVehiclesCount = running ? engine.vehicles.filter(v => v.state !== 'RESTING').length : 0;
+    let activeVehiclesCount = 0;
+    let liveAvgSpeed = null;
+    
+    if (running && engine.vehicles) {
+      const activeVehicles = engine.vehicles.filter(v => v.state !== 'RESTING' && v.speed > 0);
+      activeVehiclesCount = engine.vehicles.filter(v => v.state !== 'RESTING').length;
+      if (activeVehicles.length > 0) {
+        liveAvgSpeed = activeVehicles.reduce((sum, v) => sum + v.speed, 0) / activeVehicles.length;
+      }
+    }
 
     res.status(200).json({
       totalVehiclesToday: uniqueVehicleRows.length,
       activeVehicles: activeVehiclesCount,
       detectionCount: totalDetectionsCount,
-      avgSpeed: round(speedStats._avg.averageSpeed),
+      avgSpeed: round(speedStats._avg.averageSpeed || liveAvgSpeed),
       activeCameras,
       activeAlerts,
       congestionIndex,
@@ -143,7 +152,7 @@ exports.getBusiestRoads = async (req, res) => {
       SELECT c."roadId" AS "roadId",
              COUNT(*)::int AS "detectionCount",
              COUNT(DISTINCT d."vehicleId")::int AS "vehicleCount",
-             AVG(CASE WHEN v."speed" > 0 THEN v."speed" END) AS "avgSpeed"
+             AVG(CASE WHEN d."speed" > 0 THEN d."speed" END) AS "avgSpeed"
       FROM "Detection" d
       INNER JOIN "Camera" c ON c.id = d."cameraId"
       WHERE d."timestamp" >= $1 AND d."timestamp" <= $2
