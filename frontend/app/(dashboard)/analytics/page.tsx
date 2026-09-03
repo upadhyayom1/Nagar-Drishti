@@ -48,6 +48,13 @@ export default function AnalyticsPage() {
 
   const congestion = clampCongestionIndex(stats?.congestionIndex);
 
+  const hourlyBars = hourlyData && hourlyData.length > 0
+    ? hourlyData.slice(-12).map(d => {
+        const max = Math.max(...hourlyData.map(h => h.vehicles), 1);
+        return Math.max(10, (d.vehicles / max) * 100);
+      })
+    : [];
+
   const handleExportReport = () => {
     const reportData = {
       timestamp: new Date().toISOString(),
@@ -124,6 +131,7 @@ export default function AnalyticsPage() {
             bars: {
               label: 'Diurnal Density Rhythm (Hourly)',
               rightText: `${hourlyData.length || 24} Time Samples`,
+              data: hourlyBars,
             },
           },
           {

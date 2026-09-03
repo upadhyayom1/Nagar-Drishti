@@ -53,11 +53,11 @@ export function StatBentoGrid({ stats, totalNodes = 0, className }: StatBentoGri
         const max = Math.max(...hourlyData.map(h => h.vehicles), 1);
         return Math.max(10, (d.vehicles / max) * 100);
       })
-    : [32, 45, 60, 78, 92, 85, 64, 70, 88, 95, 82, 68];
+    : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
   const hourlyLabels = hourlyData && hourlyData.length > 0
     ? hourlyData.slice(-12).map(d => ({ hour: d.hour, veh: d.vehicles }))
-    : Array.from({ length: 12 }).map((_, i) => ({ hour: `${i + 1}:00`, veh: Math.round(([32, 45, 60, 78, 92, 85, 64, 70, 88, 95, 82, 68][i] / 100) * 340) }));
+    : Array.from({ length: 12 }).map((_, i) => ({ hour: `${i + 1}:00`, veh: 0 }));
 
   const totalVehicles = stats?.totalVehiclesToday ?? 0;
   const activeCameras = stats?.activeCameras ?? 0;

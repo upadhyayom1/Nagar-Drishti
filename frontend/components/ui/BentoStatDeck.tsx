@@ -105,7 +105,7 @@ const themeColorMap = {
   },
 };
 
-const defaultBars = [32, 45, 60, 78, 92, 85, 64, 70, 88, 95, 82, 68];
+const defaultBars = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 export function BentoStatDeck({ items, className }: BentoStatDeckProps) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
