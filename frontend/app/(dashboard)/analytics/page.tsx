@@ -12,6 +12,7 @@ import { SkeletonCard } from '@/components/ui/SkeletonCard';
 import { EmptyState }   from '@/components/ui/EmptyState';
 import { PageWrapper } from '@/components/layout/PageWrapper';
 import { analyticsService } from '@/services/analyticsService';
+import { submissionService } from '@/services/submissionService';
 
 const AreaChartWrapper = dynamic(
   () => import('@/components/charts/AreaChartWrapper').then((m) => ({ default: m.AreaChartWrapper })),
@@ -44,7 +45,7 @@ export default function AnalyticsPage() {
   const { data: hourlyData = [], isLoading: hourlyLoading }     = useQuery({ queryKey: ['hourlyTraffic', analyticsWindow],  queryFn: () => analyticsService.getHourlyTraffic(analyticsWindow) });
   const { data: cameraTraffic = [], isLoading: cameraLoading }  = useQuery({ queryKey: ['cameraTraffic', analyticsWindow],  queryFn: () => analyticsService.getCameraTraffic(analyticsWindow) });
   const { data: busiestRoads = [], isLoading: roadsLoading }    = useQuery({ queryKey: ['busiestRoads', analyticsWindow],   queryFn: () => analyticsService.getBusiestRoads(analyticsWindow) });
-  const { data: anomalies = [], isLoading: anomaliesLoading }   = useQuery({ queryKey: ['anomalies'],      queryFn: analyticsService.getTrafficAnomalies });
+  const { data: submissions = [], isLoading: submissionsLoading } = useQuery({ queryKey: ['submissions'], queryFn: submissionService.getSubmissions });
 
   const congestion = clampCongestionIndex(stats?.congestionIndex);
 
@@ -63,7 +64,7 @@ export default function AnalyticsPage() {
       hourlyTraffic: hourlyData,
       cameraTraffic,
       busiestRoads,
-      anomalies,
+      citizenReports: submissions,
     };
     const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -163,17 +164,17 @@ export default function AnalyticsPage() {
             },
           },
           {
-            category: 'INCIDENT ANOMALIES',
-            title: 'Real-time anomaly queue',
-            value: stats?.incidentsToday ?? 0,
+            category: 'CITIZEN REPORTS',
+            title: 'Reported Accidents & Incidents',
+            value: submissions.length,
             badge: { text: 'ACTIVE', variant: 'rose' },
             icon: AlertTriangle,
             colorTheme: 'rose',
             visual: 'action-link',
             visualMeta: {
-              subNote: 'Flagged sensor events',
+              subNote: 'User-submitted events',
               actionLabel: 'Review',
-              actionHref: '#anomalies',
+              actionHref: '/submissions',
             },
           },
         ]}
@@ -254,25 +255,39 @@ export default function AnalyticsPage() {
           )}
         </GlassCard>
 
-        {/* Traffic Anomalies */}
-        <GlassCard glow="amber">
+        {/* Citizen Reports */}
+        <GlassCard glow="amber" id="reports">
           <p className="text-xs font-display font-bold uppercase tracking-wider text-[var(--text-primary)] mb-4">
-            Automated Anomaly Detection
+            Citizen Reported Accidents
           </p>
-          {anomaliesLoading ? (
+          {submissionsLoading ? (
             <SkeletonCard variant="list" rows={4} />
-          ) : anomalies.length === 0 ? (
+          ) : submissions.length === 0 ? (
             <EmptyState
               icon={CheckCircle2}
-              title="All Systems Normal"
-              subtitle="No anomalies detected across the sensor network."
+              title="No Reports"
+              subtitle="No accidents or incidents have been reported."
             />
           ) : (
-            <div className="space-y-3">
-              {anomalies.map((a, i) => (
-                <div key={i} className="flex items-start gap-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
-                  <AlertTriangle size={16} className="text-amber-400 shrink-0 mt-0.5" />
-                  <p className="text-xs text-[var(--text-primary)] leading-relaxed font-body">{a}</p>
+            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+              {submissions.map((sub, i) => (
+                <div key={sub.id || i} className="flex flex-col gap-1 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-[var(--text-primary)] font-bold text-xs font-display">
+                      <AlertTriangle size={14} className="text-amber-400" />
+                      {sub.title || 'Reported Incident'}
+                    </div>
+                    <Badge variant={sub.priority === 'HIGH' ? 'critical' : 'amber'} size="sm">
+                      {sub.priority}
+                    </Badge>
+                  </div>
+                  {sub.description && (
+                    <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed font-body mt-1">{sub.description}</p>
+                  )}
+                  <div className="flex items-center justify-between mt-2 text-[10px] font-mono text-[var(--text-tertiary)]">
+                    <span>{sub.submitterName || 'Anonymous'}</span>
+                    <span>{new Date(sub.timestamp).toLocaleTimeString()}</span>
+                  </div>
                 </div>
               ))}
             </div>
