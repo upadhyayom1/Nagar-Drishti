@@ -41,6 +41,7 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
   const decodedPlate = decodeURIComponent(plate).toUpperCase();
   const [currentWaypointIndex, setCurrentWaypointIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState<1 | 2>(1);
   const theme = useUIStore((s) => s.theme);
 
   const { data: journey } = useQuery({
@@ -50,6 +51,7 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
 
   useEffect(() => {
     if (!isPlaying || !journey || currentWaypointIndex >= journey.waypoints.length - 1) return;
+    const delay = playbackSpeed === 1 ? 2200 : 1100;
     const timer = setTimeout(() => {
       setCurrentWaypointIndex((previousIndex) => {
         const nextIndex = previousIndex + 1;
@@ -59,9 +61,9 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
         }
         return nextIndex;
       });
-    }, 2200);
+    }, delay);
     return () => clearTimeout(timer);
-  }, [isPlaying, currentWaypointIndex, journey]);
+  }, [isPlaying, currentWaypointIndex, journey, playbackSpeed]);
 
   const handleReset = useCallback(() => {
     setCurrentWaypointIndex(0);
@@ -241,6 +243,15 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
             <Button
               variant="secondary"
               size="sm"
+              onClick={() => setPlaybackSpeed((s) => (s === 1 ? 2 : 1))}
+              title="Toggle Speed"
+              className="cursor-pointer font-mono font-bold text-xs px-3"
+            >
+              {playbackSpeed}x
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={handleReset}
               title="Reset"
               className="cursor-pointer"
@@ -275,11 +286,10 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
                   )}
                 >
                   <div className="flex items-center justify-between gap-1 mb-1">
-                    <span className="font-semibold font-display truncate text-[var(--text-primary)]">{wp.cameraName}</span>
+                    <span className="text-sm font-semibold font-display truncate text-[var(--text-primary)]">{wp.cameraName}</span>
                     <span className="text-[9px] font-mono text-[var(--text-secondary)]">{formatTime(wp.timestamp)}</span>
                   </div>
-                  <div className="flex items-center justify-between text-[10px] font-mono">
-                    <span className="text-[#10a37f] font-semibold">{wp.cameraId}</span>
+                  <div className="flex items-center justify-end text-[10px] font-mono">
                     <span className="text-[var(--text-secondary)]">{wp.speed} km/h</span>
                   </div>
                 </div>

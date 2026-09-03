@@ -197,7 +197,6 @@ function LoginFormContent() {
             <div className="space-y-1.5">
               <label className="text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)] font-semibold flex items-center justify-between">
                 <span>{role === 'admin' ? 'Operator Identifier' : 'Citizen Email / Phone'}</span>
-                <span className="text-[10px] text-[#10a37f] font-normal">Backend-verified account</span>
               </label>
               <Input
                 value={username}
@@ -240,7 +239,7 @@ function LoginFormContent() {
           <div className="pt-2 border-t border-[var(--glass-border)] text-center">
             <p className="text-[11px] font-mono text-[var(--text-tertiary)]">
               {role === 'admin' ? (
-                <>Requires municipal security clearance · Sector 1</>
+                <>Requires municipal security clearance</>
               ) : (
                 <>Public safety upload &amp; tracking portal · No clearance needed</>
               )}

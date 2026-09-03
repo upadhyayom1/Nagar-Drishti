@@ -128,7 +128,7 @@ export function UserProfileModal({ isOpen, onClose }: UserProfileModalProps) {
                 <span className="text-[10px] text-[var(--text-tertiary)] block uppercase tracking-wider font-semibold mb-1">
                   Grid Nodes
                 </span>
-                <span className="text-sm font-bold text-violet-400 font-display">10 Sync</span>
+                <span className="text-sm font-bold text-violet-400 font-display">52 Sync</span>
               </div>
             </div>
 
@@ -152,9 +152,9 @@ export function UserProfileModal({ isOpen, onClose }: UserProfileModalProps) {
                 <button
                   onClick={copyToken}
                   title="Click to copy token"
-                  className="flex items-center gap-1.5 font-bold text-[var(--brand-teal)] hover:underline cursor-pointer"
+                  className="group flex items-center gap-1.5 font-bold text-[var(--brand-teal)] cursor-pointer"
                 >
-                  <span>ED25519-AUTH-SEC-4</span>
+                  <span className="blur group-hover:blur-none transition-all duration-300 select-all">ED25519-AUTH-SEC-4</span>
                   {copiedToken ? (
                     <CheckCircle2 size={12} className="text-emerald-400" />
                   ) : (

@@ -7,6 +7,7 @@ import { StatBentoGrid } from '@/components/dashboard/StatBentoGrid';
 import { GlassCard }   from '@/components/ui/GlassCard';
 import { Badge }       from '@/components/ui/Badge';
 import { PageWrapper } from '@/components/layout/PageWrapper';
+import Link from 'next/link';
 import { cameraService }    from '@/services/cameraService';
 import { analyticsService } from '@/services/analyticsService';
 import { alertService }     from '@/services/alertService';
@@ -149,9 +150,14 @@ export default function DashboardPage() {
                 </p>
                 <div className="flex items-center justify-between text-[10px] font-mono">
                   {alert.vehiclePlate && (
-                    <span className="text-cyan-500 dark:text-cyan-400 font-bold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">
+                    <Link
+                      href={`/vehicles/${alert.vehiclePlate}`}
+                      onClick={(e) => e.stopPropagation()}
+                      title="View Vehicle Profile"
+                      className="text-cyan-500 dark:text-cyan-400 font-bold bg-cyan-500/10 hover:bg-cyan-500/20 px-2 py-0.5 rounded border border-cyan-500/30 hover:border-cyan-500/50 transition-colors cursor-pointer inline-block"
+                    >
                       {alert.vehiclePlate}
-                    </span>
+                    </Link>
                   )}
                   <span 
                     title={formatTime(alert.timestamp)} 
