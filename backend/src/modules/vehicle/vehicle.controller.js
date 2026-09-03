@@ -58,7 +58,6 @@ exports.searchVehicle = async function searchVehicle(req, res, next) {
     const normalized = normalizePlate(plateNumber);
     const vehicles = await prisma.vehicle.findMany({
       where: { plateNumber: { contains: normalized, mode: 'insensitive' } },
-      take: 50,
       orderBy: { lastSeen: 'desc' },
       include: { _count: { select: { detections: true } }, detections: { select: { cameraId: true } } },
     });

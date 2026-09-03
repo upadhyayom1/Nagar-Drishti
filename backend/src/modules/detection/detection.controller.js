@@ -141,9 +141,13 @@ exports.getVehicleHeatmap = async (req, res) => {
     const vehicle = await prisma.vehicle.findUnique({ where: { plateNumber } });
     if (!vehicle) return res.status(404).json({ success: false, message: 'Vehicle not found' });
 
+    const offsetPeriods = Math.max(0, parseInt(req.query.offset) || 0);
+
     // Calculate 28-day heatmap natively
     const today = new Date();
     today.setHours(23, 59, 59, 999);
+    today.setDate(today.getDate() - (offsetPeriods * 28));
+
     const startDate = new Date(today);
     startDate.setDate(startDate.getDate() - 27);
     startDate.setHours(0, 0, 0, 0);
@@ -164,7 +168,7 @@ exports.getVehicleHeatmap = async (req, res) => {
       }
     }
 
-    res.status(200).json({ success: true, data: activityDays });
+    res.status(200).json({ success: true, data: { activityDays, periodStart: startDate.toISOString(), periodEnd: today.toISOString() } });
   } catch (error) {
     console.error('Error fetching vehicle heatmap:', error);
     res.status(500).json({ success: false, message: 'Server error' });

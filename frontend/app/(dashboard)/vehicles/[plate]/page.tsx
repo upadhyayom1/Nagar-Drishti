@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -20,6 +20,7 @@ import type { Detection } from '@/types';
 export default function VehicleProfilePage({ params }: { params: Promise<{ plate: string }> }) {
   const { plate } = use(params);
   const decodedPlate = decodeURIComponent(plate).toUpperCase();
+  const [heatmapOffset, setHeatmapOffset] = useState(0);
 
   const { data: vehicle, isLoading: vehicleLoading }   = useQuery({ queryKey: ['vehicle', decodedPlate],           queryFn: () => vehicleService.getVehicleByPlate(decodedPlate) });
   const {
@@ -48,6 +49,10 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
     queryFn: () => vehicleService.getVehicleIntelligence(decodedPlate),
     enabled: false,
   });
+  const { data: heatmapData, isFetching: isFetchingHeatmap } = useQuery({
+    queryKey: ['vehicleHeatmap', decodedPlate, heatmapOffset],
+    queryFn: () => vehicleService.getVehicleHeatmap(decodedPlate, heatmapOffset),
+  });
 
   if (vehicleLoading) return (
     <PageWrapper className="flex items-center justify-center min-h-[450px]">
@@ -67,18 +72,10 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
   const statusVariant = vehicle.status === 'blacklist' ? 'danger' : vehicle.status === 'watchlist' ? 'warning' : 'success';
   const detectionsItems = detectionsData?.pages.flatMap((page) => page.items) || [];
 
-  const activityDays = Array.from({ length: 28 }, (_, index) => {
-    const day = new Date();
-    day.setHours(0, 0, 0, 0);
-    day.setDate(day.getDate() - (27 - index));
-    const nextDay = new Date(day);
-    nextDay.setDate(nextDay.getDate() + 1);
-    return detectionsItems.filter((detection) => {
-      const timestamp = new Date(detection.timestamp);
-      return timestamp >= day && timestamp < nextDay;
-    }).length || 0;
-  });
+  const activityDays = heatmapData?.activityDays || Array(28).fill(0);
   const maxActivity = Math.max(...activityDays, 1);
+  const heatmapStart = heatmapData?.periodStart ? new Date(heatmapData.periodStart) : null;
+  const heatmapEnd = heatmapData?.periodEnd ? new Date(heatmapData.periodEnd) : null;
 
   return (
     <PageWrapper className="space-y-6 font-body">
@@ -303,10 +300,35 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
 
           {/* Daily Activity Heatmap */}
           <GlassCard padding="md">
-            <p className="text-xs font-display font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
-              Daily Activity Heatmap
-            </p>
-            <div className="grid grid-cols-7 gap-1.5">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-display font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                Daily Activity Heatmap
+              </p>
+              <div className="flex items-center gap-3">
+                {heatmapStart && heatmapEnd && (
+                  <span className="text-[10px] font-mono text-[var(--text-tertiary)]">
+                    {heatmapStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - {heatmapEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </span>
+                )}
+                <div className="flex items-center gap-1">
+                  <button 
+                    onClick={() => setHeatmapOffset((prev) => prev + 1)}
+                    disabled={isFetchingHeatmap}
+                    className="p-1 rounded hover:bg-white/5 text-[var(--text-secondary)] hover:text-cyan-400 disabled:opacity-50 transition-colors cursor-pointer"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                  </button>
+                  <button 
+                    onClick={() => setHeatmapOffset((prev) => Math.max(0, prev - 1))}
+                    disabled={isFetchingHeatmap || heatmapOffset === 0}
+                    className="p-1 rounded hover:bg-white/5 text-[var(--text-secondary)] hover:text-cyan-400 disabled:opacity-50 transition-colors cursor-pointer"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className={`grid grid-cols-7 gap-1.5 transition-opacity duration-200 ${isFetchingHeatmap ? 'opacity-40' : 'opacity-100'}`}>
               {activityDays.map((count, index) => {
                 const level = count / maxActivity;
                 const background =

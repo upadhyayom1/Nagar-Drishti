@@ -16,8 +16,8 @@ export const vehicleService = {
     return unwrapApiResponse(await apiClient.get<{ items: Detection[], nextCursor: string | null }>(url));
   },
 
-  async getVehicleHeatmap(plate: string): Promise<number[]> {
-    return unwrapApiResponse(await apiClient.get<number[]>(`/detections/vehicle/${encodeURIComponent(plate)}/heatmap`));
+  async getVehicleHeatmap(plate: string, offset: number = 0): Promise<{ activityDays: number[], periodStart: string, periodEnd: string }> {
+    return unwrapApiResponse(await apiClient.get<{ activityDays: number[], periodStart: string, periodEnd: string }>(`/detections/vehicle/${encodeURIComponent(plate)}/heatmap?offset=${offset}`));
   },
 
   async getVehicleJourney(plate: string): Promise<VehicleJourney | undefined> {
