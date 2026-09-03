@@ -270,7 +270,9 @@ export default function BlacklistPage() {
                       </div>
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-3 flex-wrap">
-                          <span className="text-xl font-bold font-mono text-[var(--text-primary)] tracking-wider">{vehicle.plateNumber}</span>
+                          <Link href={`/vehicles/${vehicle.plateNumber}`} className="text-xl font-bold font-mono text-[var(--text-primary)] hover:text-cyan-400 transition-colors tracking-wider">
+                            {vehicle.plateNumber}
+                          </Link>
                           <Badge variant={isCritical ? 'danger' : isHigh ? 'warning' : 'info'} size="sm">
                             ● {vehicle.severity} THREAT
                           </Badge>
@@ -310,7 +312,13 @@ export default function BlacklistPage() {
                             {vehicle.lastSighting?.cameraCode || vehicle.lastSighting?.cameraId || 'UNKNOWN'}
                           </span>
                         </div>
-                        <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1 font-display tracking-tight">{vehicle.lastSighting?.cameraName || 'Unknown Location'}</h3>
+                        {vehicle.lastSighting?.cameraId ? (
+                          <Link href={`/cameras/${vehicle.lastSighting.cameraId}`} className="inline-block hover:text-cyan-400 transition-colors">
+                            <h3 className="text-lg font-bold text-[var(--text-primary)] hover:text-cyan-400 mb-1 font-display tracking-tight transition-colors">{vehicle.lastSighting?.cameraName || 'Unknown Location'}</h3>
+                          </Link>
+                        ) : (
+                          <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1 font-display tracking-tight">{vehicle.lastSighting?.cameraName || 'Unknown Location'}</h3>
+                        )}
                         <p className="text-[11px] text-[var(--text-secondary)] font-mono">Sector: {vehicle.lastSighting?.zone || 'Unknown'} • {vehicle.lastSighting?.road || 'Unknown'}</p>
 
                         <div className="mt-5 p-3 rounded-xl bg-[var(--bg-void)] border border-[var(--glass-border)] grid grid-cols-3 gap-4">
@@ -330,9 +338,15 @@ export default function BlacklistPage() {
                       </div>
 
                       <div className="mt-4 relative z-10">
-                        <button className="text-[11px] font-mono text-cyan-600 dark:text-cyan-400 hover:text-cyan-300 flex items-center gap-1.5 transition-colors cursor-pointer">
-                          <Camera size={12} /> Open Optical Feed ({vehicle.lastSighting?.cameraCode || vehicle.lastSighting?.cameraId || 'CAM'}) →
-                        </button>
+                        {vehicle.lastSighting?.cameraId ? (
+                          <Link href={`/cameras/${vehicle.lastSighting.cameraId}`} className="inline-flex text-[11px] font-mono text-cyan-600 dark:text-cyan-400 hover:text-cyan-300 items-center gap-1.5 transition-colors">
+                            <Camera size={12} /> Open Optical Feed ({vehicle.lastSighting.cameraCode || vehicle.lastSighting.cameraId}) →
+                          </Link>
+                        ) : (
+                          <button disabled className="text-[11px] font-mono text-[var(--text-tertiary)] flex items-center gap-1.5 opacity-50 cursor-not-allowed">
+                            <Camera size={12} /> Optical Feed Unavailable
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -348,9 +362,11 @@ export default function BlacklistPage() {
                                   <Sparkles size={12} /> NEXT PROBABLE CAMERA LOCATION
                                 </div>
                               </div>
-                              <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1 font-display tracking-tight">
-                                {vehicle.nextProbableCamera.cameraName} <span className="text-[var(--text-secondary)] font-normal text-sm">({vehicle.nextProbableCamera.cameraCode || vehicle.nextProbableCamera.cameraId})</span>
-                              </h3>
+                              <Link href={`/cameras/${vehicle.nextProbableCamera.cameraId}`} className="inline-block group">
+                                <h3 className="text-lg font-bold text-[var(--text-primary)] group-hover:text-violet-400 transition-colors mb-1 font-display tracking-tight">
+                                  {vehicle.nextProbableCamera.cameraName} <span className="text-[var(--text-secondary)] font-normal text-sm group-hover:text-violet-300 transition-colors">({vehicle.nextProbableCamera.cameraCode || vehicle.nextProbableCamera.cameraId})</span>
+                                </h3>
+                              </Link>
                               <p className="text-[11px] text-[var(--text-secondary)] font-mono">Sector: {vehicle.nextProbableCamera.zone || 'Unknown'} • {vehicle.nextProbableCamera.road || 'Unknown'}</p>
 
                               <div className="mt-5 grid grid-cols-2 gap-4">
@@ -379,9 +395,15 @@ export default function BlacklistPage() {
                             </div>
 
                             <div className="mt-4 space-y-2">
-                              <button className="text-[11px] font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1.5 transition-colors cursor-pointer">
-                                <Camera size={12} /> Open predicted camera feed ({vehicle.nextProbableCamera.cameraCode || vehicle.nextProbableCamera.cameraId}) →
-                              </button>
+                              {vehicle.nextProbableCamera.cameraId ? (
+                                <Link href={`/cameras/${vehicle.nextProbableCamera.cameraId}`} className="inline-flex text-[11px] font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] items-center gap-1.5 transition-colors">
+                                  <Camera size={12} /> Open predicted camera feed ({vehicle.nextProbableCamera.cameraCode || vehicle.nextProbableCamera.cameraId}) →
+                                </Link>
+                              ) : (
+                                <button disabled className="text-[11px] font-mono text-[var(--text-tertiary)] flex items-center gap-1.5 opacity-50 cursor-not-allowed">
+                                  <Camera size={12} /> Predicted feed unavailable
+                                </button>
+                              )}
                               {vehicle.nextProbableCamera.alternativeCameras && vehicle.nextProbableCamera.alternativeCameras.length > 0 && (
                                 <p className="text-[10px] font-mono text-[var(--text-tertiary)] truncate">
                                   Alternatives: {vehicle.nextProbableCamera.alternativeCameras.map((c: any) => `${c.cameraCode || c.cameraId} (${Math.round(c.probability * 100)}%)`).join(' • ')}
