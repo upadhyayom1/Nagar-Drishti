@@ -152,9 +152,10 @@ exports.getBusiestRoads = async (req, res) => {
       SELECT c."roadId" AS "roadId",
              COUNT(*)::int AS "detectionCount",
              COUNT(DISTINCT d."vehicleId")::int AS "vehicleCount",
-             AVG(CASE WHEN d."speed" > 0 THEN d."speed" END) AS "avgSpeed"
+             AVG(CASE WHEN v."speed" > 0 THEN v."speed" END) AS "avgSpeed"
       FROM "Detection" d
       INNER JOIN "Camera" c ON c.id = d."cameraId"
+      INNER JOIN "Vehicle" v ON v.id = d."vehicleId"
       WHERE d."timestamp" >= $1 AND d."timestamp" <= $2
         AND c."roadId" IS NOT NULL
       GROUP BY c."roadId"
