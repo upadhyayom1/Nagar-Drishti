@@ -166,10 +166,6 @@ export default function BlacklistPage() {
             note: `${criticalCount} Critical Priority Flags`,
             icon: ShieldAlert,
             colorTheme: 'rose',
-            bars: {
-              label: 'Watchlist Match Activity (Past 12h)',
-              rightText: 'Continuous Neural OCR',
-            },
           },
           {
             category: 'CRITICAL THREATS',
@@ -181,8 +177,6 @@ export default function BlacklistPage() {
             visual: 'action-link',
             visualMeta: {
               subNote: 'High-priority law enforcement',
-              actionLabel: 'Filter Critical',
-              actionHref: '#filter-critical',
             },
           },
           {
