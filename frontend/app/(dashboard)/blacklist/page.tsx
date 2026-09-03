@@ -166,6 +166,7 @@ export default function BlacklistPage() {
             note: `${criticalCount} Critical Priority Flags`,
             icon: ShieldAlert,
             colorTheme: 'rose',
+            visual: 'none',
           },
           {
             category: 'CRITICAL THREATS',

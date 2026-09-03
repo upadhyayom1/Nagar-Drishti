@@ -205,29 +205,31 @@ export function BentoStatDeck({ items, className }: BentoStatDeckProps) {
                 </div>
 
                 {/* Diurnal Volume Rhythm Micro-Bars Visual */}
-                <div className="mt-6 pt-3 border-t border-[var(--glass-border)]">
-                  <div className="flex items-center justify-between text-[9px] font-mono text-[var(--text-tertiary)] mb-2">
-                    <span>{item.bars?.label || 'Diurnal Volume Rhythm (Past 12h)'}</span>
-                    <span className="text-[var(--brand-teal)] font-bold">{item.bars?.rightText || '98.4% ANPR Accuracy'}</span>
-                  </div>
+                {item.visual !== 'none' && (
+                  <div className="mt-6 pt-3 border-t border-[var(--glass-border)]">
+                    <div className="flex items-center justify-between text-[9px] font-mono text-[var(--text-tertiary)] mb-2">
+                      <span>{item.bars?.label || 'Diurnal Volume Rhythm (Past 12h)'}</span>
+                      <span className="text-[var(--brand-teal)] font-bold">{item.bars?.rightText || '98.4% ANPR Accuracy'}</span>
+                    </div>
 
-                  <div className="grid grid-cols-12 gap-1.5 h-9 items-end">
-                    {barsData.map((height, i) => (
-                      <div
-                        key={i}
-                        className="h-full flex items-end justify-center group/bar relative"
-                        title={`Hour ${i + 1}: ${Math.round((height / 100) * 340)} veh/hr`}
-                      >
-                        <motion.div
-                          initial={{ height: 0 }}
-                          animate={{ height: `${height}%` }}
-                          transition={{ duration: 0.8, delay: 0.1 + i * 0.04, ease: 'easeOut' }}
-                          className="w-full rounded-t bg-[var(--brand-teal)]/50 hover:bg-[var(--brand-teal)] transition-all duration-300"
-                        />
-                      </div>
-                    ))}
+                    <div className="grid grid-cols-12 gap-1.5 h-9 items-end">
+                      {barsData.map((height, i) => (
+                        <div
+                          key={i}
+                          className="h-full flex items-end justify-center group/bar relative"
+                          title={`Hour ${i + 1}: ${Math.round((height / 100) * 340)} veh/hr`}
+                        >
+                          <motion.div
+                            initial={{ height: 0 }}
+                            animate={{ height: `${height}%` }}
+                            transition={{ duration: 0.8, delay: 0.1 + i * 0.04, ease: 'easeOut' }}
+                            className="w-full rounded-t bg-[var(--brand-teal)]/50 hover:bg-[var(--brand-teal)] transition-all duration-300"
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </GlassCard>
             </motion.div>
           );
