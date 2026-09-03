@@ -212,7 +212,7 @@ export function StatBentoGrid({ stats, totalNodes = 0, className }: StatBentoGri
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-mono text-[var(--text-primary)] font-bold block leading-tight">6 Sectors</span>
+                  <span className="text-[10px] font-mono text-[var(--text-primary)] font-bold block leading-tight">9 Zones</span>
                   <span className="text-[9px] font-mono text-[var(--text-tertiary)] block">
                     {totalCameras > 0 ? Math.round((activeCameras / totalCameras) * 100) : 0}% Online
                   </span>
