@@ -174,11 +174,11 @@ function VehiclesPageContent() {
             </div>
             <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
               {blacklistedVehicles.map((b) => (
-                <div key={b.id} className="p-2.5 rounded-xl bg-white/[0.03] border border-[var(--glass-border)] flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <span className="font-mono font-bold text-xs text-rose-500 dark:text-rose-400">{b.plateNumber}</span>
-                    <p className="text-[10px] text-[var(--text-secondary)] truncate">{b.reason}</p>
-                  </div>
+                <div key={b.id} className="p-2.5 rounded-xl bg-white/[0.03] border border-[var(--glass-border)] flex items-center justify-between gap-2 transition-colors hover:bg-white/[0.05]">
+                  <Link href={`/vehicles/${b.plateNumber}`} className="min-w-0 flex-1 group">
+                    <span className="font-mono font-bold text-xs text-rose-500 dark:text-rose-400 group-hover:text-rose-400 dark:group-hover:text-rose-300 transition-colors">{b.plateNumber}</span>
+                    <p className="text-[10px] text-[var(--text-secondary)] truncate group-hover:text-[var(--text-primary)] transition-colors">{b.reason}</p>
+                  </Link>
                   <Button variant="ghost" size="sm" onClick={() => deactivateBlacklist.mutate(b.id)} title="Deactivate Flag" className="cursor-pointer">
                     <ShieldOff size={13} />
                   </Button>
