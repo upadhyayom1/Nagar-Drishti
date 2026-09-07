@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Play, Pause, RotateCcw, Radio } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Button }    from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { vehicleService } from '@/services/vehicleService';
 import { useUIStore } from '@/store/uiStore';
 import { formatTime, formatDuration, formatDistance, formatSpeed, cn } from '@/lib/utils';
@@ -128,8 +128,8 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
               center={[wp.lat, wp.lng]}
               radius={i <= currentWaypointIndex ? 6 : 4}
               pathOptions={{
-                color:       i <= currentWaypointIndex ? '#10a37f' : '#525252',
-                fillColor:   i <= currentWaypointIndex ? '#10a37f' : '#212121',
+                color: i <= currentWaypointIndex ? '#10a37f' : '#525252',
+                fillColor: i <= currentWaypointIndex ? '#10a37f' : '#212121',
                 fillOpacity: i <= currentWaypointIndex ? 0.9 : 0.4,
                 weight: 1.5,
               }}
@@ -152,8 +152,8 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
             center={[currentWaypoint.lat, currentWaypoint.lng]}
             radius={10}
             pathOptions={{
-              color:       '#ffffff',
-              fillColor:   '#10a37f',
+              color: '#ffffff',
+              fillColor: '#10a37f',
               fillOpacity: 1,
               weight: 2,
             }}
@@ -267,7 +267,7 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
           <div className="space-y-1.5">
             {waypoints.map((wp: Waypoint, i: number) => {
               const isCurrent = i === currentWaypointIndex;
-              const isPassed  = i < currentWaypointIndex;
+              const isPassed = i < currentWaypointIndex;
 
               return (
                 <div
@@ -281,8 +281,8 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
                     isCurrent
                       ? 'bg-[var(--bg-elevated-2)] border-neutral-700 text-[var(--text-primary)]'
                       : isPassed
-                      ? 'bg-transparent border-transparent opacity-60 hover:opacity-100 text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)]'
-                      : 'bg-transparent border-transparent text-[var(--text-tertiary)] hover:bg-[var(--bg-elevated)]',
+                        ? 'bg-transparent border-transparent opacity-60 hover:opacity-100 text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)]'
+                        : 'bg-transparent border-transparent text-[var(--text-tertiary)] hover:bg-[var(--bg-elevated)]',
                   )}
                 >
                   <div className="flex items-center justify-between gap-1 mb-1">

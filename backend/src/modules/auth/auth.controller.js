@@ -4,7 +4,7 @@ const { env } = require('../../config/env');
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Username is required'),
-  password: z.string().min(8, 'Password is too short'),
+  password: z.string().min(6, 'Password is too short'),
 });
 
 const login = async (req, res) => {

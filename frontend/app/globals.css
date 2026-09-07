@@ -7,6 +7,10 @@
    ========================================================================== */
 
 :root {
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
   /* ── Ultra-Dark True Black Scale (Pure OLED Pitch Black Void) ── */
   --bg-void:        #000000; /* Layer 0: Pure pitch black void */
   --bg-surface:     #040406; /* Layer 1: Inky obsidian surface */

@@ -22,19 +22,19 @@ interface MapViewProps {
 
 function statusColor(status: string): string {
   switch (status) {
-    case 'online':   return '#10a37f';
-    case 'warning':  return '#f59e0b';
-    case 'offline':  return '#ef4444';
+    case 'online': return '#10a37f';
+    case 'warning': return '#f59e0b';
+    case 'offline': return '#ef4444';
     case 'critical': return '#ef4444';
-    default:         return '#10a37f';
+    default: return '#10a37f';
   }
 }
 
 function statusVariant(status: string): 'ok' | 'warn' | 'critical' {
   switch (status) {
-    case 'online':   return 'ok';
-    case 'warning':  return 'warn';
-    default:         return 'critical';
+    case 'online': return 'ok';
+    case 'warning': return 'warn';
+    default: return 'critical';
   }
 }
 

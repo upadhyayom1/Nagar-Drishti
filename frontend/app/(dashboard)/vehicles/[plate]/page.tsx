@@ -229,27 +229,6 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
 
         {/* Journey Summary & Patterns */}
         <div className="space-y-5">
-          {journey && (
-            <GlassCard padding="md">
-              <p className="text-xs font-display font-bold uppercase tracking-wider text-[var(--text-primary)] mb-4">
-                Journey Analytics
-              </p>
-              <div className="space-y-3">
-                {[
-                  { label: 'Total Distance',  value: `${journey.totalDistance} km` },
-                  { label: 'Travel Duration', value: `${journey.totalDuration} min` },
-                  { label: 'Average Velocity', value: `${journey.avgSpeed} km/h` },
-                  { label: 'Nodes Crossed',   value: `${journey.waypoints.length} Cameras` },
-                ].map((row) => (
-                  <div key={row.label} className="flex justify-between items-center text-xs">
-                    <span className="text-[var(--text-secondary)] font-medium">{row.label}</span>
-                    <span className="font-mono text-[var(--text-primary)] font-bold tabular-nums">{row.value}</span>
-                  </div>
-                ))}
-              </div>
-            </GlassCard>
-          )}
-
           <GlassCard padding="md">
             <div className="flex items-center justify-between mb-4">
               <p className="text-xs font-display font-bold uppercase tracking-wider text-[var(--text-primary)]">
