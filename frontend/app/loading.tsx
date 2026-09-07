@@ -1,31 +1,64 @@
 'use client';
 
-import { Radio, Zap } from 'lucide-react';
+import { Radio, ShieldCheck, Video, Cpu, Activity } from 'lucide-react';
 
 export default function GlobalLoading() {
   return (
-    <div className="min-h-[500px] w-full flex flex-col items-center justify-center p-8 font-body select-none">
-      <div className="relative w-20 h-20 flex items-center justify-center mb-5">
-        {/* Outer Rotating Cyan Ring */}
-        <div className="absolute inset-0 rounded-full border-2 border-cyan-400/20 border-t-cyan-400 animate-spin" />
+    <div className="min-h-[520px] w-full flex flex-col items-center justify-center p-8 font-body select-none">
+      <div className="w-full max-w-sm rounded-3xl p-7 bg-[var(--bg-elevated)] border border-white/[0.08] dark:border-white/[0.08] shadow-[var(--glass-shadow)] backdrop-blur-2xl text-center space-y-5">
         
-        {/* Middle Counter-Rotating Fuchsia Ring */}
-        <div className="absolute inset-2.5 rounded-full border-2 border-fuchsia-500/20 border-b-fuchsia-500 animate-spin [animation-direction:reverse] [animation-duration:1.5s]" />
-        
-        {/* Inner Pulsing Core */}
-        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-400 to-indigo-500 animate-pulse shadow-[0_0_16px_rgba(61,118,121,0.8)] flex items-center justify-center">
-          <Zap size={12} className="text-white" />
+        {/* Animated Brand Ring & Telemetry Beacon */}
+        <div className="relative w-16 h-16 mx-auto flex items-center justify-center">
+          <div className="absolute inset-0 rounded-full border-2 border-[var(--brand-teal)]/20 border-t-[var(--brand-teal)] animate-spin" />
+          <div className="w-9 h-9 rounded-full bg-[var(--brand-teal)]/10 border border-[var(--brand-teal)]/30 flex items-center justify-center text-[var(--brand-teal)]">
+            <Radio size={16} className="animate-pulse" />
+          </div>
         </div>
-      </div>
 
-      <div className="text-center space-y-1.5">
-        <p className="text-xs font-mono font-bold uppercase tracking-widest text-cyan-400 flex items-center justify-center gap-2">
-          <Radio size={13} className="animate-pulse" />
-          Synchronizing Municipal Neural Stream...
-        </p>
-        <p className="text-[10px] font-mono text-[var(--text-tertiary)] uppercase tracking-wider">
-          Prayagraj Optical Sensor Matrix · Zone 1
-        </p>
+        {/* Title and System Descriptor */}
+        <div className="space-y-1">
+          <h2 className="text-sm font-display font-bold text-[var(--text-primary)] tracking-wide">
+            NagarDrishti Command Center
+          </h2>
+          <p className="text-[11px] font-mono text-[var(--text-tertiary)]">
+            Synchronizing municipal traffic intelligence...
+          </p>
+        </div>
+
+        {/* Telemetry Readiness Pulse Indicators */}
+        <div className="pt-2 border-t border-white/[0.06] dark:border-white/[0.06] space-y-2 text-left text-[10px] font-mono">
+          <div className="flex items-center justify-between text-[var(--text-secondary)]">
+            <span className="flex items-center gap-1.5">
+              <Video size={11} className="text-[var(--brand-teal)]" />
+              Sensor Grid
+            </span>
+            <span className="text-[var(--brand-teal)] font-bold flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-teal)] animate-ping" />
+              ONLINE
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between text-[var(--text-secondary)]">
+            <span className="flex items-center gap-1.5">
+              <Cpu size={11} className="text-cyan-400" />
+              Vision Analytics
+            </span>
+            <span className="text-cyan-400 font-bold">READY</span>
+          </div>
+
+          <div className="flex items-center justify-between text-[var(--text-secondary)]">
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck size={11} className="text-emerald-400" />
+              Threat Sentinel
+            </span>
+            <span className="text-emerald-400 font-bold">MONITORING</span>
+          </div>
+        </div>
+
+        {/* Smooth indeterminate progress line */}
+        <div className="h-1 w-full rounded-full bg-white/[0.06] overflow-hidden">
+          <div className="h-full rounded-full bg-gradient-to-r from-transparent via-[var(--brand-teal)] to-transparent w-1/2 animate-[shimmer_1.5s_infinite_linear]" />
+        </div>
       </div>
     </div>
   );

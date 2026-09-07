@@ -82,21 +82,21 @@ export default function AnalyticsPage() {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight font-display">Traffic Analytics</h1>
-          <p className="text-xs font-mono text-[var(--text-secondary)] mt-0.5 uppercase tracking-wider">
-            City-wide traffic density · Diurnal volume curves · Congestion indexing
+          <p className="text-xs font-normal text-[var(--text-secondary)] mt-0.5 font-body">
+            City-wide volume curves, vehicle velocity, and real-time congestion patterns
           </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           {/* Time Range Selector */}
-          <div className="flex items-center p-1 rounded-xl bg-white/[0.03] border border-[var(--glass-border)] text-xs font-display">
+          <div className="flex items-center p-1 rounded-xl bg-white/[0.03] border border-white/[0.08] dark:border-white/[0.08] text-xs font-display">
             {(['today', '24h', '7d', '30d'] as const).map((range) => (
               <button
                 key={range}
                 onClick={() => setTimeRange(range)}
                 className={`px-3 py-1 rounded-lg uppercase tracking-wider text-[10px] font-bold transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-400 ${
                   timeRange === range
-                    ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-400/40 shadow-[0_0_12px_rgba(6,182,212,0.3)]'
+                    ? 'bg-cyan-500/20 text-cyan-400 shadow-sm'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent'
                 }`}
               >
@@ -112,7 +112,7 @@ export default function AnalyticsPage() {
 
           <Button variant="secondary" size="sm" onClick={handleExportReport} className="text-xs">
             <Download size={13} />
-            Export Intel
+            Export Data
           </Button>
         </div>
       </div>

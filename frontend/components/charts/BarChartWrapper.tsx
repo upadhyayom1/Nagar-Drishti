@@ -19,12 +19,12 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (!active || !payload?.length) return null;
   const fullLabel = String(label ?? '');
   return (
-    <div className="rounded-lg px-3 py-2 text-xs bg-[var(--bg-elevated)] border border-neutral-700 shadow-md font-mono text-[var(--text-primary)]">
-      <p className="text-[var(--text-secondary)] mb-1 text-[11px] font-medium truncate max-w-[200px]">{fullLabel}</p>
+    <div className="rounded-xl px-3.5 py-2.5 text-xs bg-[var(--bg-elevated)] border border-white/10 dark:border-white/10 shadow-xl font-mono text-[var(--text-primary)] backdrop-blur-md">
+      <p className="text-[var(--text-tertiary)] mb-1 text-[10px] font-medium truncate max-w-[200px] uppercase tracking-wider">{fullLabel}</p>
       {payload.map((entry, index) => (
         <p key={`${entry.name}-${index}`} className="text-[var(--text-primary)] font-bold flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#10a37f' }} />
-          <span className="text-[#10a37f]">{entry.value?.toLocaleString()} veh</span>
+          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: 'var(--brand-teal)' }} />
+          <span className="text-[var(--brand-teal)] font-bold">{entry.value?.toLocaleString()} vehicles</span>
         </p>
       ))}
     </div>
@@ -52,9 +52,9 @@ export function BarChartWrapper({
 }: BarChartWrapperProps) {
   const theme = useUIStore((s) => s.theme);
   const isDark = theme === 'dark';
-  const gridColor = isDark ? '#262626' : '#e5e5e5';
-  const axisColor = isDark ? '#333333' : '#e5e5e5';
-  const tickFill  = isDark ? '#737373' : '#8e8e8e';
+  const gridColor = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.06)';
+  const axisColor = 'transparent';
+  const tickFill  = isDark ? '#a1a1aa' : '#64748b';
 
   // Show at most ~10 labels regardless of how many bars there are
   const labelInterval = data.length > 12 ? Math.ceil(data.length / 10) : 0;
@@ -62,7 +62,7 @@ export function BarChartWrapper({
   return (
     <div className="w-full" style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 10, right: 15, left: -10, bottom: 72 }}>
+        <BarChart data={data} margin={{ top: 12, right: 15, left: -15, bottom: 65 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
           <XAxis
             dataKey={xAxisKey}
@@ -76,7 +76,7 @@ export function BarChartWrapper({
             tickLine={false}
             dy={6}
             interval={labelInterval}
-            angle={-65}
+            angle={-55}
             textAnchor="end"
           />
           <YAxis
@@ -85,13 +85,13 @@ export function BarChartWrapper({
             tickLine={false}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }} />
-          <Bar dataKey={dataKey} radius={[4, 4, 0, 0]} maxBarSize={32} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
+          <Bar dataKey={dataKey} radius={[6, 6, 2, 2]} maxBarSize={28} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
             {data.map((_, index) => {
-              const opacity = 0.55 + ((index % 5) * 0.1);
+              const opacity = 0.65 + ((index % 5) * 0.08);
               return (
                 <Cell
                   key={`cell-${index}`}
-                  fill="#10a37f"
+                  fill="var(--brand-teal)"
                   fillOpacity={opacity}
                 />
               );

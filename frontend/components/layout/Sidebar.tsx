@@ -205,13 +205,13 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         {navGroups.map((group) => (
             <div key={group.label}>
               {!sidebarCollapsed && (
-                <p className="text-[10px] font-mono font-medium uppercase tracking-[0.18em] px-2.5 mb-2 text-[var(--text-tertiary)] flex items-center gap-1.5">
-                  <span className="w-1 h-1 rounded-full bg-neutral-600 shrink-0" />
+                <p className="text-[10px] font-mono font-medium uppercase tracking-[0.14em] px-3 mb-1.5 text-[var(--text-tertiary)] flex items-center gap-1.5">
+                  <span className="w-1 h-1 rounded-full bg-neutral-600/60 shrink-0" />
                   {group.label}
                 </p>
               )}
 
-            <div className="space-y-1 relative">
+            <div className="space-y-0.5 relative">
               {group.items.map((item) => {
                 const isActive =
                   pathname === item.href ||
@@ -225,19 +225,17 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                     onClick={onNavigate}
                     title={sidebarCollapsed ? item.name : undefined}
                     className={cn(
-                      'flex items-center gap-2.5 rounded-2xl transition-all duration-200 outline-none group relative overflow-hidden border',
+                      'flex items-center gap-2.5 rounded-2xl transition-all duration-200 outline-none group relative overflow-hidden',
                       sidebarCollapsed
-                        ? 'justify-center px-2 py-2.5'
-                        : 'px-3 py-2.5',
+                        ? 'justify-center px-2 py-2'
+                        : 'px-3 py-2',
                       isActive
                         ? cn(
                             item.bgActive,
-                            item.borderActive,
-                            item.glowShadow,
-                            'font-semibold text-[var(--text-primary)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]'
+                            'font-semibold text-[var(--text-primary)] shadow-sm'
                           )
                         : cn(
-                            'text-[var(--text-secondary)] border-transparent font-medium hover:scale-[1.01]',
+                            'text-[var(--text-secondary)] font-medium hover:scale-[1.01]',
                             item.hoverClass
                           )
                     )}
