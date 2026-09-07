@@ -1,0 +1,46 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "postinstall": "prisma generate",
+    "prune:storage": "node src/scripts/prune-storage.js",
+    "seed": "node prisma/seed.js",
+    "seed:prayagraj-network": "node src/scripts/seedPrayagrajNetwork.js",
+    "generate:historical": "node src/scripts/historical/generateHistoricalData.js",
+    "export:detections": "node src/scripts/historical/exportCsv.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
+    "@prisma/adapter-neon": "^7.10.0",
+    "@prisma/adapter-pg": "^7.9.1",
+    "@prisma/client": "^7.9.1",
+    "@turf/turf": "^7.4.0",
+    "axios": "^1.19.0",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "csv-writer": "^1.6.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "form-data": "^4.0.6",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.2.0",
+    "pg": "^8.23.0",
+    "ws": "^8.21.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "prisma": "^7.10.0"
+  }
+}

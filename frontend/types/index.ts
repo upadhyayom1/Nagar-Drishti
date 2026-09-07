@@ -17,6 +17,7 @@ export interface Camera {
   fps: number | null;
   lastUpdated: string;
   zone: string;
+  liveVehicleCount?: number;
 }
 
 export interface Detection {

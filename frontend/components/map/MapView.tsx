@@ -187,7 +187,8 @@ export function MapView({
         {/* ── Layer 2: Live Density Rings ── */}
         {showTrafficDensity && cameras.map((c) => {
           const ringColor = c.trafficLevel === 'congested' ? '#ef4444' : c.trafficLevel === 'high' ? '#f59e0b' : '#10a37f';
-          const radius = c.vehiclesDetected > 300 ? 550 : c.vehiclesDetected > 150 ? 380 : 220;
+          const liveVehicleCount = c.liveVehicleCount ?? c.vehiclesDetected;
+          const radius = liveVehicleCount > 30 ? 550 : liveVehicleCount > 15 ? 380 : 220;
           return (
             <Circle
               key={`density-${c.id}`}
@@ -242,8 +243,8 @@ export function MapView({
 
                   <div className="grid grid-cols-2 gap-2 text-xs font-mono bg-white/[0.04] p-2 rounded-xl border border-[var(--glass-border)]">
                     <div>
-                      <span className="text-[9px] text-[var(--text-secondary)] block uppercase">Detections</span>
-                      <span className="font-bold text-cyan-400">{c.vehiclesDetected}</span>
+                      <span className="text-[9px] text-[var(--text-secondary)] block uppercase">Live Vehicles</span>
+                      <span className="font-bold text-cyan-400">{c.liveVehicleCount ?? c.vehiclesDetected}</span>
                     </div>
                     <div>
                       <span className="text-[9px] text-[var(--text-secondary)] block uppercase">Traffic</span>

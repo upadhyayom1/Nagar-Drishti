@@ -1,5 +1,6 @@
 const turf = require('@turf/turf');
 const { prisma } = require('../../lib/prisma');
+const { publishRealtime, setJson } = require('../../realtime/realtime');
 
 const VEHICLE_SPEED_RANGES = {
   AUTO: [22, 34],
@@ -291,6 +292,7 @@ class SimulationEngine {
     }
     this.running = true;
     this.lastTickTime = Date.now();
+    publishRealtime('simulation:state', { running: true, speed: this.speed, simulationTime: this.time.toISOString() });
     this.timer = setInterval(() => {
       if (this.tickInProgress) return;
       this.tickInProgress = true;
@@ -309,6 +311,7 @@ class SimulationEngine {
     this.running = false;
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
+    publishRealtime('simulation:state', { running: false, speed: this.speed, simulationTime: this.time.toISOString() });
   }
 
   async reset() {
@@ -321,6 +324,7 @@ class SimulationEngine {
     this.liveCameraCounts.clear();
     this.liveAlerts = [];
     await this.init();
+    publishRealtime('simulation:state', { running: false, speed: this.speed, simulationTime: this.time.toISOString() });
   }
 
   setSpeed(speed) {
@@ -517,6 +521,8 @@ class SimulationEngine {
                 status: 'ACTIVE',
                 createdAt: detection.timestamp
               }
+            }).then((alert) => {
+              void publishRealtime('alert:changed', { action: 'created', alertId: alert.id });
             }).catch(() => { });
           } else {
             // Bump the alert to the top if it already exists
@@ -526,6 +532,8 @@ class SimulationEngine {
                 createdAt: detection.timestamp,
                 cameraId: detection.cameraId
               }
+            }).then((alert) => {
+              void publishRealtime('alert:changed', { action: 'updated', alertId: alert.id });
             }).catch(() => { });
           }
         }).catch(() => { });
@@ -565,6 +573,14 @@ class SimulationEngine {
     }
 
     this.liveAlerts = []; // Deprecated in favor of DB alerts
+
+    // Publish the in-memory simulation state once per tick. Redis provides the
+    // cross-instance Pub/Sub transport; the WebSocket layer fans it out to
+    // connected dashboards. This never blocks the simulation tick.
+    const realtimeState = this.getRealtimeState();
+    void setJson('nagardrishti:simulation:state', realtimeState, 10);
+    void setJson('nagardrishti:simulation:camera-counts', Object.fromEntries(this.liveCameraCounts), 10);
+    void publishRealtime('simulation:update', realtimeState);
   }
 
   getLiveCameraCounts() {
@@ -573,6 +589,31 @@ class SimulationEngine {
 
   getLiveAlerts() {
     return [...this.liveAlerts];
+  }
+
+  getRealtimeState() {
+    return {
+      simulationTime: this.time.toISOString(),
+      speed: this.speed,
+      running: this.running,
+      stats: {
+        vehicles: this.vehicles.length,
+        cameras: this.cameras.length,
+        recentDetections: this.recentDetections.length,
+        generatedDetections: this.generatedDetectionCount,
+      },
+      cameraCounts: Object.fromEntries(this.liveCameraCounts),
+      vehicles: this.vehicles.map((v) => ({
+        id: v.id,
+        plateNumber: v.plateNumber,
+        type: v.type,
+        speed: v.speed,
+        longitude: v.coords[0],
+        latitude: v.coords[1],
+        roadId: v.currentRoadId,
+        state: v.state,
+      })),
+    };
   }
 
   getState() {

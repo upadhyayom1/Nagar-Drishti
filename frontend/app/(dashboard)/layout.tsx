@@ -9,10 +9,12 @@ import { useUIStore }          from '@/store/uiStore';
 import { cn }                  from '@/lib/utils';
 import { X }                   from 'lucide-react';
 import { AuthGuard }           from '@/components/layout/AuthGuard';
+import { useRealtime, type RealtimeStatus } from '@/hooks/useRealtime';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { sidebarCollapsed, mobileMenuOpen, setMobileMenuOpen } = useUIStore();
   const pathname = usePathname();
+  useRealtime();
 
   // Scroll to top and close mobile menu on route changes
   useEffect(() => {

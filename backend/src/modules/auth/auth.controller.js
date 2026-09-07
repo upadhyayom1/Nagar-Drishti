@@ -1,4 +1,5 @@
 const { z } = require('zod');
+const jwt = require('jsonwebtoken');
 const authService = require('./auth.service');
 const { env } = require('../../config/env');
 
@@ -60,4 +61,15 @@ const me = (req, res) => {
   });
 };
 
-module.exports = { login, logout, me };
+
+const wsToken = (req, res) => {
+  const token = jwt.sign(
+    { sub: req.user.id, role: req.user.role, type: 'websocket' },
+    env.JWT_SECRET,
+    { expiresIn: '5m' }
+  );
+
+  res.status(200).json({ success: true, data: { token } });
+};
+
+module.exports = { login, logout, me, wsToken };
