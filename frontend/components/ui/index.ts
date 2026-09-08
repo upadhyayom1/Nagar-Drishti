@@ -10,3 +10,4 @@ export { PulseDot } from './PulseDot';
 export { EmptyState } from './EmptyState';
 export { Logo, NagarDrishtiIcon } from './Logo';
 export { SectionHeader } from './SectionHeader';
+export { Strands } from './Strands';
