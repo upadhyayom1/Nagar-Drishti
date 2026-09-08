@@ -59,7 +59,6 @@ export default function DashboardPage() {
   const { data: cameras = [] } = useQuery({
     queryKey: ['cameras'],
     queryFn: cameraService.getCameras,
-    refetchInterval: 5_000,
   });
 
   const { data: stats } = useQuery({

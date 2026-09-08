@@ -8,4 +8,5 @@ router.post('/login', authController.login);
 
 router.post('/logout', authController.logout);
 router.get('/me', authenticate, authController.me);
+router.get('/ws-token', authenticate, authController.wsToken);
 module.exports = router;

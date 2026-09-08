@@ -30,7 +30,7 @@ function clampCongestionIndex(raw: number | undefined): { display: number; raw: 
 }
 
 export default function AnalyticsPage() {
-  const [timeRange, setTimeRange] = useState<'today' | '24h' | '7d' | '30d'>('today');
+  const [timeRange, setTimeRange] = useState<'today' | '24h' | '7d' | '30d'>('24h');
   const analyticsWindow = useMemo(() => {
     const to = new Date();
     const from = new Date(to);

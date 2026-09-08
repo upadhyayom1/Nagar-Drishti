@@ -1,14 +1,30 @@
 'use client';
 
 import Link from 'next/link';
-import { ShieldCheck, ArrowLeft, Sun, Moon } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ShieldCheck, ArrowLeft, Sun, Moon, LogOut } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
+import { useAuthStore } from '@/store/authStore';
+import { authService } from '@/services/authService';
 import { Button } from '@/components/ui/Button';
 import { Logo } from '@/components/ui/Logo';
 import { AuthGuard } from '@/components/layout/AuthGuard';
 
 export default function UserPortalLayout({ children }: { children: React.ReactNode }) {
   const { theme, toggleTheme } = useUIStore();
+  const clearUser = useAuthStore((state) => state.logout);
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } catch (e) {
+      console.error('Logout failed', e);
+    } finally {
+      clearUser();
+      router.push('/login');
+    }
+  };
 
   return (
     <AuthGuard allowedRoles={['USER']}>
@@ -36,11 +52,9 @@ export default function UserPortalLayout({ children }: { children: React.ReactNo
               {theme === 'dark' ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-[var(--signal-violet)]" />}
             </button>
 
-            <Link href="/dashboard">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft size={13} /> Command Center
-              </Button>
-            </Link>
+            <Button variant="danger" size="sm" onClick={handleLogout}>
+              <LogOut size={13} /> Sign Out
+            </Button>
           </div>
 
         </div>

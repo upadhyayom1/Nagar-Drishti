@@ -26,6 +26,7 @@ const analyticsRoutes = require('./modules/analytics/analytics.routes');
 const alertRoutes = require('./modules/alert/alert.routes');
 const { env } = require('./config/env');
 const { prisma } = require('./lib/prisma');
+const { isRealtimeReady } = require('./realtime/realtime');
 const app = express();
 
 const allowedOrigins = env.CORS_ORIGINS.split(',')
@@ -77,6 +78,8 @@ app.get('/api/health', async (req, res) => {
       success: true,
       status: 'ok',
       database: 'ok',
+      redis: isRealtimeReady() ? 'ok' : 'fallback',
+      websocket: 'mounted',
       simulation: global.simulationEngine?.running ? 'running' : 'paused',
     });
   } catch (error) {

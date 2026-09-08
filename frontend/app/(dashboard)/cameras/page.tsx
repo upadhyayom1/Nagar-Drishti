@@ -117,7 +117,7 @@ function CameraCard({ camera }: { camera: Camera }) {
             </div>
             <div className="flex items-center gap-1.5 justify-end">
               <Activity size={12} className="text-violet-400 shrink-0" />
-              <span className="text-[var(--text-primary)] font-bold font-display">{camera.vehiclesDetected}</span>
+              <span className="text-[var(--text-primary)] font-bold font-display">{camera.liveVehicleCount ?? camera.vehiclesDetected}</span>
               <span className="text-[10px]">veh</span>
             </div>
           </div>
