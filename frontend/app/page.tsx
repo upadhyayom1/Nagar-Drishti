@@ -45,6 +45,7 @@ import { StackingCapabilities } from '@/components/landing/StackingCapabilities'
 import { analyticsService } from '@/services/analyticsService';
 import { useUIStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
+import { useFilterStore } from '@/store/filterStore';
 
 // Single Unified 3D Smart City Trajectory & Optical Constellation Background
 const HeroScene = dynamic(() => import('@/components/three/HeroScene'), {
@@ -52,6 +53,20 @@ const HeroScene = dynamic(() => import('@/components/three/HeroScene'), {
   loading: () => <div className="fixed inset-0 bg-[var(--bg-void)] -z-10" />,
 });
 
+const DriftWall = dynamic(
+  () => import('@/components/ui/DriftWall').then((m) => ({ default: m.DriftWall })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full min-h-[420px] flex flex-col items-center justify-center bg-[var(--glass-surface)] rounded-xl">
+        <div className="w-8 h-8 rounded-full border-2 border-emerald-400/20 border-t-emerald-400 animate-spin mb-2" />
+        <p className="text-[11px] font-mono text-emerald-400 uppercase tracking-wider">
+          Initializing 3D Optical Feed Matrix…
+        </p>
+      </div>
+    ),
+  }
+);
 const staggerContainer = {
   hidden: { opacity: 0 },
   show: {
@@ -84,6 +99,21 @@ export default function LandingPage() {
   const rawNodes = systemHealth?.summary?.total ?? 0;
   const rawOnline = systemHealth?.summary?.online ?? 0;
   const rawAlerts = stats?.activeAlerts ?? 0;
+
+  const handleTerminalMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    el.style.setProperty('--glow-x', x + '%');
+    el.style.setProperty('--glow-y', y + '%');
+    el.style.setProperty('--glow-intensity', '1');
+  };
+
+  const handleTerminalMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    el.style.setProperty('--glow-intensity', '0');
+  };
 
   const telemetryFacts = [
     {
@@ -135,14 +165,15 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[var(--bg-void)] text-[var(--text-primary)] relative overflow-hidden font-body select-none transition-colors duration-300">
 
-      {/* ── Balanced Medium Opacity 3D Smart City Background ── */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-65 dark:opacity-55">
+      {/* ── Spatial VisionOS Depth Spheres (Soft Daylight Ambient in Light, Pitch Obsidian in Dark) ── */}
+      <div className="fixed -top-32 -left-32 w-[550px] h-[550px] rounded-full bg-indigo-300/15 dark:bg-transparent blur-[120px] pointer-events-none z-0" />
+      <div className="fixed top-1/3 -right-32 w-[600px] h-[600px] rounded-full bg-emerald-300/10 dark:bg-transparent blur-[140px] pointer-events-none z-0" />
+      <div className="fixed -bottom-32 left-1/3 w-[500px] h-[500px] rounded-full bg-cyan-300/10 dark:bg-transparent blur-[130px] pointer-events-none z-0" />
+
+      {/* ── 3D Smart City Optical Constellation ── */}
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-80 dark:opacity-75">
         <HeroScene />
       </div>
-
-      {/* ── Subtle Monochrome Ambient Lighting ── */}
-      <div className="fixed top-[-10%] left-[10%] w-[55vw] h-[55vw] bg-cyan-500/[0.03] rounded-full blur-[190px] pointer-events-none z-0" />
-      <div className="fixed bottom-[5%] left-[20%] w-[45vw] h-[45vw] bg-slate-500/[0.03] rounded-full blur-[200px] pointer-events-none z-0" />
 
       {/* ── Floating Glass Header ── */}
       <header className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 py-4">
@@ -167,11 +198,18 @@ export default function LandingPage() {
             </button>
 
             {isAuthenticated && user ? (
-              <Link href={user.role === 'ADMIN' ? '/dashboard' : '/report'}>
-                <Button variant="primary" size="sm" className="cursor-pointer">
-                  {user.role === 'ADMIN' ? 'Command Center' : 'Citizen Portal'} <ArrowRight size={13} />
-                </Button>
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link href={user.role === 'ADMIN' ? '/dashboard' : '/report'}>
+                  <Button variant="primary" size="sm" className="cursor-pointer">
+                    {user.role === 'ADMIN' ? 'Command Center' : 'Citizen Portal'} <ArrowRight size={13} />
+                  </Button>
+                </Link>
+                <Link href="/login">
+                  <Button variant="ghost" size="sm" className="text-xs cursor-pointer">
+                    Switch / Login
+                  </Button>
+                </Link>
+              </div>
             ) : (
               <>
                 <Link href="/report">
@@ -192,7 +230,7 @@ export default function LandingPage() {
 
       {/* ── Hero Section with Animated Headings & CTAs ── */}
       <section className="relative min-h-[85vh] flex items-center justify-center pt-28 px-6 z-10">
-        <div className="max-w-4xl mx-auto text-center relative z-20 space-y-7 py-12">
+        <div className="max-w-5xl mx-auto text-center relative z-20 space-y-7 py-12">
           
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -261,6 +299,66 @@ export default function LandingPage() {
                 <UploadCloud size={16} className="text-cyan-500 dark:text-cyan-400" /> Report an Incident
               </Button>
             </Link>
+          </motion.div>
+
+          {/* ── Interactive Live Optical Grid Terminal Preview ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 28 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.4 }}
+            className="w-full max-w-5xl mx-auto pt-6 text-left"
+          >
+            <div onMouseMove={handleTerminalMouseMove} onMouseLeave={handleTerminalMouseLeave} style={{ '--glow-color': '0, 245, 155' } as React.CSSProperties} className="rounded-2xl overflow-hidden border border-white/15 dark:border-white/10 bg-[var(--bg-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.65)] backdrop-blur-2xl p-2.5 relative group glass-card--border-glow transition-all duration-200">
+              {/* Glass Terminal Bar */}
+              <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-[var(--glass-border)] mb-2 flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 mr-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                  </div>
+                  <Badge variant="cyan" size="sm" dot pulse>OPTICAL MATRIX PREVIEW</Badge>
+                  <span className="text-[11px] font-mono text-[var(--text-secondary)] hidden sm:inline-block">
+                    Prayagraj Sector 1 · 3D Optical Sensor Feed Matrix
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-mono text-[var(--text-tertiary)] flex items-center gap-1.5 hidden sm:inline-flex">
+                    <Activity size={12} className="text-emerald-500 animate-pulse" />
+                    {rawOnline || 10} / {rawNodes || 10} Nodes Online
+                  </span>
+                  <Link href="/dashboard">
+                    <button className="text-[10px] font-mono uppercase tracking-wider px-2.5 py-1 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 transition-colors flex items-center gap-1 cursor-pointer">
+                      Enter Full Command Center <ArrowRight size={10} />
+                    </button>
+                  </Link>
+                </div>
+              </div>
+
+              {/* 3D Drifting Optical Sensor Feed Wall */}
+              <div className="h-[420px] sm:h-[480px] w-full rounded-xl overflow-hidden relative border border-[var(--glass-border)] bg-[var(--bg-void)]">
+                <DriftWall
+                  columns={5}
+                  tileWidth={210}
+                  tileHeight={134}
+                  gap={16}
+                  tilt={14}
+                  turn={-12}
+                  perspective={1200}
+                  depth={100}
+                  speed={36}
+                  direction="up"
+                  variance={0.4}
+                  parallax={0.6}
+                  pauseOnHover={true}
+                  lift={60}
+                  fade={0.65}
+                  dim={theme === 'light' ? 0.75 : 0.65}
+                  overlayColor={theme === 'light' ? 'rgba(243, 246, 249, 0.35)' : '#040406'}
+                />
+                <div className="absolute inset-0 pointer-events-none rounded-xl ring-1 ring-inset ring-white/10 dark:ring-white/5 shadow-[inset_0_0_40px_rgba(0,0,0,0.35)]" />
+              </div>
+            </div>
           </motion.div>
         </div>
       </section>

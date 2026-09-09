@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { PageWrapper } from '@/components/layout/PageWrapper';
+import { MagicCard, GlobalSpotlight } from '@/components/ui/MagicBento';
 import { blacklistService } from '@/services/blacklistService';
 import { vehicleService } from '@/services/vehicleService';
 import type { AlertSeverity, Vehicle } from '@/types';
@@ -20,37 +21,48 @@ const itemVariants = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0, 
 
 function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
   const statusVariant = vehicle.status === 'blacklist' ? 'critical' : vehicle.status === 'watchlist' ? 'warn' : 'ok';
-  const glowType = vehicle.status === 'blacklist' ? 'rose' : vehicle.status === 'watchlist' ? 'amber' : 'cyan';
+  const glowColor =
+    vehicle.status === 'blacklist' ? '255, 51, 85' :
+    vehicle.status === 'watchlist' ? '251, 191, 36' :
+    '0, 240, 255';
 
   return (
-    <Link href={`/vehicles/${vehicle.plate}`} className="block h-full">
-      <GlassCard hover glow={glowType} className="h-full flex flex-col justify-between gap-3.5 p-4">
-        <div>
-          <div className="flex items-start justify-between mb-2.5">
-            <span className="text-base font-mono font-bold text-cyan-500 dark:text-cyan-400 tracking-wider">{vehicle.plate}</span>
-            <Badge variant={statusVariant} size="sm">{vehicle.status}</Badge>
+    <MagicCard
+      href={`/vehicles/${vehicle.plate}`}
+      enableStars={true}
+      enableBorderGlow={true}
+      enableTilt={true}
+      enableMagnetism={true}
+      clickEffect={true}
+      glowColor={glowColor}
+      className="h-full flex flex-col justify-between gap-3.5 p-4 rounded-3xl border border-[var(--glass-border)] shadow-[var(--glass-shadow)]"
+    >
+      <div>
+        <div className="flex items-start justify-between mb-2.5">
+          <span className="text-base font-mono font-bold text-cyan-500 dark:text-cyan-400 tracking-wider group-hover:text-white transition-colors">{vehicle.plate}</span>
+          <Badge variant={statusVariant} size="sm">{vehicle.status}</Badge>
+        </div>
+        <div className="space-y-1.5 text-xs text-[var(--text-secondary)] font-body">
+          <div className="flex items-center gap-2">
+            <Car size={13} className="text-violet-500 dark:text-violet-400 shrink-0" />
+            <span>{vehicle.vehicleType} · {vehicle.color}</span>
           </div>
-          <div className="space-y-1.5 text-xs text-[var(--text-secondary)] font-body">
-            <div className="flex items-center gap-2">
-              <Car size={13} className="text-violet-500 dark:text-violet-400 shrink-0" />
-              <span>{vehicle.vehicleType} · {vehicle.color}</span>
-            </div>
-            <div className="flex items-center gap-2 font-mono">
-              <Eye size={13} className="text-cyan-500 dark:text-cyan-400 shrink-0" />
-              <span><span className="text-[var(--text-primary)] font-bold">{vehicle.totalDetections}</span> detections</span>
-            </div>
-            <div className="flex items-center gap-2 font-mono">
-              <MapPin size={13} className="text-amber-500 dark:text-amber-400 shrink-0" />
-              <span><span className="text-[var(--text-primary)] font-bold">{vehicle.camerasVisited}</span> nodes visited</span>
-            </div>
+          <div className="flex items-center gap-2 font-mono">
+            <Eye size={13} className="text-cyan-500 dark:text-cyan-400 shrink-0" />
+            <span><span className="text-[var(--text-primary)] font-bold">{vehicle.totalDetections}</span> detections</span>
+          </div>
+          <div className="flex items-center gap-2 font-mono">
+            <MapPin size={13} className="text-amber-500 dark:text-amber-400 shrink-0" />
+            <span><span className="text-[var(--text-primary)] font-bold">{vehicle.camerasVisited}</span> nodes visited</span>
           </div>
         </div>
-      </GlassCard>
-    </Link>
+      </div>
+    </MagicCard>
   );
 }
 
 function VehiclesPageContent() {
+  const gridRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(() => (searchParams.get('search') || '').toUpperCase());
@@ -112,13 +124,16 @@ function VehiclesPageContent() {
             </p>
             <Badge variant="info" size="sm">ANPR Records</Badge>
           </div>
-          <motion.div variants={containerVariants} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {displayVehicles.map((vehicle) => (
-              <motion.div variants={itemVariants} key={vehicle.plate} className="h-full">
-                <VehicleCard vehicle={vehicle} />
-              </motion.div>
-            ))}
-          </motion.div>
+          <div className="relative w-full bento-section" ref={gridRef}>
+            <GlobalSpotlight gridRef={gridRef} enabled={true} spotlightRadius={340} glowColor="0, 240, 255" />
+            <motion.div variants={containerVariants} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {displayVehicles.map((vehicle) => (
+                <motion.div variants={itemVariants} key={vehicle.plate} className="h-full">
+                  <VehicleCard vehicle={vehicle} />
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
           {displayVehicles.length === 0 && (
             <div className="text-center py-16">
               <Search size={36} className="mx-auto mb-2 text-cyan-400/20" />

@@ -15,9 +15,9 @@ import { formatTime, formatRelativeTime, cn } from '@/lib/utils';
 import { useFilterStore }   from '@/store/filterStore';
 import type { Alert } from '@/types';
 
-// Dynamic import for Leaflet map with zero SSR issues
-const MapView = dynamic(
-  () => import('@/components/map/MapView').then((m) => ({ default: m.MapView })),
+// Dynamic import for MapLibre map (OpenFreeMap Dark & Light - No Watermark) with zero SSR issues
+const NagarMapLibre = dynamic(
+  () => import('@/components/map/NagarMapLibre').then((m) => ({ default: m.NagarMapLibre })),
   {
     ssr: false,
     loading: () => (
@@ -25,11 +25,17 @@ const MapView = dynamic(
         <div className="w-10 h-10 rounded-full border-2 border-cyan-400/20 border-t-cyan-400 animate-spin mb-3" />
         <p className="text-xs font-mono text-cyan-400 uppercase tracking-wider flex items-center gap-2 font-semibold">
           <Radio size={13} className="animate-pulse" />
-          Scanning optical grid & synchronizing sensors…
+          Initializing Optical Matrix…
         </p>
       </div>
     ),
   }
+);
+
+// Dynamic import for interactive MagicBento with zero SSR issues
+const MagicBento = dynamic(
+  () => import('@/components/ui/MagicBento').then((m) => ({ default: m.MagicBento })),
+  { ssr: false }
 );
 
 function severityVariant(s: string): 'critical' | 'warn' | 'info' | 'default' {
@@ -109,7 +115,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="h-[520px] w-full rounded-2xl overflow-hidden border border-white/[0.08] dark:border-white/[0.08] bg-[var(--bg-void)] shadow-[0_20px_50px_rgba(0,0,0,0.45)] relative z-0 group">
-              <MapView cameras={cameras} />
+              <NagarMapLibre cameras={cameras} />
               {/* Subtle inner cinematic vignette to integrate map inside dashboard shell */}
               <div className="absolute inset-0 pointer-events-none rounded-2xl ring-1 ring-inset ring-white/10 dark:ring-white/5 shadow-[inset_0_0_30px_rgba(0,0,0,0.4)]" />
             </div>
@@ -171,6 +177,80 @@ export default function DashboardPage() {
               ))}
             </div>
           </GlassCard>
+        </div>
+
+        {/* ── Neural Telemetry & Urban Intelligence Grid (Magic Bento) ── */}
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#00f59b] animate-pulse" />
+              <h2 className="text-xs font-mono uppercase tracking-[0.2em] font-bold text-[var(--text-secondary)]">
+                Neural Subsystems & Intelligence Matrix
+              </h2>
+            </div>
+            <span className="text-[11px] font-mono text-cyan-400/70 hidden sm:inline-block">
+              6 Core Subsystems Synchronized
+            </span>
+          </div>
+
+          <MagicBento
+            cards={[
+              {
+                title: 'ANPR Neural Telemetry',
+                description: 'Real-time multi-angle license plate recognition, automated speed radar & vehicle classification.',
+                label: '99.4% Optical Confidence',
+                badge: 'Neural Engine',
+                href: '/detect',
+              },
+              {
+                title: 'Corridor Velocity & Flow',
+                description: stats?.avgSpeed
+                  ? `Average corridor speed profiling at ${Math.round(stats.avgSpeed)} km/h with automated green-wave traffic signal sync.`
+                  : 'Corridor speed profiling and automated green-wave traffic signal synchronization.',
+                label: stats?.congestionIndex ? `Congestion: ${stats.congestionIndex}/100` : 'Flow Analytics',
+                badge: 'Real-Time Sync',
+                href: '/analytics',
+              },
+              {
+                title: 'Prayagraj Optical Sensor Matrix',
+                description: 'City-wide optical surveillance grid streaming low-latency feeds with instant anomaly detection and coordinate mapping across all municipal sectors.',
+                label: 'Municipal Grid',
+                badge: `${cameras.length || 18} Active Nodes`,
+                href: '/cameras',
+              },
+              {
+                title: 'Predictive Demand & Surge AI',
+                description: 'Deep spatial-temporal LSTM forecasting traffic surges, bottlenecks, and peak congestion up to 4 hours in advance with proactive signal rerouting.',
+                label: 'AI Forecasting',
+                badge: 'LSTM Active',
+                href: '/forecast',
+              },
+              {
+                title: 'Sentinel Threat Watchlist',
+                description: 'Automated flagged vehicle alerts, blacklist matching, and stolen plate interception dispatch across all active road corridors.',
+                label: 'Sentinel Defense',
+                badge: `${alerts.length} Active Flags`,
+                href: '/blacklist',
+              },
+              {
+                title: 'Field Triage & Citizen Portal',
+                description: 'Citizen incident reporting pipeline with instant optical verification, geo-tagging, and officer dispatch validation.',
+                label: 'Citizen Portal',
+                badge: 'Verified Desk',
+                href: '/submissions',
+              },
+            ]}
+            textAutoHide={true}
+            enableStars={true}
+            enableSpotlight={true}
+            enableBorderGlow={true}
+            enableTilt={true}
+            enableMagnetism={true}
+            clickEffect={true}
+            spotlightRadius={320}
+            particleCount={14}
+            glowColor="0, 245, 155"
+          />
         </div>
     </PageWrapper>
   );
