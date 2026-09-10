@@ -29,15 +29,19 @@ export default function MovementNetworkPage() {
     const nodesMap = new Map<string, { name: string; code: string; index: number }>();
     let nodeIndex = 0;
 
+    // Create a bipartite graph (sources on left, destinations on right) to prevent cyclic graph errors in Sankey
     routes.forEach((r: any) => {
-      if (!nodesMap.has(r.origin.id)) nodesMap.set(r.origin.id, { ...r.origin, index: nodeIndex++ });
-      if (!nodesMap.has(r.destination.id)) nodesMap.set(r.destination.id, { ...r.destination, index: nodeIndex++ });
+      const sourceKey = `src_${r.origin.id}`;
+      const destKey = `dst_${r.destination.id}`;
+
+      if (!nodesMap.has(sourceKey)) nodesMap.set(sourceKey, { name: `${r.origin.name} (Origin)`, code: r.origin.code, index: nodeIndex++ });
+      if (!nodesMap.has(destKey)) nodesMap.set(destKey, { name: `${r.destination.name} (Destination)`, code: r.destination.code, index: nodeIndex++ });
     });
 
     const nodes = Array.from(nodesMap.values()).map((n) => ({ name: n.name, code: n.code }));
     const links = routes.map((r: any) => ({
-      source: nodesMap.get(r.origin.id)!.index,
-      target: nodesMap.get(r.destination.id)!.index,
+      source: nodesMap.get(`src_${r.origin.id}`)!.index,
+      target: nodesMap.get(`dst_${r.destination.id}`)!.index,
       value: r.volume,
     }));
 

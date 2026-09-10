@@ -341,6 +341,7 @@ class SimulationEngine {
     this.time = new Date(now);
 
     const liveDetections = [];
+    const liveTransitions = [];
 
     // Move vehicles
     for (let v of this.vehicles) {
@@ -462,6 +463,17 @@ class SimulationEngine {
               longitude: v.coords[0]
             };
             liveDetections.push(detection);
+            if (v.lastCameraId && v.lastCameraId !== cam.id) {
+              const travelTimeSeconds = v.lastCameraTimestamp ? Math.round((this.time.getTime() - v.lastCameraTimestamp.getTime()) / 1000) : 0;
+              liveTransitions.push({
+                vehicleId: v.id,
+                sourceCameraId: v.lastCameraId,
+                destinationCameraId: cam.id,
+                timestamp: new Date(this.time),
+                travelTimeSeconds: travelTimeSeconds > 0 ? travelTimeSeconds : 0,
+                averageSpeed: detection.speed || 0,
+              });
+            }
             v.lastCameraId = cam.id;
             v.lastCameraTimestamp = new Date(this.time);
           }
@@ -494,6 +506,13 @@ class SimulationEngine {
         })),
         skipDuplicates: true
       }).catch(err => console.error('Failed to persist simulated detections:', err));
+
+      if (liveTransitions.length > 0) {
+        prisma.cameraTransition.createMany({
+          data: liveTransitions,
+          skipDuplicates: true
+        }).catch(err => console.error('Failed to persist simulated transitions:', err));
+      }
 
       // Also update vehicle lastSeen
       const vehicleIds = liveDetections.map(d => d.vehicleId);
