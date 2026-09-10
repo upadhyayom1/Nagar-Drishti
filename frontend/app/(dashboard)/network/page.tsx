@@ -26,22 +26,48 @@ export default function MovementNetworkPage() {
 
   const sankeyData = useMemo(() => {
     if (!routes || routes.length === 0) return { nodes: [], links: [] };
-    const nodesMap = new Map<string, { name: string; code: string; index: number }>();
-    let nodeIndex = 0;
 
-    // Create a bipartite graph (sources on left, destinations on right) to prevent cyclic graph errors in Sankey
-    routes.forEach((r: any) => {
-      const sourceKey = `src_${r.origin.id}`;
-      const destKey = `dst_${r.destination.id}`;
+    // Group routes into clean, distinct Origin nodes (left) and Destination nodes (right)
+    // to guarantee an acyclic Bipartite DAG for the Sankey flow without cyclic recursion
+    const validRoutes = routes.filter(
+      (r: any) => r && r.origin?.id && r.destination?.id && r.volume > 0 && r.origin.id !== r.destination.id
+    );
 
-      if (!nodesMap.has(sourceKey)) nodesMap.set(sourceKey, { name: `${r.origin.name} (Origin)`, code: r.origin.code, index: nodeIndex++ });
-      if (!nodesMap.has(destKey)) nodesMap.set(destKey, { name: `${r.destination.name} (Destination)`, code: r.destination.code, index: nodeIndex++ });
+    if (validRoutes.length === 0) return { nodes: [], links: [] };
+
+    const originMap = new Map<string, number>();
+    const destMap = new Map<string, number>();
+
+    validRoutes.forEach((r: any) => {
+      if (!originMap.has(r.origin.id)) originMap.set(r.origin.id, originMap.size);
+      if (!destMap.has(r.destination.id)) destMap.set(r.destination.id, destMap.size);
     });
 
-    const nodes = Array.from(nodesMap.values()).map((n) => ({ name: n.name, code: n.code }));
-    const links = routes.map((r: any) => ({
-      source: nodesMap.get(`src_${r.origin.id}`)!.index,
-      target: nodesMap.get(`dst_${r.destination.id}`)!.index,
+    const originOffset = 0;
+    const destOffset = originMap.size;
+
+    const originNodes = Array.from(originMap.keys()).map((id) => {
+      const r = validRoutes.find((route: any) => route.origin.id === id);
+      return {
+        name: r?.origin.name || 'Origin Sensor',
+        code: r?.origin.code,
+        role: 'Origin' as const,
+      };
+    });
+
+    const destNodes = Array.from(destMap.keys()).map((id) => {
+      const r = validRoutes.find((route: any) => route.destination.id === id);
+      return {
+        name: r?.destination.name || 'Destination Sensor',
+        code: r?.destination.code,
+        role: 'Destination' as const,
+      };
+    });
+
+    const nodes = [...originNodes, ...destNodes];
+    const links = validRoutes.map((r: any) => ({
+      source: originOffset + originMap.get(r.origin.id)!,
+      target: destOffset + destMap.get(r.destination.id)!,
       value: r.volume,
     }));
 
@@ -157,7 +183,7 @@ export default function MovementNetworkPage() {
           </div>
           
           <div className="flex-1 min-h-[400px] rounded-xl bg-white/[0.02] border border-[var(--glass-border)] flex flex-col items-center justify-center relative overflow-hidden">
-            {routes.length > 0 ? (
+            {routes.length > 0 && sankeyData.links.length > 0 ? (
               <SankeyChartWrapper data={sankeyData} height={400} />
             ) : (
               <div className="text-center p-5">

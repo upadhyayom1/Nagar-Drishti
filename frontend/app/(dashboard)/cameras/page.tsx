@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -9,6 +10,7 @@ import { Badge }       from '@/components/ui/Badge';
 import { SkeletonCard } from '@/components/ui/SkeletonCard';
 import { PulseDot }    from '@/components/ui/PulseDot';
 import { PageWrapper } from '@/components/layout/PageWrapper';
+import { MagicCard, GlobalSpotlight } from '@/components/ui/MagicBento';
 import { cameraService }  from '@/services/cameraService';
 import { formatTime } from '@/lib/utils';
 import { useFilterStore } from '@/store/filterStore';
@@ -37,9 +39,19 @@ function CameraCard({ camera }: { camera: Camera }) {
     camera.trafficLevel === 'congested' ? 'critical' :
     camera.trafficLevel === 'high'      ? 'warn' : 'ok';
 
+  const glowColor = isOnline ? '0, 245, 155' : isWarn ? '251, 191, 36' : '255, 51, 85';
+
   return (
-    <Link href={`/cameras/${encodeURIComponent(camera.name)}`} className="block h-full group">
-      <div className="h-full rounded-3xl p-3.5 flex flex-col justify-between transition-all duration-300 relative overflow-hidden border border-[var(--glass-border)] bg-[var(--bg-elevated)] backdrop-blur-2xl shadow-[var(--glass-shadow)] hover:border-[var(--brand-teal)]/50 hover:shadow-[0_20px_45px_rgba(0,0,0,0.4),0_0_25px_rgba(0,245,155,0.15)] hover:-translate-y-1.5">
+    <MagicCard
+      href={`/cameras/${encodeURIComponent(camera.name)}`}
+      enableStars={true}
+      enableBorderGlow={true}
+      enableTilt={true}
+      enableMagnetism={true}
+      clickEffect={true}
+      glowColor={glowColor}
+      className="h-full rounded-3xl p-3.5 flex flex-col justify-between transition-all duration-300 relative overflow-hidden group border border-[var(--glass-border)] shadow-[var(--glass-shadow)]"
+    >
 
         {/* Specular top rim highlight */}
         <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-[var(--glass-highlight)] to-transparent pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity" />
@@ -131,9 +143,7 @@ function CameraCard({ camera }: { camera: Camera }) {
             <Badge variant={trafficVar} size="sm">{camera.trafficLevel}</Badge>
           </div>
         </div>
-
-      </div>
-    </Link>
+    </MagicCard>
   );
 }
 
@@ -156,6 +166,7 @@ function FilterPill({
 }
 
 export default function CamerasPage() {
+  const gridRef = useRef<HTMLDivElement>(null);
   const { data: cameras = [], isLoading } = useQuery({
     queryKey: ['cameras'],
     queryFn: cameraService.getCameras,
@@ -210,18 +221,21 @@ export default function CamerasPage() {
           ))}
         </div>
       ) : (
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
-        >
-          {filtered.map((camera: Camera) => (
-            <motion.div key={camera.id} variants={itemVariants} className="h-full">
-              <CameraCard camera={camera} />
-            </motion.div>
-          ))}
-        </motion.div>
+        <div className="relative w-full bento-section" ref={gridRef}>
+          <GlobalSpotlight gridRef={gridRef} enabled={true} spotlightRadius={360} glowColor="0, 245, 155" />
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
+          >
+            {filtered.map((camera: Camera) => (
+              <motion.div key={camera.id} variants={itemVariants} className="h-full">
+                <CameraCard camera={camera} />
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
       )}
     </PageWrapper>
   );

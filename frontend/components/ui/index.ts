@@ -10,3 +10,7 @@ export { PulseDot } from './PulseDot';
 export { EmptyState } from './EmptyState';
 export { Logo, NagarDrishtiIcon } from './Logo';
 export { SectionHeader } from './SectionHeader';
+export { Strands } from './Strands';
+export { MoltenMetal } from './MoltenMetal';
+export { Dock } from './Dock';
+export { MagicBento, MagicCard, GlobalSpotlight } from './MagicBento';

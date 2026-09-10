@@ -14,13 +14,14 @@ export type AccentVariant =
 export type CardVariant = 'default' | 'soft' | 'textured' | 'gradient' | 'hero';
 
 export interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  padding?:  'none' | 'sm' | 'md' | 'lg';
-  hover?:    boolean;
-  glow?:     GlowVariant;
-  accent?:   AccentVariant;
-  elevated?: boolean;
-  variant?:  CardVariant;
-  hero?:     boolean;
+  padding?:    'none' | 'sm' | 'md' | 'lg';
+  hover?:      boolean;
+  glow?:       GlowVariant;
+  accent?:     AccentVariant;
+  elevated?:   boolean;
+  variant?:    CardVariant;
+  hero?:       boolean;
+  borderGlow?: boolean;
 }
 
 const paddingMap = {
@@ -28,6 +29,24 @@ const paddingMap = {
   sm:   'p-4',
   md:   'p-6',
   lg:   'p-8',
+};
+
+const glowColorRgbMap: Record<GlowVariant, string> = {
+  none:     '0, 245, 155',
+  brand:    '0, 245, 155',
+  cyan:     '0, 245, 155',
+  teal:     '13, 148, 136',
+  blue:     '59, 130, 246',
+  violet:   '168, 85, 247',
+  pink:     '236, 72, 153',
+  spectral: '0, 245, 155',
+  ok:       '16, 185, 129',
+  emerald:  '16, 185, 129',
+  warn:     '245, 158, 11',
+  amber:    '245, 158, 11',
+  critical: '244, 63, 94',
+  crimson:  '244, 63, 94',
+  rose:     '244, 63, 94',
 };
 
 const glowMap: Record<GlowVariant, string> = {
@@ -84,18 +103,53 @@ export const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
     elevated = false,
     variant = 'default',
     hero = false,
+    borderGlow = true,
     onClick,
+    onMouseMove,
+    onMouseLeave,
+    style,
     ...props
   }, ref) => {
     const resolvedVariant = hero ? 'hero' : variant;
+    const resolvedGlowColor =
+      glowColorRgbMap[glow] || glowColorRgbMap[accent as GlowVariant] || '0, 245, 155';
+
+    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+      if (hover || borderGlow) {
+        const el = e.currentTarget;
+        const rect = el.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        el.style.setProperty('--glow-x', x + '%');
+        el.style.setProperty('--glow-y', y + '%');
+        el.style.setProperty('--glow-intensity', '1');
+      }
+      onMouseMove?.(e);
+    };
+
+    const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+      if (hover || borderGlow) {
+        const el = e.currentTarget;
+        el.style.setProperty('--glow-intensity', '0');
+      }
+      onMouseLeave?.(e);
+    };
+
     return (
       <div
         ref={ref}
         onClick={onClick}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        style={{
+          '--glow-color': resolvedGlowColor,
+          ...style,
+        } as React.CSSProperties}
         className={cn(
           elevated ? 'glass-panel-elevated' : variantClassMap[resolvedVariant],
           paddingMap[padding],
           accent !== 'none' && accentMap[accent],
+          (hover || borderGlow) && 'glass-card--border-glow',
           hover && cn(
             'transition-colors duration-150',
             'hover:bg-[var(--bg-elevated-2)]',
