@@ -28,12 +28,11 @@ import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import type { User as AuthUser } from '@/services/authService';
 
-// Dynamic import for SlicedWaves WebGL canvas with ssr: false
-const SlicedWaves = dynamic(() => import('@/components/ui/SlicedWaves'), {
+// Dynamic import for ColorBends Three.js canvas with ssr: false
+const ColorBends = dynamic(() => import('@/components/ui/ColorBends'), {
   ssr: false,
   loading: () => <div className="absolute inset-0 bg-[var(--bg-void)]" />,
 });
-
 function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -131,32 +130,29 @@ function LoginFormContent() {
   return (
     <div className={'min-h-screen flex flex-col justify-between p-4 sm:p-6 md:p-8 relative overflow-hidden font-body select-none transition-colors duration-300 ' + (isLight ? 'bg-[#f3f6f9] text-slate-900' : 'bg-black text-white')}>
       
-      {/* ── SlicedWaves Background (Preserved Horizontal Wave Slats + High-Contrast in Light & Dark) ── */}
+      {/* ── ColorBends Background (Harmonized Nagar-Drishti Emerald Palette) ── */}
       <div className="absolute inset-0 z-0 overflow-hidden">
-        <SlicedWaves
-          color1={isLight ? '#0d9488' : '#00f59b'}
-          color2={isLight ? '#047857' : '#059669'}
-          color3={isLight ? '#0284c7' : '#00e5ff'}
-          columns={14}
-          rows={8}
-          barThickness={0.16}
-          speed={0.35}
-          travel={0.7}
-          waveSpread={0.9}
-          rowOffset={1.0}
-          softness={0.06}
-          glow={0.35}
-          brightness={1.2}
-          contrast={1.15}
-          opacity={isLight ? 0.85 : 0.88}
-          orientation="horizontal"
-          alternate={false}
-          mouseInteraction={true}
-          mouseStrength={1.5}
-          mouseRadius={0.4}
-          grain={true}
-          grainIntensity={0.04}
+        <ColorBends
+          colors={
+            isLight
+              ? ['#0d9488', '#059669', '#047857', '#0f766e']
+              : ['#00f59b', '#00dc82', '#059669', '#10b981']
+          }
+          rotation={45}
+          autoRotate={0.8}
+          speed={0.22}
+          scale={1.1}
+          frequency={1.1}
+          warpStrength={1.2}
+          mouseInfluence={0.8}
+          parallax={0.4}
+          noise={0.06}
+          iterations={2}
+          intensity={isLight ? 1.05 : 1.25}
+          bandWidth={6}
+          transparent={!isLight}
           lightMode={isLight}
+          backgroundColor={isLight ? '#f3f6f9' : '#000000'}
         />
         {/* Subtle Ambient Vignette */}
         <div className={'absolute inset-0 pointer-events-none ' + (isLight ? 'bg-radial-gradient from-transparent via-slate-100/10 to-slate-200/40' : 'bg-radial-gradient from-transparent via-black/20 to-black/60')} />
