@@ -18,17 +18,48 @@ async function connectRealtime() {
     return;
   }
 
+  let redisUrl = env.REDIS_URL;
+  if (!redisUrl) {
+    if (env.NODE_ENV === 'production') {
+      console.warn('⚠️ REDIS_URL not provided in production environment. Disabling Redis.');
+      return;
+    }
+    redisUrl = 'redis://127.0.0.1:6379';
+  }
+
   if (connected) return;
 
-  publisher = createClient({ url: env.REDIS_URL });
+  const clientOptions = {
+    url: redisUrl,
+    socket: {
+      reconnectStrategy: (retries) => {
+        if (retries > 5) {
+          console.warn('⚠️ Redis max retries reached. Realtime events will fallback to local.');
+          return new Error('Redis connection failed');
+        }
+        return Math.min(retries * 1000, 5000);
+      }
+    }
+  };
+
+  if (redisUrl.startsWith('rediss://')) {
+    clientOptions.socket.tls = true;
+    clientOptions.socket.rejectUnauthorized = false; // Required for some managed Redis instances like Render
+  }
+
+  publisher = createClient(clientOptions);
   subscriber = publisher.duplicate();
 
-  publisher.on('error', (error) => {
-    console.error('Redis publisher error:', error.message);
-  });
-  subscriber.on('error', (error) => {
-    console.error('Redis subscriber error:', error.message);
-  });
+  let errorCount = 0;
+  const errorHandler = (type) => (error) => {
+    errorCount++;
+    if (errorCount <= 3) {
+      console.error(`Redis ${type} error:`, error.message);
+    }
+  };
+
+  publisher.on('error', errorHandler('publisher'));
+  subscriber.on('error', errorHandler('subscriber'));
 
   await publisher.connect();
   await subscriber.connect();
@@ -52,7 +83,7 @@ async function connectRealtime() {
   });
 
   connected = true;
-  console.log(`✅ Redis connected (${env.REDIS_URL})`);
+  console.log(`✅ Redis connected (${redisUrl})`);
 }
 
 function onRealtimeEvent(listener) {
