@@ -63,6 +63,17 @@ function LoginFormContent() {
     setErrorMessage('');
   };
 
+  const handleQuickDemoFill = () => {
+    if (role === 'admin') {
+      setUsername('operator.krishnan');
+      setPassword('admin123');
+    } else {
+      setUsername('citizen.user');
+      setPassword('user123');
+    }
+    setErrorMessage('');
+  };
+
   const handleSignOutActive = () => {
     logout();
     setActiveSession(null);
@@ -209,260 +220,298 @@ function LoginFormContent() {
         </div>
       </header>
 
-      {/* ── Main Holographic Cyber-Glass Console ── */}
-      <main className="w-full max-w-lg mx-auto relative z-10 my-auto py-6">
+      {/* ── Main Elevated Modern Cyber-Glass Console ── */}
+      <main className="w-full max-w-[430px] mx-auto relative z-10 my-auto py-3 sm:py-4">
         <motion.div
           initial={{ opacity: 0, y: 16, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.35, ease: 'easeOut' }}
+          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
           className="space-y-4"
         >
           {/* Header Brand */}
-          <div className="text-center space-y-1.5">
+          <div className="text-center space-y-1 mb-2">
             <Logo size="md" className="justify-center" />
-            <p className={'text-xs font-body ' + (isLight ? 'text-slate-600' : 'text-zinc-400')}>
-              Municipal AI Intelligence &amp; Citizen Dispatch Gateway
+            <p className={'text-xs tracking-tight font-medium ' + (isLight ? 'text-slate-500' : 'text-zinc-400')}>
+              Municipal AI Intelligence &amp; Dispatch Gateway
             </p>
           </div>
 
-          {/* Holographic Cyber-Glass Card — Light & Dark Mode Harmonized */}
-          <div className={'relative rounded-3xl border backdrop-blur-2xl overflow-hidden glass-card--border-glow p-7 sm:p-9 transition-colors duration-300 ' +
-            (isLight
-              ? 'bg-white/90 border-slate-200/90 shadow-[0_20px_50px_rgba(15,23,42,0.1)]'
-              : 'bg-black/75 border-white/10 shadow-[0_25px_60px_rgba(0,0,0,0.85)]')}>
-            
-            {/* Top Specular Rim Accent */}
-            <div className={'absolute top-0 left-8 right-8 h-[2px] pointer-events-none ' +
+          {/* Exterior Glow Aura */}
+          <div className="relative group">
+            <div className={'absolute -inset-1 rounded-[30px] blur-xl opacity-60 transition-opacity duration-500 pointer-events-none -z-10 ' +
               (isLight
-                ? 'bg-gradient-to-r from-transparent via-emerald-500 to-transparent'
-                : 'bg-gradient-to-r from-transparent via-emerald-400/80 to-transparent')} />
+                ? 'bg-gradient-to-b from-emerald-200/40 via-teal-200/20 to-transparent'
+                : 'bg-gradient-to-b from-emerald-500/15 via-teal-500/10 to-transparent')} />
 
-            {/* Verification Scanning HUD Overlay */}
-            {isVerifying && (
-              <div className={'absolute inset-0 z-30 backdrop-blur-md flex flex-col items-center justify-center p-6 space-y-5 animate-in fade-in duration-200 ' + (isLight ? 'bg-white/95 text-slate-900' : 'bg-black/92 text-white')}>
-                <div className="relative w-20 h-20 flex items-center justify-center">
-                  <div className={'absolute inset-0 rounded-full border-2 border-t-emerald-500 animate-spin ' + (isLight ? 'border-slate-200' : 'border-neutral-700/60')} />
-                  <div className="absolute inset-2 rounded-full border border-dashed border-emerald-500/40 animate-[spin_4s_linear_infinite_reverse]" />
-                  <div className="w-9 h-9 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                    <Activity size={18} className="animate-pulse" />
-                  </div>
-                </div>
+            {/* Elevated Cyber-Glass Card */}
+            <div className={'relative rounded-[28px] border backdrop-blur-3xl overflow-hidden p-6 sm:p-7 transition-all duration-300 ' +
+              (isLight
+                ? 'bg-white/85 border-slate-200/90 shadow-[0_20px_50px_rgba(15,23,42,0.07),0_1px_3px_rgba(0,0,0,0.05)]'
+                : 'bg-black/65 border-white/[0.1] shadow-[0_24px_70px_rgba(0,0,0,0.85),0_0_35px_rgba(0,245,155,0.05)]')}>
+              
+              {/* Top Specular Rim Accent */}
+              <div className={'absolute top-0 inset-x-10 h-[1px] pointer-events-none ' +
+                (isLight
+                  ? 'bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent'
+                  : 'bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent')} />
 
-                <div className="text-center space-y-2 max-w-xs">
-                  <p className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider flex items-center justify-center gap-2">
-                    <Radio size={14} className="animate-pulse" />
-                    {verificationStep === 1 && 'Scanning Sector Credentials…'}
-                    {verificationStep === 2 && 'Validating Cryptographic Ledger…'}
-                  </p>
-                  <div className={'w-48 h-1.5 rounded-full overflow-hidden mx-auto ' + (isLight ? 'bg-slate-200' : 'bg-neutral-800')}>
-                    <div
-                      className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-700 rounded-full"
-                      style={{ width: verificationStep === 1 ? '50%' : '92%' }}
-                    />
-                  </div>
-                  <span className={'text-[10px] font-mono block ' + (isLight ? 'text-slate-500' : 'text-zinc-500')}>
-                    {verificationStep === 1 ? 'Sector Handshake: Phase 1/2' : 'Sector Handshake: Phase 2/2'}
+              {/* Top Micro-HUD Bar */}
+              <div className="flex items-center justify-between mb-4.5 pb-3 border-b border-slate-100 dark:border-white/[0.06]">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  </span>
+                  <span className={'text-[10px] font-mono tracking-wider uppercase font-semibold ' + (isLight ? 'text-slate-600' : 'text-zinc-300')}>
+                    SECTOR // 01 ONLINE
                   </span>
                 </div>
+                <button
+                  type="button"
+                  onClick={handleQuickDemoFill}
+                  className={'group inline-flex items-center gap-1.5 text-[10px] font-mono py-1 px-2.5 rounded-lg border transition-all cursor-pointer ' +
+                    (isLight
+                      ? 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700'
+                      : 'border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:bg-emerald-500/10 hover:border-emerald-500/30 hover:text-emerald-400')}
+                  title="Quick-fill test credentials"
+                >
+                  <Sparkles size={11} className="text-emerald-500 transition-transform group-hover:rotate-12" />
+                  <span>Demo Fill</span>
+                </button>
               </div>
-            )}
 
-            {/* Verified Success Confirmation */}
-            {verifiedSuccess && (
-              <div className={'absolute inset-0 z-30 backdrop-blur-md flex flex-col items-center justify-center p-6 space-y-4 animate-in fade-in zoom-in-95 duration-300 ' + (isLight ? 'bg-white/95 text-slate-900' : 'bg-black/92 text-white')}>
-                <div className="w-16 h-16 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-[0_0_24px_rgba(16,185,129,0.25)]">
-                  <CheckCircle2 size={36} />
-                </div>
-                <div className="text-center space-y-1">
-                  <p className="text-base font-bold font-display">Clearance Authenticated</p>
-                  <p className="text-xs font-mono text-emerald-600 dark:text-emerald-400">
-                    Launching {role === 'admin' ? 'Command Center Grid' : 'Citizen Incident Portal'}…
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Active Session Notification (if authenticated already) */}
-            {activeSession && (
-              <div className={'mb-5 p-3.5 rounded-2xl border flex items-center justify-between gap-3 text-xs font-mono animate-in fade-in duration-200 ' +
-                (isLight
-                  ? 'bg-emerald-50/90 border-emerald-300 text-emerald-900'
-                  : 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400')}>
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <ShieldCheck size={18} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
-                  <div className="truncate">
-                    <span className="font-semibold">{activeSession.name}</span>
-                    <span className={'text-[10px] block sm:inline sm:ml-2 ' + (isLight ? 'text-slate-600' : 'text-zinc-400')}>
-                      ({activeSession.role} session active)
-                    </span>
+              {/* Verification Scanning HUD Overlay */}
+              {isVerifying && (
+                <div className={'absolute inset-0 z-30 backdrop-blur-md flex flex-col items-center justify-center p-6 space-y-4 animate-in fade-in duration-200 ' + (isLight ? 'bg-white/95 text-slate-900' : 'bg-black/92 text-white')}>
+                  <div className="relative w-16 h-16 flex items-center justify-center">
+                    <div className={'absolute inset-0 rounded-full border-2 border-t-emerald-500 animate-spin ' + (isLight ? 'border-slate-200' : 'border-neutral-700/60')} />
+                    <div className="w-8 h-8 rounded-full bg-emerald-500/15 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                      <Activity size={16} className="animate-pulse" />
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Link href={activeSession.role === 'ADMIN' ? '/dashboard' : '/report'}>
-                    <button
-                      type="button"
-                      className={'px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1 ' +
-                        (isLight
-                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                          : 'bg-emerald-500/25 hover:bg-emerald-500/35 text-emerald-400 border border-emerald-500/50')}
-                    >
-                      Enter Grid <ArrowRight size={11} />
-                    </button>
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={handleSignOutActive}
-                    className={'p-1.5 rounded-lg transition-colors cursor-pointer ' +
-                      (isLight ? 'text-rose-600 hover:text-rose-800 hover:bg-rose-100' : 'text-rose-400 hover:text-rose-300 hover:bg-white/10')}
-                    title="Sign Out to switch operator"
-                  >
-                    <LogOut size={13} />
-                  </button>
-                </div>
-              </div>
-            )}
 
-            {/* Tactile Clearance Switcher Tabs */}
-            <div className={'grid grid-cols-2 gap-2 p-1.5 rounded-2xl border mb-5 ' +
-              (isLight
-                ? 'bg-slate-100/90 border-slate-200/90'
-                : 'bg-black/60 border-white/10')}>
-              <button
-                type="button"
-                onClick={() => handleRoleSwitch('admin')}
-                className={'group relative flex flex-col items-center justify-center py-3 px-3 rounded-xl font-display text-xs font-semibold transition-all duration-200 cursor-pointer overflow-hidden ' +
-                  (role === 'admin'
-                    ? (isLight
-                        ? 'bg-white text-slate-900 border border-emerald-500/50 shadow-[0_2px_12px_rgba(16,185,129,0.18)]'
-                        : 'bg-emerald-500/15 text-white border border-emerald-500/50 shadow-[0_0_20px_rgba(0,245,155,0.25)]')
-                    : (isLight
-                        ? 'text-slate-600 hover:text-slate-900 hover:bg-white/60 border border-transparent'
-                        : 'text-zinc-400 hover:text-white hover:bg-white/[0.04] border border-transparent'))}
-              >
-                <div className="flex items-center gap-2">
-                  <Shield size={15} className={role === 'admin' ? (isLight ? 'text-emerald-600' : 'text-emerald-400') : (isLight ? 'text-slate-400' : 'text-zinc-500')} />
-                  <span className="font-bold tracking-wide">Admin Command</span>
-                </div>
-                <span className={'text-[9px] font-mono mt-0.5 ' + (role === 'admin' ? (isLight ? 'text-emerald-700' : 'text-emerald-400') : (isLight ? 'text-slate-500' : 'text-zinc-500'))}>
-                  Municipal Operator
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleRoleSwitch('user')}
-                className={'group relative flex flex-col items-center justify-center py-3 px-3 rounded-xl font-display text-xs font-semibold transition-all duration-200 cursor-pointer overflow-hidden ' +
-                  (role === 'user'
-                    ? (isLight
-                        ? 'bg-white text-slate-900 border border-cyan-500/50 shadow-[0_2px_12px_rgba(6,182,212,0.18)]'
-                        : 'bg-cyan-500/15 text-white border border-cyan-500/50 shadow-[0_0_20px_rgba(0,229,255,0.25)]')
-                    : (isLight
-                        ? 'text-slate-600 hover:text-slate-900 hover:bg-white/60 border border-transparent'
-                        : 'text-zinc-400 hover:text-white hover:bg-white/[0.04] border border-transparent'))}
-              >
-                <div className="flex items-center gap-2">
-                  <UserCheck size={15} className={role === 'user' ? (isLight ? 'text-cyan-600' : 'text-cyan-400') : (isLight ? 'text-slate-400' : 'text-zinc-500')} />
-                  <span className="font-bold tracking-wide">Citizen Portal</span>
-                </div>
-                <span className={'text-[9px] font-mono mt-0.5 ' + (role === 'user' ? (isLight ? 'text-cyan-700' : 'text-cyan-400') : (isLight ? 'text-slate-500' : 'text-zinc-500'))}>
-                  Public Safety Desk
-                </span>
-              </button>
-            </div>
-
-            {/* Auth Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className={'text-[11px] font-mono uppercase tracking-wider font-semibold flex items-center justify-between ' + (isLight ? 'text-slate-700' : 'text-zinc-300')}>
-                  <span>{role === 'admin' ? 'Operator Identifier' : 'Citizen Identifier'}</span>
-                  <span className={'text-[9px] font-normal ' + (isLight ? 'text-emerald-700 font-semibold' : 'text-emerald-400')}>REQUIRED</span>
-                </label>
-                <div className="relative group">
-                  <div className={'absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors pointer-events-none ' +
-                    (isLight ? 'text-slate-400 group-focus-within:text-emerald-600' : 'text-zinc-500 group-focus-within:text-emerald-400')}>
-                    {role === 'admin' ? <Shield size={14} /> : <UserCheck size={14} />}
+                  <div className="text-center space-y-1.5 max-w-xs">
+                    <p className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-semibold tracking-wide flex items-center justify-center gap-1.5">
+                      <Radio size={13} className="animate-pulse" />
+                      {verificationStep === 1 && 'Authenticating clearance…'}
+                      {verificationStep === 2 && 'Syncing security keys…'}
+                    </p>
+                    <div className={'w-40 h-1 rounded-full overflow-hidden mx-auto ' + (isLight ? 'bg-slate-200' : 'bg-neutral-800')}>
+                      <div
+                        className="h-full bg-emerald-500 transition-all duration-700 rounded-full"
+                        style={{ width: verificationStep === 1 ? '50%' : '92%' }}
+                      />
+                    </div>
                   </div>
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder={role === 'admin' ? 'e.g. operator.krishnan' : 'e.g. citizen.user'}
-                    className={'w-full h-11 pl-10 pr-4 rounded-xl border text-xs font-mono transition-all outline-none ' +
-                      (isLight
-                        ? 'bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 shadow-sm'
-                        : 'bg-black/60 border-white/10 text-white placeholder:text-zinc-500 focus:border-emerald-500/80 focus:ring-2 focus:ring-emerald-500/20 shadow-inner')}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className={'text-[11px] font-mono uppercase tracking-wider font-semibold flex items-center justify-between ' + (isLight ? 'text-slate-700' : 'text-zinc-300')}>
-                  <span>Security Passcode</span>
-                  <span className={'text-[9px] font-normal ' + (isLight ? 'text-emerald-700 font-semibold' : 'text-emerald-400')}>ENCRYPTED</span>
-                </label>
-                <div className="relative group">
-                  <div className={'absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors pointer-events-none ' +
-                    (isLight ? 'text-slate-400 group-focus-within:text-emerald-600' : 'text-zinc-500 group-focus-within:text-emerald-400')}>
-                    <Lock size={14} />
-                  </div>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className={'w-full h-11 pl-10 pr-11 rounded-xl border text-xs font-mono tracking-widest transition-all outline-none ' +
-                      (isLight
-                        ? 'bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 shadow-sm'
-                        : 'bg-black/60 border-white/10 text-white placeholder:text-zinc-500 focus:border-emerald-500/80 focus:ring-2 focus:ring-emerald-500/20 shadow-inner')}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className={'absolute right-3 top-1/2 -translate-y-1/2 transition-colors p-1.5 rounded-lg cursor-pointer ' +
-                      (isLight ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-200/60' : 'text-zinc-400 hover:text-white hover:bg-white/10')}
-                    title={showPassword ? 'Hide passcode' : 'Show passcode'}
-                  >
-                    {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Clearance Hint */}
-              <div className={'px-1 text-[10px] font-mono flex items-center justify-between ' + (isLight ? 'text-slate-500' : 'text-zinc-400')}>
-                <span>{role === 'admin' ? 'Clearance: Level-4 Admin' : 'Access: Public Citizen Desk'}</span>
-                <span>admin123 / user123</span>
-              </div>
-
-              {errorMessage && (
-                <div className={'text-xs font-mono p-3 rounded-xl flex items-start gap-2 animate-in fade-in duration-150 border ' +
-                  (isLight ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-rose-500/10 border-rose-500/20 text-rose-400')}>
-                  <span className="font-bold shrink-0">!</span>
-                  <p className="leading-snug">{errorMessage}</p>
                 </div>
               )}
 
-              {/* Submit Action Button */}
-              <button
-                type="submit"
-                className={'group relative w-full h-12 rounded-xl font-display font-extrabold text-xs uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 mt-4 ' +
-                  (isLight
-                    ? 'bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-700 text-white shadow-[0_6px_24px_rgba(16,185,129,0.35)] hover:shadow-[0_8px_32px_rgba(16,185,129,0.5)] active:scale-[0.99]'
-                    : 'bg-gradient-to-r from-[#00f59b] via-[#00dc82] to-[#059669] text-black shadow-[0_0_28px_rgba(0,245,155,0.45)] hover:shadow-[0_0_38px_rgba(0,245,155,0.65)] hover:scale-[1.01] active:scale-[0.99] border border-emerald-200/50')}
-              >
-                <span>Authorize &amp; Launch {role === 'admin' ? 'Command Grid' : 'Citizen Portal'}</span>
-                <ArrowRight size={15} className="group-hover:translate-x-1.5 transition-transform duration-200" />
-              </button>
-            </form>
+              {/* Verified Success Confirmation */}
+              {verifiedSuccess && (
+                <div className={'absolute inset-0 z-30 backdrop-blur-md flex flex-col items-center justify-center p-6 space-y-3 animate-in fade-in zoom-in-95 duration-200 ' + (isLight ? 'bg-white/95 text-slate-900' : 'bg-black/92 text-white')}>
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-[0_0_24px_rgba(16,185,129,0.3)]">
+                    <CheckCircle2 size={32} />
+                  </div>
+                  <div className="text-center space-y-0.5">
+                    <p className="text-sm font-semibold">Access Granted</p>
+                    <p className="text-xs font-mono text-emerald-600 dark:text-emerald-400">
+                      Entering {role === 'admin' ? 'Command Center' : 'Citizen Portal'}…
+                    </p>
+                  </div>
+                </div>
+              )}
 
-            {/* Security Clearance Footer */}
-            <div className={'mt-6 pt-5 border-t flex items-center justify-between text-[10px] font-mono flex-wrap gap-2 ' +
-              (isLight ? 'border-slate-200 text-slate-500' : 'border-white/10 text-zinc-400')}>
-              <span className="flex items-center gap-1.5">
-                <Shield size={11} className={isLight ? 'text-emerald-600' : 'text-emerald-400'} /> TLS 1.3 // 256-Bit Encrypted
-              </span>
-              <span className="flex items-center gap-1">
-                <Sparkles size={11} className={isLight ? 'text-cyan-600' : 'text-cyan-400'} /> Nagar-Drishti v2.4 OS
-              </span>
+              {/* Active Session Notification */}
+              {activeSession && (
+                <div className={'mb-4 p-3 rounded-xl border flex items-center justify-between gap-2.5 text-xs font-mono animate-in fade-in duration-200 ' +
+                  (isLight
+                    ? 'bg-emerald-50/90 border-emerald-300 text-emerald-900'
+                    : 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400')}>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <ShieldCheck size={16} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <div className="truncate">
+                      <span className="font-semibold">{activeSession.name}</span>
+                      <span className={'text-[10px] ml-1.5 ' + (isLight ? 'text-slate-600' : 'text-zinc-400')}>
+                        ({activeSession.role})
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Link href={activeSession.role === 'ADMIN' ? '/dashboard' : '/report'}>
+                      <button
+                        type="button"
+                        className={'px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-colors cursor-pointer flex items-center gap-1 ' +
+                          (isLight
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                            : 'bg-emerald-500/25 hover:bg-emerald-500/35 text-emerald-400 border border-emerald-500/40')}
+                      >
+                        Enter Grid <ArrowRight size={10} />
+                      </button>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handleSignOutActive}
+                      className={'p-1 rounded-lg transition-colors cursor-pointer ' +
+                        (isLight ? 'text-rose-600 hover:bg-rose-100' : 'text-rose-400 hover:bg-white/10')}
+                      title="Sign Out"
+                    >
+                      <LogOut size={12} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Tactile Segmented Clearance Switcher with Animated Spring Indicator */}
+              <div className={'relative p-1 rounded-xl border mb-5 flex items-center gap-1 ' +
+                (isLight
+                  ? 'bg-slate-100/90 border-slate-200/90'
+                  : 'bg-white/[0.04] border-white/[0.08]')}>
+                <button
+                  type="button"
+                  onClick={() => handleRoleSwitch('admin')}
+                  className={'relative flex-1 py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer z-10 ' +
+                    (role === 'admin'
+                      ? (isLight ? 'text-slate-900 font-semibold' : 'text-emerald-400 font-semibold')
+                      : (isLight ? 'text-slate-600 hover:text-slate-900' : 'text-zinc-400 hover:text-zinc-200'))}
+                >
+                  {role === 'admin' && (
+                    <motion.div
+                      layoutId="roleActivePill"
+                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                      className={'absolute inset-0 rounded-lg ' +
+                        (isLight
+                          ? 'bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-slate-200/80'
+                          : 'bg-emerald-500/15 border border-emerald-500/35 shadow-[0_0_18px_rgba(0,245,155,0.2)]')}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center gap-2">
+                    <Shield size={13} className={role === 'admin' ? (isLight ? 'text-emerald-600' : 'text-emerald-400') : 'text-zinc-500'} />
+                    <span>Admin Command</span>
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleRoleSwitch('user')}
+                  className={'relative flex-1 py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer z-10 ' +
+                    (role === 'user'
+                      ? (isLight ? 'text-slate-900 font-semibold' : 'text-emerald-400 font-semibold')
+                      : (isLight ? 'text-slate-600 hover:text-slate-900' : 'text-zinc-400 hover:text-zinc-200'))}
+                >
+                  {role === 'user' && (
+                    <motion.div
+                      layoutId="roleActivePill"
+                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                      className={'absolute inset-0 rounded-lg ' +
+                        (isLight
+                          ? 'bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-slate-200/80'
+                          : 'bg-emerald-500/15 border border-emerald-500/35 shadow-[0_0_18px_rgba(0,245,155,0.2)]')}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center gap-2">
+                    <UserCheck size={13} className={role === 'user' ? (isLight ? 'text-emerald-600' : 'text-emerald-400') : 'text-zinc-500'} />
+                    <span>Citizen Portal</span>
+                  </span>
+                </button>
+              </div>
+
+              {/* Auth Form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className={'text-[11px] font-medium tracking-wide block ' + (isLight ? 'text-slate-700' : 'text-zinc-300')}>
+                    {role === 'admin' ? 'Operator Identifier' : 'Citizen Identifier'}
+                  </label>
+                  <div className="relative group">
+                    <div className={'absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors pointer-events-none ' +
+                      (isLight ? 'text-slate-400 group-focus-within:text-emerald-600' : 'text-zinc-500 group-focus-within:text-emerald-400')}>
+                      {role === 'admin' ? <Shield size={14} /> : <UserCheck size={14} />}
+                    </div>
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder={role === 'admin' ? 'operator.krishnan' : 'citizen.user'}
+                      className={'w-full h-11 pl-10 pr-4 rounded-xl border text-xs font-sans transition-all outline-none ' +
+                        (isLight
+                          ? 'bg-slate-50/80 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:shadow-[0_0_16px_rgba(16,185,129,0.12)]'
+                          : 'bg-white/[0.03] border-white/[0.08] text-white placeholder:text-zinc-500 focus:bg-white/[0.06] focus:border-emerald-500/80 focus:ring-2 focus:ring-emerald-500/20 focus:shadow-[0_0_20px_rgba(0,245,155,0.15)]')}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className={'text-[11px] font-medium tracking-wide block ' + (isLight ? 'text-slate-700' : 'text-zinc-300')}>
+                    Security Passcode
+                  </label>
+                  <div className="relative group">
+                    <div className={'absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors pointer-events-none ' +
+                      (isLight ? 'text-slate-400 group-focus-within:text-emerald-600' : 'text-zinc-500 group-focus-within:text-emerald-400')}>
+                      <Lock size={14} />
+                    </div>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className={'w-full h-11 pl-10 pr-11 rounded-xl border text-xs font-sans tracking-widest transition-all outline-none ' +
+                        (isLight
+                          ? 'bg-slate-50/80 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:shadow-[0_0_16px_rgba(16,185,129,0.12)]'
+                          : 'bg-white/[0.03] border-white/[0.08] text-white placeholder:text-zinc-500 focus:bg-white/[0.06] focus:border-emerald-500/80 focus:ring-2 focus:ring-emerald-500/20 focus:shadow-[0_0_20px_rgba(0,245,155,0.15)]')}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className={'absolute right-3 top-1/2 -translate-y-1/2 transition-colors p-1.5 rounded-lg cursor-pointer ' +
+                        (isLight ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-200/60' : 'text-zinc-400 hover:text-white hover:bg-white/10')}
+                      title={showPassword ? 'Hide passcode' : 'Show passcode'}
+                    >
+                      {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
+                </div>
+
+                {errorMessage && (
+                  <div className={'text-xs p-3 rounded-xl flex items-start gap-2 animate-in fade-in duration-150 border ' +
+                    (isLight ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-rose-500/10 border-rose-500/20 text-rose-400')}>
+                    <span className="font-bold shrink-0">!</span>
+                    <p className="leading-snug">{errorMessage}</p>
+                  </div>
+                )}
+
+                {/* Elevated Action Button with Shimmer Sweep and Tactile Feedback */}
+                <button
+                  type="submit"
+                  className={'group relative w-full h-11.5 rounded-xl font-semibold text-xs tracking-wide flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 mt-5 overflow-hidden ' +
+                    (isLight
+                      ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white shadow-[0_8px_20px_rgba(16,185,129,0.3)] hover:shadow-[0_12px_28px_rgba(16,185,129,0.45)] hover:scale-[1.012] active:scale-[0.985]'
+                      : 'bg-gradient-to-r from-[#00f59b] via-[#00dc82] to-[#00f59b] text-black shadow-[0_0_28px_rgba(0,245,155,0.38),0_2px_8px_rgba(0,0,0,0.5)] hover:shadow-[0_0_38px_rgba(0,245,155,0.6),0_4px_12px_rgba(0,0,0,0.6)] hover:scale-[1.012] active:scale-[0.985]')}
+                >
+                  {/* Shimmer Light Sweep */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
+
+                  {/* Pulsing micro status dot */}
+                  <span className={'w-1.5 h-1.5 rounded-full shrink-0 animate-pulse ' + (isLight ? 'bg-white/90' : 'bg-black/75')} />
+
+                  <span className="relative z-10">Authorize &amp; Enter {role === 'admin' ? 'Command Grid' : 'Citizen Portal'}</span>
+
+                  {/* Micro Arrow Icon Container */}
+                  <span className={'w-5 h-5 rounded-md flex items-center justify-center transition-transform group-hover:translate-x-1 ' +
+                    (isLight ? 'bg-white/20 text-white' : 'bg-black/15 text-black')}>
+                    <ArrowRight size={12} />
+                  </span>
+                </button>
+              </form>
+
+              {/* Security Clearance Footer */}
+              <div className={'mt-5 pt-3.5 border-t flex items-center justify-between text-[10px] font-mono ' +
+                (isLight ? 'border-slate-100 text-slate-400' : 'border-white/[0.06] text-zinc-500')}>
+                <span className="flex items-center gap-1.5">
+                  <Shield size={11} className={isLight ? 'text-emerald-600' : 'text-emerald-400'} /> Encrypted Session
+                </span>
+                <span className="flex items-center gap-1">
+                  <Sparkles size={11} className={isLight ? 'text-teal-600' : 'text-teal-400'} /> NagarDrishti OS
+                </span>
+              </div>
             </div>
           </div>
         </motion.div>
