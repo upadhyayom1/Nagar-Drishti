@@ -171,7 +171,7 @@ export default function PlateDetectionPage() {
             >
               {cameras.map((camera) => (
                 <option key={camera.id} value={camera.id} className="bg-[var(--bg-elevated)] text-[var(--text-primary)]">
-                  {camera.cameraCode} · {camera.name}
+                  {camera.name}
                 </option>
               ))}
             </select>

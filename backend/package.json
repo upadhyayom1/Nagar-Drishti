@@ -37,10 +37,11 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
     "pg": "^8.23.0",
+    "redis": "^5.12.1",
     "ws": "^8.21.3",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "prisma": "^7.9.1"
+    "prisma": "^7.10.0"
   }
 }

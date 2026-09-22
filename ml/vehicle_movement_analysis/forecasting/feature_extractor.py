@@ -97,11 +97,17 @@ def build_supervised_features(target_horizon_mins: int = 30):
 
     steps_ahead = max(1, int(np.ceil(target_horizon_mins / freq)))
     df["target_future_count"] = grouped["vehicle_count"].shift(-steps_ahead)
+    
+    df["target_ratio"] = (df["target_future_count"] + 1) / (df["vehicle_count"] + 1)
+    df["lag_1_ratio"] = (df["lag_1"] + 1) / (df["vehicle_count"] + 1)
+    df["lag_2_ratio"] = (df["lag_2"] + 1) / (df["vehicle_count"] + 1)
+    df["rolling_mean_4_ratio"] = (df["rolling_mean_4"] + 1) / (df["vehicle_count"] + 1)
+
     df["target_time"] = df["time_bin"] + pd.to_timedelta(target_horizon_mins, unit="m")
     df["horizon_parameter_mins"] = target_horizon_mins
     df["hour_of_day"] = df["time_bin"].dt.hour
     df["day_of_week"] = df["time_bin"].dt.dayofweek
 
     return df.dropna(
-        subset=["vehicle_count", "lag_1", "lag_2", "rolling_mean_4", "target_future_count"]
+        subset=["vehicle_count", "lag_1_ratio", "lag_2_ratio", "rolling_mean_4_ratio", "target_ratio"]
     ).reset_index(drop=True)

@@ -35,20 +35,30 @@ exports.getOverview = async (req, res) => {
       }),
     ]);
 
-    // This is deliberately a normalized observation index, not a physical road-capacity claim.
+    // This is a normalized observation index based on detection volume vs practical capacity.
     const durationHours = Math.max((window.to - window.from) / 3600000, 1 / 60);
-    const hourlyUniqueVehicleRate = (uniqueVehicleRows.length * 60) / (durationHours * 60);
-    const congestionIndex = Math.min(100, Math.round((hourlyUniqueVehicleRate / Math.max(activeCameras, 1)) * 10));
+    const avgDetectionsPerHourPerCamera = totalDetectionsCount / durationHours / Math.max(activeCameras, 1);
+    // 240 detections per hour (4 per min per camera) is considered highly congested (100%)
+    const congestionIndex = Math.min(100, Math.round((avgDetectionsPerHourPerCamera / 240) * 100));
 
     const engine = global.simulationEngine;
     const running = Boolean(engine?.running);
-    const activeVehiclesCount = running ? engine.vehicles.filter(v => v.state !== 'RESTING').length : 0;
+    let activeVehiclesCount = 0;
+    let liveAvgSpeed = null;
+    
+    if (running && engine.vehicles) {
+      const activeVehicles = engine.vehicles.filter(v => v.state !== 'RESTING' && v.speed > 0);
+      activeVehiclesCount = engine.vehicles.filter(v => v.state !== 'RESTING').length;
+      if (activeVehicles.length > 0) {
+        liveAvgSpeed = activeVehicles.reduce((sum, v) => sum + v.speed, 0) / activeVehicles.length;
+      }
+    }
 
     res.status(200).json({
       totalVehiclesToday: uniqueVehicleRows.length,
       activeVehicles: activeVehiclesCount,
       detectionCount: totalDetectionsCount,
-      avgSpeed: round(speedStats._avg.averageSpeed),
+      avgSpeed: round(speedStats._avg.averageSpeed || liveAvgSpeed),
       activeCameras,
       activeAlerts,
       congestionIndex,
@@ -145,6 +155,7 @@ exports.getBusiestRoads = async (req, res) => {
              AVG(CASE WHEN v."speed" > 0 THEN v."speed" END) AS "avgSpeed"
       FROM "Detection" d
       INNER JOIN "Camera" c ON c.id = d."cameraId"
+      INNER JOIN "Vehicle" v ON v.id = d."vehicleId"
       WHERE d."timestamp" >= $1 AND d."timestamp" <= $2
         AND c."roadId" IS NOT NULL
       GROUP BY c."roadId"

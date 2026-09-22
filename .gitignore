@@ -63,3 +63,4 @@ ml/test_image_anpr.py
 ml/test_results.csv
 ml/test_results.json
 
+!frontend/lib/

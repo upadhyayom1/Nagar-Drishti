@@ -135,7 +135,7 @@ export default function BlacklistPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => refetch()}
-            className="p-2.5 rounded-xl bg-[var(--glass-surface)] border border-[var(--glass-border)] text-[var(--text-secondary)] hover:text-cyan-400 hover:border-cyan-400/40 transition-all cursor-pointer"
+            className="p-2.5 rounded-xl bg-[var(--glass-surface)] border border-[var(--glass-border)] text-[var(--text-secondary)] hover:text-cyan-600 dark:text-cyan-400 hover:border-cyan-400/40 transition-all cursor-pointer"
             title="Refresh Watchlist Grid"
           >
             <RefreshCw size={16} className={isFetching ? 'animate-spin' : ''} />
@@ -166,10 +166,7 @@ export default function BlacklistPage() {
             note: `${criticalCount} Critical Priority Flags`,
             icon: ShieldAlert,
             colorTheme: 'rose',
-            bars: {
-              label: 'Watchlist Match Activity (Past 12h)',
-              rightText: 'Continuous Neural OCR',
-            },
+            visual: 'none',
           },
           {
             category: 'CRITICAL THREATS',
@@ -181,8 +178,6 @@ export default function BlacklistPage() {
             visual: 'action-link',
             visualMeta: {
               subNote: 'High-priority law enforcement',
-              actionLabel: 'Filter Critical',
-              actionHref: '#filter-critical',
             },
           },
           {
@@ -265,7 +260,7 @@ export default function BlacklistPage() {
                   padding="none"
                   glow={isCritical ? 'rose' : isHigh ? 'amber' : 'violet'}
                   accent={isCritical ? 'rose' : isHigh ? 'amber' : 'violet'}
-                  className="p-5 flex flex-col gap-5 border-white/5"
+                  className="p-5 flex flex-col gap-5 border-[var(--glass-border)]"
                 >
                   {/* Header Section */}
                   <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
@@ -275,11 +270,13 @@ export default function BlacklistPage() {
                       </div>
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-3 flex-wrap">
-                          <span className="text-xl font-bold font-mono text-white tracking-wider">{vehicle.plateNumber}</span>
+                          <Link href={`/vehicles/${vehicle.plateNumber}`} className="text-xl font-bold font-mono text-[var(--text-primary)] hover:text-cyan-400 transition-colors tracking-wider">
+                            {vehicle.plateNumber}
+                          </Link>
                           <Badge variant={isCritical ? 'danger' : isHigh ? 'warning' : 'info'} size="sm">
                             ● {vehicle.severity} THREAT
                           </Badge>
-                          <Badge variant="default" size="sm" className="border-white/10 text-[var(--text-secondary)] bg-white/5">
+                          <Badge variant="default" size="sm" className="border-[var(--glass-border)] text-[var(--text-secondary)] bg-[var(--bg-surface-hover)]">
                             {vehicle.vehicleIntelligence.vehicleType}
                           </Badge>
                         </div>
@@ -290,10 +287,12 @@ export default function BlacklistPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
-                      <Button variant="secondary" size="sm" className="gap-2 rounded-full border-white/10 bg-white/5 hover:bg-white/10 text-[var(--text-secondary)] font-mono text-[11px] h-8 cursor-pointer">
-                        <Navigation size={12} /> Track Trajectory
-                      </Button>
-                      <Link href={`/vehicles/${vehicle.plateNumber}`} className="text-[11px] font-mono text-[var(--text-secondary)] hover:text-white flex items-center gap-1.5 transition-colors">
+                      <Link href={`/vehicles/${vehicle.plateNumber}/trajectory`}>
+                        <Button variant="secondary" size="sm" className="gap-2 rounded-full border-[var(--glass-border)] bg-[var(--bg-surface-hover)] hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-mono text-[11px] h-8 cursor-pointer">
+                          <Navigation size={12} /> Track Trajectory
+                        </Button>
+                      </Link>
+                      <Link href={`/vehicles/${vehicle.plateNumber}`} className="text-[11px] font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1.5 transition-colors">
                         <ExternalLink size={12} /> Full Profile
                       </Link>
                     </div>
@@ -302,92 +301,109 @@ export default function BlacklistPage() {
                   {/* Main Panels */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {/* Left Panel: Last Sighted Location */}
-                    <div className="rounded-2xl bg-[#0B0F19]/60 border border-white/5 p-5 flex flex-col justify-between relative overflow-hidden">
+                    <div className="rounded-2xl bg-[var(--bg-elevated-2)] border border-[var(--glass-border)] p-5 flex flex-col justify-between relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 blur-2xl rounded-full translate-x-1/2 -translate-y-1/2" />
                       <div className="relative z-10">
                         <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-2 text-cyan-400 text-[10px] font-bold tracking-wider font-mono">
+                          <div className="flex items-center gap-2 text-cyan-600 dark:text-cyan-400 text-[10px] font-bold tracking-wider font-mono">
                             <MapPin size={12} /> LAST SIGHTED LOCATION
                           </div>
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
                             {vehicle.lastSighting?.cameraCode || vehicle.lastSighting?.cameraId || 'UNKNOWN'}
                           </span>
                         </div>
-                        <h3 className="text-lg font-bold text-white mb-1 font-display tracking-tight">{vehicle.lastSighting?.cameraName || 'Unknown Location'}</h3>
+                        {vehicle.lastSighting?.cameraId ? (
+                          <Link href={`/cameras/${vehicle.lastSighting.cameraId}`} className="inline-block hover:text-cyan-400 transition-colors">
+                            <h3 className="text-lg font-bold text-[var(--text-primary)] hover:text-cyan-400 mb-1 font-display tracking-tight transition-colors">{vehicle.lastSighting?.cameraName || 'Unknown Location'}</h3>
+                          </Link>
+                        ) : (
+                          <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1 font-display tracking-tight">{vehicle.lastSighting?.cameraName || 'Unknown Location'}</h3>
+                        )}
                         <p className="text-[11px] text-[var(--text-secondary)] font-mono">Sector: {vehicle.lastSighting?.zone || 'Unknown'} • {vehicle.lastSighting?.road || 'Unknown'}</p>
-                        
-                        <div className="mt-5 p-3 rounded-xl bg-black/40 border border-white/5 grid grid-cols-3 gap-4">
+
+                        <div className="mt-5 p-3 rounded-xl bg-[var(--bg-void)] border border-[var(--glass-border)] grid grid-cols-3 gap-4">
                           <div>
                             <span className="block text-[9px] text-[var(--text-tertiary)] font-bold mb-1 uppercase tracking-wider font-mono">Time</span>
-                            <span className="text-xs font-mono text-white font-bold">{vehicle.lastSighting ? formatTime(vehicle.lastSighting.timestamp) : '--:--:--'}</span>
+                            <span className="text-xs font-mono text-[var(--text-primary)] font-bold">{vehicle.lastSighting ? formatTime(vehicle.lastSighting.timestamp) : '--:--:--'}</span>
                           </div>
                           <div>
                             <span className="block text-[9px] text-[var(--text-tertiary)] font-bold mb-1 uppercase tracking-wider font-mono">Velocity</span>
-                            <span className="text-xs font-mono text-cyan-400 font-bold">{vehicle.lastSighting?.speed || '--'} km/h</span>
+                            <span className="text-xs font-mono text-cyan-600 dark:text-cyan-400 font-bold">{vehicle.lastSighting?.speed || '--'} km/h</span>
                           </div>
                           <div>
                             <span className="block text-[9px] text-[var(--text-tertiary)] font-bold mb-1 uppercase tracking-wider font-mono">Heading</span>
-                            <span className="text-xs font-mono text-violet-400 font-bold uppercase">{vehicle.lastSighting?.direction || 'UNKNOWN'}</span>
+                            <span className="text-xs font-mono text-violet-600 dark:text-violet-400 font-bold uppercase">{vehicle.lastSighting?.direction || 'UNKNOWN'}</span>
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="mt-4 relative z-10">
-                        <button className="text-[11px] font-mono text-cyan-400 hover:text-cyan-300 flex items-center gap-1.5 transition-colors cursor-pointer">
-                          <Camera size={12} /> Open Optical Feed ({vehicle.lastSighting?.cameraCode || vehicle.lastSighting?.cameraId || 'CAM'}) →
-                        </button>
+                        {vehicle.lastSighting?.cameraId ? (
+                          <Link href={`/cameras/${vehicle.lastSighting.cameraId}`} className="inline-flex text-[11px] font-mono text-cyan-600 dark:text-cyan-400 hover:text-cyan-300 items-center gap-1.5 transition-colors">
+                            <Camera size={12} /> Open Optical Feed ({vehicle.lastSighting.cameraCode || vehicle.lastSighting.cameraId}) →
+                          </Link>
+                        ) : (
+                          <button disabled className="text-[11px] font-mono text-[var(--text-tertiary)] flex items-center gap-1.5 opacity-50 cursor-not-allowed">
+                            <Camera size={12} /> Optical Feed Unavailable
+                          </button>
+                        )}
                       </div>
                     </div>
 
                     {/* Right Panel: Next Probable Camera Location */}
-                    <div className="rounded-2xl bg-[#0B0F19]/60 border border-white/5 p-5 flex flex-col justify-between relative overflow-hidden">
+                    <div className="rounded-2xl bg-[var(--bg-elevated-2)] border border-[var(--glass-border)] p-5 flex flex-col justify-between relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/5 blur-2xl rounded-full translate-x-1/2 -translate-y-1/2" />
                       <div className="relative z-10 h-full flex flex-col justify-between">
                         {vehicle.nextProbableCamera ? (
                           <>
                             <div>
                               <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center gap-2 text-violet-400 text-[10px] font-bold tracking-wider font-mono">
+                                <div className="flex items-center gap-2 text-violet-600 dark:text-violet-400 text-[10px] font-bold tracking-wider font-mono">
                                   <Sparkles size={12} /> NEXT PROBABLE CAMERA LOCATION
                                 </div>
-                                <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-violet-500/10 text-violet-400 border border-violet-500/20">
-                                  ML Sentry
-                                </span>
                               </div>
-                              <h3 className="text-lg font-bold text-white mb-1 font-display tracking-tight">
-                                {vehicle.nextProbableCamera.cameraName} <span className="text-[var(--text-secondary)] font-normal text-sm">({vehicle.nextProbableCamera.cameraCode || vehicle.nextProbableCamera.cameraId})</span>
-                              </h3>
+                              <Link href={`/cameras/${vehicle.nextProbableCamera.cameraId}`} className="inline-block group">
+                                <h3 className="text-lg font-bold text-[var(--text-primary)] group-hover:text-violet-400 transition-colors mb-1 font-display tracking-tight">
+                                  {vehicle.nextProbableCamera.cameraName} <span className="text-[var(--text-secondary)] font-normal text-sm group-hover:text-violet-300 transition-colors">({vehicle.nextProbableCamera.cameraCode || vehicle.nextProbableCamera.cameraId})</span>
+                                </h3>
+                              </Link>
                               <p className="text-[11px] text-[var(--text-secondary)] font-mono">Sector: {vehicle.nextProbableCamera.zone || 'Unknown'} • {vehicle.nextProbableCamera.road || 'Unknown'}</p>
-                              
+
                               <div className="mt-5 grid grid-cols-2 gap-4">
                                 <div>
                                   <span className="block text-[9px] text-[var(--text-tertiary)] font-bold mb-1 uppercase tracking-wider font-mono">Estimated Arrival</span>
-                                  <span className="text-xs font-mono text-emerald-400 font-bold">~{vehicle.nextProbableCamera.etaMinutes || (vehicle.nextProbableCamera as any).estimatedTimeMins || '--'} min</span>
+                                  <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold">~{vehicle.nextProbableCamera.etaMinutes || (vehicle.nextProbableCamera as any).estimatedTimeMins || '--'} min</span>
                                 </div>
                                 <div>
                                   <span className="block text-[9px] text-[var(--text-tertiary)] font-bold mb-1 uppercase tracking-wider font-mono">Confidence</span>
-                                  <span className="text-xs font-mono text-white font-bold">{vehicle.nextProbableCamera.confidence || (vehicle.nextProbableCamera.probability > 0.7 ? 'HIGH' : vehicle.nextProbableCamera.probability > 0.4 ? 'MEDIUM' : 'LOW')}</span>
+                                  <span className="text-xs font-mono text-[var(--text-primary)] font-bold">{vehicle.nextProbableCamera.confidence || (vehicle.nextProbableCamera.probability > 0.7 ? 'HIGH' : vehicle.nextProbableCamera.probability > 0.4 ? 'MEDIUM' : 'LOW')}</span>
                                 </div>
                               </div>
 
                               <div className="mt-4 space-y-2">
                                 <div className="flex items-center justify-between text-[9px] font-mono uppercase tracking-wider text-[var(--text-secondary)]">
                                   <span>Transition Probability</span>
-                                  <span className="text-white font-bold">{Math.round(vehicle.nextProbableCamera.probability * 100)}%</span>
+                                  <span className="text-[var(--text-primary)] font-bold">{Math.round(vehicle.nextProbableCamera.probability * 100)}%</span>
                                 </div>
-                                <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
-                                  <div 
+                                <div className="h-1.5 rounded-full bg-[var(--bg-surface-hover)] overflow-hidden">
+                                  <div
                                     className="h-full rounded-full bg-gradient-to-r from-violet-500 to-cyan-400"
                                     style={{ width: `${Math.round(vehicle.nextProbableCamera.probability * 100)}%` }}
                                   />
                                 </div>
                               </div>
                             </div>
-                            
+
                             <div className="mt-4 space-y-2">
-                              <button className="text-[11px] font-mono text-[var(--text-secondary)] hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer">
-                                <Camera size={12} /> Open predicted camera feed ({vehicle.nextProbableCamera.cameraCode || vehicle.nextProbableCamera.cameraId}) →
-                              </button>
+                              {vehicle.nextProbableCamera.cameraId ? (
+                                <Link href={`/cameras/${vehicle.nextProbableCamera.cameraId}`} className="inline-flex text-[11px] font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] items-center gap-1.5 transition-colors">
+                                  <Camera size={12} /> Open predicted camera feed ({vehicle.nextProbableCamera.cameraCode || vehicle.nextProbableCamera.cameraId}) →
+                                </Link>
+                              ) : (
+                                <button disabled className="text-[11px] font-mono text-[var(--text-tertiary)] flex items-center gap-1.5 opacity-50 cursor-not-allowed">
+                                  <Camera size={12} /> Predicted feed unavailable
+                                </button>
+                              )}
                               {vehicle.nextProbableCamera.alternativeCameras && vehicle.nextProbableCamera.alternativeCameras.length > 0 && (
                                 <p className="text-[10px] font-mono text-[var(--text-tertiary)] truncate">
                                   Alternatives: {vehicle.nextProbableCamera.alternativeCameras.map((c: any) => `${c.cameraCode || c.cameraId} (${Math.round(c.probability * 100)}%)`).join(' • ')}
@@ -405,18 +421,18 @@ export default function BlacklistPage() {
                   </div>
 
                   {/* Footer Section */}
-                  <div className="flex flex-col sm:flex-row items-center justify-between pt-1 mt-1 border-t border-white/5 gap-4">
+                  <div className="flex flex-col sm:flex-row items-center justify-between pt-1 mt-1 border-t border-[var(--glass-border)] gap-4">
                     <div className="flex items-center gap-4 sm:gap-6 text-[10px] font-mono text-[var(--text-secondary)] flex-wrap">
-                      <span>Detections: <span className="text-white font-bold">{vehicle.vehicleIntelligence.totalDetections}</span></span>
-                      <span>Cameras Visited: <span className="text-cyan-400 font-bold">{vehicle.vehicleIntelligence.camerasVisited}</span></span>
-                      <span>First Sighted: <span className="text-white font-bold">{formatDateTime(vehicle.vehicleIntelligence.firstSeen)}</span></span>
-                      <span>Avg Speed: <span className="text-emerald-400 font-bold">{vehicle.vehicleIntelligence.averageSpeed ? `${Math.round(vehicle.vehicleIntelligence.averageSpeed)} km/h` : '--'}</span></span>
+                      <span>Detections: <span className="text-[var(--text-primary)] font-bold">{vehicle.vehicleIntelligence.totalDetections}</span></span>
+                      <span>Cameras Visited: <span className="text-cyan-600 dark:text-cyan-400 font-bold">{vehicle.vehicleIntelligence.camerasVisited}</span></span>
+                      <span>First Sighted: <span className="text-[var(--text-primary)] font-bold">{formatDateTime(vehicle.vehicleIntelligence.firstSeen)}</span></span>
+                      <span>Avg Speed: <span className="text-emerald-600 dark:text-emerald-400 font-bold">{vehicle.vehicleIntelligence.averageSpeed ? `${Math.round(vehicle.vehicleIntelligence.averageSpeed)} km/h` : '--'}</span></span>
                     </div>
-                    
+
                     <button
                       onClick={() => deactivateMutation.mutate(vehicle.id)}
                       disabled={deactivateMutation.isPending}
-                      className="text-[11px] font-mono text-rose-500 hover:text-rose-400 flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+                      className="text-[11px] font-mono text-rose-500 hover:text-[var(--text-primary)] bg-rose-500/10 hover:bg-rose-500/30 border border-rose-500/30 hover:border-rose-500/50 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
                     >
                       <Trash2 size={12} /> Deactivate Watchlist Flag
                     </button>
@@ -497,8 +513,8 @@ export default function BlacklistPage() {
                             ? sev === 'CRITICAL'
                               ? 'bg-rose-500/20 text-rose-300 border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.3)]'
                               : sev === 'HIGH'
-                              ? 'bg-amber-500/20 text-amber-300 border-amber-500 shadow-[0_0_15px_rgba(251,191,36,0.3)]'
-                              : 'bg-cyan-500/20 text-cyan-300 border-cyan-500'
+                                ? 'bg-amber-500/20 text-amber-300 border-amber-500 shadow-[0_0_15px_rgba(251,191,36,0.3)]'
+                                : 'bg-cyan-500/20 text-cyan-300 border-cyan-500'
                             : 'bg-white/[0.04] text-[var(--text-secondary)] border-[var(--glass-border)] hover:text-[var(--text-primary)]',
                         )}
                       >

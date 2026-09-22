@@ -34,15 +34,22 @@ export function formatRelativeTime(dateString?: string | null): string {
   if (!dateString) return 'just now';
   const d = new Date(dateString);
   if (isNaN(d.getTime())) return 'just now';
-  const diffMs = Date.now() - d.getTime();
-  const diffSec = Math.floor(diffMs / 1000);
-  if (diffSec < 45) return 'just now';
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin} min ago`;
+  
+  const now = Date.now();
+  const diffMs = now - d.getTime();
+  const isFuture = diffMs < 0;
+  const absDiffSec = Math.floor(Math.abs(diffMs) / 1000);
+  
+  if (absDiffSec < 45) return 'just now';
+  
+  const diffMin = Math.floor(absDiffSec / 60);
+  if (diffMin < 60) return isFuture ? `in ${diffMin} min` : `${diffMin} min ago`;
+  
   const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
+  if (diffHr < 24) return isFuture ? `in ${diffHr}h` : `${diffHr}h ago`;
+  
   const diffDays = Math.floor(diffHr / 24);
-  return `${diffDays}d ago`;
+  return isFuture ? `in ${diffDays}d` : `${diffDays}d ago`;
 }
 
 // ── Numeric Formatting ────────────────────────────────────────────────────────

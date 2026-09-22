@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRightLeft, Route, Activity, Zap, TrendingUp, Radio } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -7,15 +8,71 @@ import { Badge } from '@/components/ui/Badge';
 import { PageWrapper } from '@/components/layout/PageWrapper';
 import { BentoStatDeck } from '@/components/ui/BentoStatDeck';
 import { analyticsService } from '@/services/analyticsService';
+import dynamic from 'next/dynamic';
+
+const SankeyChartWrapper = dynamic(
+  () => import('@/components/charts/SankeyChartWrapper').then((m) => ({ default: m.SankeyChartWrapper })),
+  { ssr: false }
+);
 
 const formatDuration = (seconds: number) => seconds ? `${Math.floor(seconds / 60)}m ${seconds % 60}s` : 'No observations';
 
 export default function MovementNetworkPage() {
-  const { data: network, isLoading } = useQuery({ queryKey: ['network'], queryFn: analyticsService.getNetwork, refetchInterval: 30_000 });
+  const { data: network, isLoading } = useQuery({ queryKey: ['network'], queryFn: () => analyticsService.getNetwork(), refetchInterval: 30_000 });
   const routes = network?.corridors ?? [];
   const summary = network?.summary;
-  const totalFlow = routes.reduce((total, route) => total + route.volume, 0);
+  const totalFlow = routes.reduce((total: number, route: any) => total + route.volume, 0);
   const peak = routes[0];
+
+  const sankeyData = useMemo(() => {
+    if (!routes || routes.length === 0) return { nodes: [], links: [] };
+
+    // Group routes into clean, distinct Origin nodes (left) and Destination nodes (right)
+    // to guarantee an acyclic Bipartite DAG for the Sankey flow without cyclic recursion
+    const validRoutes = routes.filter(
+      (r: any) => r && r.origin?.id && r.destination?.id && r.volume > 0 && r.origin.id !== r.destination.id
+    );
+
+    if (validRoutes.length === 0) return { nodes: [], links: [] };
+
+    const originMap = new Map<string, number>();
+    const destMap = new Map<string, number>();
+
+    validRoutes.forEach((r: any) => {
+      if (!originMap.has(r.origin.id)) originMap.set(r.origin.id, originMap.size);
+      if (!destMap.has(r.destination.id)) destMap.set(r.destination.id, destMap.size);
+    });
+
+    const originOffset = 0;
+    const destOffset = originMap.size;
+
+    const originNodes = Array.from(originMap.keys()).map((id) => {
+      const r = validRoutes.find((route: any) => route.origin.id === id);
+      return {
+        name: r?.origin.name || 'Origin Sensor',
+        code: r?.origin.code,
+        role: 'Origin' as const,
+      };
+    });
+
+    const destNodes = Array.from(destMap.keys()).map((id) => {
+      const r = validRoutes.find((route: any) => route.destination.id === id);
+      return {
+        name: r?.destination.name || 'Destination Sensor',
+        code: r?.destination.code,
+        role: 'Destination' as const,
+      };
+    });
+
+    const nodes = [...originNodes, ...destNodes];
+    const links = validRoutes.map((r: any) => ({
+      source: originOffset + originMap.get(r.origin.id)!,
+      target: destOffset + destMap.get(r.destination.id)!,
+      value: r.volume,
+    }));
+
+    return { nodes, links };
+  }, [routes]);
 
   return (
     <PageWrapper className="space-y-6 font-body">
@@ -32,27 +89,27 @@ export default function MovementNetworkPage() {
             category: 'NETWORK FLOW',
             title: 'Recorded Transit Transitions',
             badge: { text: 'GRAPH TELEMETRY', variant: 'cyan' },
-            value: totalFlow || 842,
+            value: totalFlow || 0,
             unit: 'transitions',
-            trend: { text: '+14.6% corridor volume', isPositive: true },
-            note: peak ? `Peak: ${peak.origin.name} → ${peak.destination.name}` : 'Civil Lines → Sangam Node',
+            trend: { text: totalFlow > 0 ? '+ Active flow' : 'No flow yet', isPositive: true },
+            note: peak ? `Peak: ${peak.origin.name} → ${peak.destination.name}` : 'Awaiting data...',
             icon: TrendingUp,
             colorTheme: 'brand',
             bars: {
               label: 'Corridor Exchange Rhythm (Past 12h)',
-              rightText: `${summary?.corridorCount ?? 6} Active Links`,
+              rightText: `${summary?.corridorCount || 0} Active Links`,
             },
           },
           {
             category: 'OBSERVED CORRIDORS',
             title: 'Active arterial corridors',
-            value: summary?.corridorCount ?? 6,
+            value: summary?.corridorCount || 0,
             icon: Route,
             colorTheme: 'cyan',
             visual: 'ring',
             visualMeta: {
               ringValue: 100,
-              ringText: '6/6',
+              ringText: `${summary?.corridorCount || 0}`,
               subLabel: 'Network Mesh',
               subNote: 'Full Route Coverage',
             },
@@ -60,7 +117,7 @@ export default function MovementNetworkPage() {
           {
             category: 'AVG TRANSIT TIME',
             title: 'Cross-sector travel duration',
-            value: formatDuration(summary?.averageTravelSeconds ?? 340),
+            value: formatDuration(summary?.averageTravelSeconds || 0),
             icon: Activity,
             colorTheme: 'violet',
             visual: 'segmented-bar',
@@ -71,17 +128,11 @@ export default function MovementNetworkPage() {
           },
           {
             category: 'PEAK CORRIDOR',
-            title: peak ? `${peak.origin.code} → ${peak.destination.code}` : 'Civil Lines → Sangam',
-            value: summary?.peakVolume ?? 142,
+            title: peak ? `${peak.origin.name} → ${peak.destination.name}` : 'Awaiting data...',
+            value: summary?.peakVolume || 0,
             unit: 'veh/hr',
             icon: Zap,
             colorTheme: 'amber',
-            visual: 'action-link',
-            visualMeta: {
-              subNote: 'Peak arterial corridor',
-              actionLabel: 'Explore Link',
-              actionHref: '#corridors',
-            },
           },
         ]}
       />
@@ -100,12 +151,12 @@ export default function MovementNetworkPage() {
             ) : routes.length === 0 ? (
               <p className="text-xs font-mono text-[var(--text-secondary)]">No camera-to-camera transitions recorded yet.</p>
             ) : (
-              routes.map((route) => (
+              routes.map((route: any) => (
                 <div key={`${route.origin.id}-${route.destination.id}`} className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-xl bg-white/[0.03] border border-[var(--glass-border)] hover:border-teal-400/40 transition-all gap-3">
                   <div className="flex items-center gap-2.5 flex-wrap">
-                    <span className="font-mono text-xs text-teal-400 font-bold">{route.origin.code} ({route.origin.name})</span>
+                    <span className="font-mono text-xs text-teal-400 font-bold">{route.origin.name}</span>
                     <ArrowRightLeft size={13} className="text-[var(--text-tertiary)] shrink-0" />
-                    <span className="font-mono text-xs text-violet-400 font-bold">{route.destination.code} ({route.destination.name})</span>
+                    <span className="font-mono text-xs text-violet-400 font-bold">{route.destination.name}</span>
                   </div>
                   <div className="flex items-center gap-5 justify-between sm:justify-end">
                     <div className="text-right">
@@ -121,19 +172,28 @@ export default function MovementNetworkPage() {
         </GlassCard>
 
         <GlassCard variant="soft" padding="md" className="flex flex-col">
-          <h2 className="text-sm font-display font-bold text-[var(--text-primary)] mb-1">Origin-Destination Flow</h2>
-          <p className="text-[10px] font-mono text-[var(--text-secondary)] mb-4">Transitions grouped by source and target camera</p>
-          <div className="flex-1 min-h-[240px] rounded-xl bg-white/[0.03] border border-[var(--glass-border)] flex flex-col items-center justify-center p-5 text-center">
-            <div className="w-12 h-12 rounded-xl bg-teal-500/10 border border-teal-400/30 flex items-center justify-center mb-3 text-teal-400 shadow-[0_0_20px_rgba(13,148,136,0.2)]">
-              <Route size={24} />
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-display font-bold text-[var(--text-primary)] mb-1">Origin-Destination Flow</h2>
+              <p className="text-[10px] font-mono text-[var(--text-secondary)]">Transitions grouped by source and target camera</p>
             </div>
-            <p className="text-xs font-bold text-[var(--text-primary)] mb-1 font-display">{routes.length ? 'Observed Network Ready' : 'Awaiting Transitions'}</p>
-            <p className="text-[10px] font-mono text-[var(--text-secondary)]">
-              {routes.length ? `${totalFlow.toLocaleString()} transitions available for spatial analysis.` : 'Network ingestion stream active.'}
-            </p>
-            <div className="mt-3.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[9px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5">
-              <Radio size={11} className="animate-pulse" /> Live Network Stream
+            <div className="px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[9px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <Radio size={9} className="animate-pulse" /> Live
             </div>
+          </div>
+          
+          <div className="flex-1 min-h-[400px] rounded-xl bg-white/[0.02] border border-[var(--glass-border)] flex flex-col items-center justify-center relative overflow-hidden">
+            {routes.length > 0 && sankeyData.links.length > 0 ? (
+              <SankeyChartWrapper data={sankeyData} height={400} />
+            ) : (
+              <div className="text-center p-5">
+                <div className="w-12 h-12 rounded-xl bg-teal-500/10 border border-teal-400/30 flex items-center justify-center mb-3 mx-auto text-teal-400 shadow-[0_0_20px_rgba(13,148,136,0.2)]">
+                  <Route size={24} />
+                </div>
+                <p className="text-xs font-bold text-[var(--text-primary)] mb-1 font-display">Awaiting Transitions</p>
+                <p className="text-[10px] font-mono text-[var(--text-secondary)]">Network ingestion stream active.</p>
+              </div>
+            )}
           </div>
         </GlassCard>
       </div>

@@ -1,5 +1,6 @@
 const turf = require('@turf/turf');
 const { prisma } = require('../../lib/prisma');
+const { publishRealtime, setJson } = require('../../realtime/realtime');
 
 const VEHICLE_SPEED_RANGES = {
   AUTO: [22, 34],
@@ -291,6 +292,7 @@ class SimulationEngine {
     }
     this.running = true;
     this.lastTickTime = Date.now();
+    publishRealtime('simulation:state', { running: true, speed: this.speed, simulationTime: this.time.toISOString() });
     this.timer = setInterval(() => {
       if (this.tickInProgress) return;
       this.tickInProgress = true;
@@ -309,6 +311,7 @@ class SimulationEngine {
     this.running = false;
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
+    publishRealtime('simulation:state', { running: false, speed: this.speed, simulationTime: this.time.toISOString() });
   }
 
   async reset() {
@@ -321,6 +324,7 @@ class SimulationEngine {
     this.liveCameraCounts.clear();
     this.liveAlerts = [];
     await this.init();
+    publishRealtime('simulation:state', { running: false, speed: this.speed, simulationTime: this.time.toISOString() });
   }
 
   setSpeed(speed) {
@@ -337,6 +341,7 @@ class SimulationEngine {
     this.time = new Date(now);
 
     const liveDetections = [];
+    const liveTransitions = [];
 
     // Move vehicles
     for (let v of this.vehicles) {
@@ -449,7 +454,7 @@ class SimulationEngine {
               plateText: v.plateNumber,
               timestamp: new Date(this.time),
               source: 'SIMULATION',
-              speed: v.speed,
+              speed: simDeltaSec > 0 ? Math.round((calculateDistanceMeters(previousCoords[0], previousCoords[1], v.coords[0], v.coords[1]) / simDeltaSec) * 3.6 * 10) / 10 : v.speed,
               vehicleConfidence: 0.95 + (Math.random() * 0.04),
               ocrConfidence: 0.90 + (Math.random() * 0.09),
               lane: Math.floor(Math.random() * 3) + 1,
@@ -458,6 +463,17 @@ class SimulationEngine {
               longitude: v.coords[0]
             };
             liveDetections.push(detection);
+            if (v.lastCameraId && v.lastCameraId !== cam.id) {
+              const travelTimeSeconds = v.lastCameraTimestamp ? Math.round((this.time.getTime() - v.lastCameraTimestamp.getTime()) / 1000) : 0;
+              liveTransitions.push({
+                vehicleId: v.id,
+                sourceCameraId: v.lastCameraId,
+                destinationCameraId: cam.id,
+                timestamp: new Date(this.time),
+                travelTimeSeconds: travelTimeSeconds > 0 ? travelTimeSeconds : 0,
+                averageSpeed: detection.speed || 0,
+              });
+            }
             v.lastCameraId = cam.id;
             v.lastCameraTimestamp = new Date(this.time);
           }
@@ -491,6 +507,13 @@ class SimulationEngine {
         skipDuplicates: true
       }).catch(err => console.error('Failed to persist simulated detections:', err));
 
+      if (liveTransitions.length > 0) {
+        prisma.cameraTransition.createMany({
+          data: liveTransitions,
+          skipDuplicates: true
+        }).catch(err => console.error('Failed to persist simulated transitions:', err));
+      }
+
       // Also update vehicle lastSeen
       const vehicleIds = liveDetections.map(d => d.vehicleId);
       prisma.vehicle.updateMany({
@@ -517,6 +540,8 @@ class SimulationEngine {
                 status: 'ACTIVE',
                 createdAt: detection.timestamp
               }
+            }).then((alert) => {
+              void publishRealtime('alert:changed', { action: 'created', alertId: alert.id });
             }).catch(() => { });
           } else {
             // Bump the alert to the top if it already exists
@@ -526,6 +551,8 @@ class SimulationEngine {
                 createdAt: detection.timestamp,
                 cameraId: detection.cameraId
               }
+            }).then((alert) => {
+              void publishRealtime('alert:changed', { action: 'updated', alertId: alert.id });
             }).catch(() => { });
           }
         }).catch(() => { });
@@ -565,6 +592,14 @@ class SimulationEngine {
     }
 
     this.liveAlerts = []; // Deprecated in favor of DB alerts
+
+    // Publish the in-memory simulation state once per tick. Redis provides the
+    // cross-instance Pub/Sub transport; the WebSocket layer fans it out to
+    // connected dashboards. This never blocks the simulation tick.
+    const realtimeState = this.getRealtimeState();
+    void setJson('nagardrishti:simulation:state', realtimeState, 10);
+    void setJson('nagardrishti:simulation:camera-counts', Object.fromEntries(this.liveCameraCounts), 10);
+    void publishRealtime('simulation:update', realtimeState);
   }
 
   getLiveCameraCounts() {
@@ -573,6 +608,31 @@ class SimulationEngine {
 
   getLiveAlerts() {
     return [...this.liveAlerts];
+  }
+
+  getRealtimeState() {
+    return {
+      simulationTime: this.time.toISOString(),
+      speed: this.speed,
+      running: this.running,
+      stats: {
+        vehicles: this.vehicles.length,
+        cameras: this.cameras.length,
+        recentDetections: this.recentDetections.length,
+        generatedDetections: this.generatedDetectionCount,
+      },
+      cameraCounts: Object.fromEntries(this.liveCameraCounts),
+      vehicles: this.vehicles.map((v) => ({
+        id: v.id,
+        plateNumber: v.plateNumber,
+        type: v.type,
+        speed: v.speed,
+        longitude: v.coords[0],
+        latitude: v.coords[1],
+        roadId: v.currentRoadId,
+        state: v.state,
+      })),
+    };
   }
 
   getState() {

@@ -55,13 +55,16 @@ export const cameraService = {
     return status === 'all' ? cameras : cameras.filter((camera) => camera.status === status);
   },
 
-  async getDetectionsByCamera(cameraId: string, options: { live?: boolean; windowMinutes?: number } = {}): Promise<Detection[]> {
+  async getDetectionsByCamera(cameraId: string, options: { live?: boolean; windowMinutes?: number; cursor?: string } = {}): Promise<{ items: Detection[], nextCursor: string | null }> {
     const params = new URLSearchParams({ limit: '100' });
     if (options.live) {
       params.set('live', '1');
       params.set('windowMinutes', String(options.windowMinutes ?? 2));
     }
-    return unwrapApiResponse(await apiClient.get<Detection[]>(
+    if (options.cursor) {
+      params.set('cursor', options.cursor);
+    }
+    return unwrapApiResponse(await apiClient.get<{ items: Detection[], nextCursor: string | null }>(
       `/detections/camera/${encodeURIComponent(cameraId)}?${params.toString()}`
     ));
   },

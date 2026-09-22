@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Play, Pause, RotateCcw, Radio } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Button }    from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { vehicleService } from '@/services/vehicleService';
 import { useUIStore } from '@/store/uiStore';
 import { formatTime, formatDuration, formatDistance, formatSpeed, cn } from '@/lib/utils';
@@ -41,6 +41,7 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
   const decodedPlate = decodeURIComponent(plate).toUpperCase();
   const [currentWaypointIndex, setCurrentWaypointIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState<1 | 2>(1);
   const theme = useUIStore((s) => s.theme);
 
   const { data: journey } = useQuery({
@@ -50,6 +51,7 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
 
   useEffect(() => {
     if (!isPlaying || !journey || currentWaypointIndex >= journey.waypoints.length - 1) return;
+    const delay = playbackSpeed === 1 ? 2200 : 1100;
     const timer = setTimeout(() => {
       setCurrentWaypointIndex((previousIndex) => {
         const nextIndex = previousIndex + 1;
@@ -59,9 +61,9 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
         }
         return nextIndex;
       });
-    }, 2200);
+    }, delay);
     return () => clearTimeout(timer);
-  }, [isPlaying, currentWaypointIndex, journey]);
+  }, [isPlaying, currentWaypointIndex, journey, playbackSpeed]);
 
   const handleReset = useCallback(() => {
     setCurrentWaypointIndex(0);
@@ -126,8 +128,8 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
               center={[wp.lat, wp.lng]}
               radius={i <= currentWaypointIndex ? 6 : 4}
               pathOptions={{
-                color:       i <= currentWaypointIndex ? '#10a37f' : '#525252',
-                fillColor:   i <= currentWaypointIndex ? '#10a37f' : '#212121',
+                color: i <= currentWaypointIndex ? '#10a37f' : '#525252',
+                fillColor: i <= currentWaypointIndex ? '#10a37f' : '#212121',
                 fillOpacity: i <= currentWaypointIndex ? 0.9 : 0.4,
                 weight: 1.5,
               }}
@@ -150,8 +152,8 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
             center={[currentWaypoint.lat, currentWaypoint.lng]}
             radius={10}
             pathOptions={{
-              color:       '#ffffff',
-              fillColor:   '#10a37f',
+              color: '#ffffff',
+              fillColor: '#10a37f',
               fillOpacity: 1,
               weight: 2,
             }}
@@ -241,6 +243,15 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
             <Button
               variant="secondary"
               size="sm"
+              onClick={() => setPlaybackSpeed((s) => (s === 1 ? 2 : 1))}
+              title="Toggle Speed"
+              className="cursor-pointer font-mono font-bold text-xs px-3"
+            >
+              {playbackSpeed}x
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={handleReset}
               title="Reset"
               className="cursor-pointer"
@@ -256,7 +267,7 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
           <div className="space-y-1.5">
             {waypoints.map((wp: Waypoint, i: number) => {
               const isCurrent = i === currentWaypointIndex;
-              const isPassed  = i < currentWaypointIndex;
+              const isPassed = i < currentWaypointIndex;
 
               return (
                 <div
@@ -270,16 +281,15 @@ export default function TrajectoryPage({ params }: { params: Promise<{ plate: st
                     isCurrent
                       ? 'bg-[var(--bg-elevated-2)] border-neutral-700 text-[var(--text-primary)]'
                       : isPassed
-                      ? 'bg-transparent border-transparent opacity-60 hover:opacity-100 text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)]'
-                      : 'bg-transparent border-transparent text-[var(--text-tertiary)] hover:bg-[var(--bg-elevated)]',
+                        ? 'bg-transparent border-transparent opacity-60 hover:opacity-100 text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)]'
+                        : 'bg-transparent border-transparent text-[var(--text-tertiary)] hover:bg-[var(--bg-elevated)]',
                   )}
                 >
                   <div className="flex items-center justify-between gap-1 mb-1">
-                    <span className="font-semibold font-display truncate text-[var(--text-primary)]">{wp.cameraName}</span>
+                    <span className="text-sm font-semibold font-display truncate text-[var(--text-primary)]">{wp.cameraName}</span>
                     <span className="text-[9px] font-mono text-[var(--text-secondary)]">{formatTime(wp.timestamp)}</span>
                   </div>
-                  <div className="flex items-center justify-between text-[10px] font-mono">
-                    <span className="text-[#10a37f] font-semibold">{wp.cameraId}</span>
+                  <div className="flex items-center justify-end text-[10px] font-mono">
                     <span className="text-[var(--text-secondary)]">{wp.speed} km/h</span>
                   </div>
                 </div>

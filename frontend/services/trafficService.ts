@@ -18,7 +18,7 @@ export interface TrafficForecast {
 export const trafficService = {
   async getForecast(horizonMins?: number): Promise<TrafficForecast> {
     const params = new URLSearchParams();
-    if (horizonMins) params.append('horizon_mins', horizonMins.toString());
+    if (horizonMins) params.append('minutes', horizonMins.toString());
     
     return unwrapApiResponse(
       await apiClient.get<TrafficForecast>(`/traffic/forecast?${params.toString()}`)

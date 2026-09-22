@@ -1,4 +1,5 @@
 const { prisma } = require('../../lib/prisma');
+const { getJson, publishRealtime, setJson } = require('../../realtime/realtime');
 
 const DEFAULT_WINDOW_MINUTES = 5;
 
@@ -12,13 +13,14 @@ function parseTrafficWindow({ from, to } = {}) {
 }
 
 function getTrafficLevel({ detectionCount, vehicleCount, durationMinutes }) {
-  if (vehicleCount >= 30) return 'congested';
-  if (vehicleCount >= 20) return 'high';
-  if (vehicleCount >= 10) return 'moderate';
+  const scale = Math.max(1, (durationMinutes || 5) / 5);
+  if (vehicleCount >= 30 * scale) return 'congested';
+  if (vehicleCount >= 20 * scale) return 'high';
+  if (vehicleCount >= 10 * scale) return 'moderate';
   return 'low';
 }
 
-async function getTrafficSnapshot(windowInput = {}, cameraId) {
+async function getTrafficSnapshot(windowInput = {}, cameraIdentifier) {
   let { from, to } = windowInput;
 
   if (!to) {
@@ -26,10 +28,39 @@ async function getTrafficSnapshot(windowInput = {}, cameraId) {
   }
 
   const window = parseTrafficWindow({ from, to });
-  const where = { timestamp: { gte: window.from, lte: window.to }, ...(cameraId ? { cameraId } : {}) };
+
+  // Cache short-lived live snapshots. The API can still serve historical data
+  // from PostgreSQL, while repeated dashboard reads within the same 5-second
+  // bucket avoid duplicate aggregation queries.
+  const cacheBucket = Math.floor(window.to.getTime() / 5000);
+  const cacheKey = `nagardrishti:traffic:snapshot:${cameraIdentifier || 'all'}:${cacheBucket}:${Math.round(window.durationMinutes * 10)}`;
+  const cachedSnapshot = await getJson(cacheKey);
+  if (cachedSnapshot) return cachedSnapshot;
+
+  // Resolve camera identifier to internal ID if provided
+  let resolvedCameraId = undefined;
+  if (cameraIdentifier) {
+    const cam = await prisma.camera.findFirst({
+      where: {
+        OR: [
+          { id: cameraIdentifier },
+          { cameraCode: cameraIdentifier },
+          { name: { equals: cameraIdentifier, mode: 'insensitive' } }
+        ]
+      }
+    });
+    if (cam) {
+      resolvedCameraId = cam.id;
+    } else {
+      // If not found, fallback to just passing it (will likely result in 0 traffic)
+      resolvedCameraId = cameraIdentifier;
+    }
+  }
+
+  const where = { timestamp: { gte: window.from, lte: window.to }, ...(resolvedCameraId ? { cameraId: resolvedCameraId } : {}) };
 
   const cameras = await prisma.camera.findMany({
-    where: cameraId ? { id: cameraId } : undefined,
+    where: resolvedCameraId ? { id: resolvedCameraId } : undefined,
     include: { zone: { select: { name: true } }, road: { select: { name: true } } },
     orderBy: { cameraCode: 'asc' },
   });
@@ -62,7 +93,7 @@ async function getTrafficSnapshot(windowInput = {}, cameraId) {
     : new Map();
   const liveSimulationTime = simulationRunning ? engine.getState().simulationTime : null;
 
-  return {
+  const result = {
     from: window.from,
     to: window.to,
     durationMinutes: window.durationMinutes,
@@ -87,6 +118,9 @@ async function getTrafficSnapshot(windowInput = {}, cameraId) {
       };
     }),
   };
+
+  void setJson(cacheKey, result, 5);
+  return result;
 }
 
 async function evaluateCongestionAlert(cameraId, timestamp = new Date()) {
@@ -101,13 +135,21 @@ async function evaluateCongestionAlert(cameraId, timestamp = new Date()) {
   // Thresholds: 20 vehicles = HIGH, 30 vehicles = CRITICAL in the 5-minute window
   const vehicleCount = camera ? camera.vehicleCount : 0;
   
-  if (!camera || vehicleCount < 20) {
+  // Hysteresis: Only resolve the alert if traffic drops significantly below the threshold (e.g. < 10)
+  if (!camera || vehicleCount < 10) {
     if (existingActiveAlert) {
-      return prisma.alert.update({
+      const resolved = await prisma.alert.update({
         where: { id: existingActiveAlert.id },
         data: { status: 'RESOLVED', resolvedAt: new Date(timestamp) },
       });
+      void publishRealtime('alert:changed', { action: 'resolved', alertId: resolved.id });
+      return resolved;
     }
+    return null;
+  }
+
+  // If no alert exists and we haven't hit the threshold yet, do nothing
+  if (!existingActiveAlert && vehicleCount < 20) {
     return null;
   }
 
@@ -116,14 +158,18 @@ async function evaluateCongestionAlert(cameraId, timestamp = new Date()) {
   
   if (existingActiveAlert) {
     // Only update if severity changed or to bump the timestamp
-    return prisma.alert.update({
+    const updated = await prisma.alert.update({
       where: { id: existingActiveAlert.id },
       data: { severity, message, createdAt: new Date(timestamp), resolvedAt: null },
     });
+    void publishRealtime('alert:changed', { action: 'updated', alertId: updated.id });
+    return updated;
   }
-  return prisma.alert.create({
+  const created = await prisma.alert.create({
     data: { type: 'CONGESTION', severity, cameraId, message, status: 'ACTIVE', createdAt: new Date(timestamp) },
   });
+  void publishRealtime('alert:changed', { action: 'created', alertId: created.id });
+  return created;
 }
 
 const calculateCongestionLevel = (vehicleCount, averageSpeed) => {

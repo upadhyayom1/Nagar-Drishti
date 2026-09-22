@@ -1,17 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import { Car, Camera as CameraIcon, Gauge, AlertTriangle, Activity, ArrowUpRight, ShieldCheck, Zap, Radio, Sparkles } from 'lucide-react';
 import { StatCounter } from '@/components/ui/StatCounter';
-import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/Badge';
+import { MagicCard, GlobalSpotlight } from '@/components/ui/MagicBento';
 import { cn } from '@/lib/utils';
 import type { TrafficStats } from '@/types';
+import { useQuery } from '@tanstack/react-query';
+import { analyticsService } from '@/services/analyticsService';
 import Link from 'next/link';
 
 interface StatBentoGridProps {
   stats?: TrafficStats;
+  totalNodes?: number;
   className?: string;
 }
 
@@ -36,19 +39,43 @@ const itemVariants: Variants = {
   },
 };
 
-export function StatBentoGrid({ stats, className }: StatBentoGridProps) {
+export function StatBentoGrid({ stats, totalNodes = 0, className }: StatBentoGridProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
 
-  // Simulated 12-hour diurnal volume bar distribution (scaled 20% to 95%)
-  const hourlyBars = [32, 45, 60, 78, 92, 85, 64, 70, 88, 95, 82, 68];
+  const { data: hourlyData } = useQuery({
+    queryKey: ['hourlyTraffic'],
+    queryFn: () => analyticsService.getHourlyTraffic(),
+    refetchInterval: 15_000,
+  });
 
-  const totalVehicles = stats?.totalVehiclesToday ?? 2847;
-  const activeCameras = stats?.activeCameras ?? 10;
-  const avgSpeed = stats?.avgSpeed ?? 38.5;
-  const activeAlerts = stats?.activeAlerts ?? 4;
+  const hourlyBars = hourlyData && hourlyData.length > 0
+    ? hourlyData.slice(-12).map(d => {
+        const max = Math.max(...hourlyData.map(h => h.vehicles), 1);
+        return Math.max(10, (d.vehicles / max) * 100);
+      })
+    : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+  const hourlyLabels = hourlyData && hourlyData.length > 0
+    ? hourlyData.slice(-12).map(d => ({ hour: d.hour, veh: d.vehicles }))
+    : Array.from({ length: 12 }).map((_, i) => ({ hour: `${i + 1}:00`, veh: 0 }));
+
+  const totalVehicles = stats?.totalVehiclesToday ?? 0;
+  const activeCameras = stats?.activeCameras ?? 0;
+  const avgSpeed = stats?.avgSpeed ?? 0;
+  const activeAlerts = stats?.activeAlerts ?? 0;
+  const totalCameras = totalNodes || activeCameras;
 
   return (
-    <div className={cn('space-y-4 font-body select-none', className)}>
+    <div className={cn('space-y-4 font-body select-none bento-section w-full', className)} ref={gridRef}>
+      {/* Dynamic Cursor Spotlight across the whole bento grid */}
+      <GlobalSpotlight
+        gridRef={gridRef}
+        enabled={true}
+        spotlightRadius={340}
+        glowColor="0, 245, 155"
+      />
+
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -62,10 +89,14 @@ export function StatBentoGrid({ stats, className }: StatBentoGridProps) {
           onMouseEnter={() => setHoveredIndex(0)}
           onMouseLeave={() => setHoveredIndex(null)}
         >
-          <GlassCard
-            hover
-            glow="brand"
-            className="flex-1 p-6 relative overflow-hidden flex flex-col justify-between group border bg-[var(--bg-elevated)] border-[var(--card-soft-border)] shadow-[var(--glass-shadow)]"
+          <MagicCard
+            enableStars={true}
+            enableBorderGlow={true}
+            enableTilt={true}
+            enableMagnetism={true}
+            clickEffect={true}
+            glowColor="0, 245, 155"
+            className="flex-1 p-6 relative overflow-hidden flex flex-col justify-between group border border-white/10 dark:border-white/10 bg-black/25 dark:bg-black/20 backdrop-blur-xl shadow-[var(--glass-shadow)] rounded-3xl"
           >
             {/* Watermark icon with floating rotate effect */}
             <Car
@@ -104,23 +135,13 @@ export function StatBentoGrid({ stats, className }: StatBentoGridProps) {
                   detections
                 </span>
               </div>
-
-              {/* Trend & metrics */}
-              <div className="flex items-center gap-3 mt-2 flex-wrap">
-                <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-[var(--status-ok)] bg-[var(--brand-teal)]/15 border border-[var(--brand-teal)]/30 px-2.5 py-0.5 rounded-full shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
-                  <ArrowUpRight size={13} /> +12.4% flow
-                </span>
-                <span className="text-[10px] font-mono text-[var(--text-secondary)]">
-                  Peak: <strong className="text-[var(--text-primary)]">3,420/hr</strong> (Zone B)
-                </span>
-              </div>
             </div>
 
             {/* Diurnal Traffic Pulse Micro-Bars Visual */}
-            <div className="mt-6 pt-3 border-t border-[var(--glass-border)]">
+            <div className="mt-6 pt-3 border-t border-white/[0.08]">
               <div className="flex items-center justify-between text-[9px] font-mono text-[var(--text-secondary)] mb-2">
                 <span>Diurnal Volume Rhythm (Past 12h)</span>
-                <span className="text-[var(--brand-teal)] font-bold">98.4% ANPR Accuracy</span>
+                <span className="text-[var(--brand-teal)] font-bold">{stats?.anprAccuracy != null ? stats.anprAccuracy : 98.4}% ANPR Accuracy</span>
               </div>
 
               <div className="grid grid-cols-12 gap-1.5 h-9 items-end">
@@ -128,7 +149,7 @@ export function StatBentoGrid({ stats, className }: StatBentoGridProps) {
                   <div
                     key={i}
                     className="h-full flex items-end justify-center group/bar relative"
-                    title={`Hour ${i + 1}: ${Math.round((height / 100) * 340)} veh/hr`}
+                    title={`Hour ${hourlyLabels[i]?.hour}: ${hourlyLabels[i]?.veh} veh/hr`}
                   >
                     <motion.div
                       initial={{ height: 0 }}
@@ -140,7 +161,7 @@ export function StatBentoGrid({ stats, className }: StatBentoGridProps) {
                 ))}
               </div>
             </div>
-          </GlassCard>
+          </MagicCard>
         </motion.div>
 
         {/* ── CARD 2: ACTIVE OPTICAL NODES (1 COL) ── */}
@@ -150,10 +171,14 @@ export function StatBentoGrid({ stats, className }: StatBentoGridProps) {
           onMouseEnter={() => setHoveredIndex(1)}
           onMouseLeave={() => setHoveredIndex(null)}
         >
-          <GlassCard
-            hover
-            glow="none"
-            className="flex-1 p-5 relative overflow-hidden flex flex-col justify-between group border border-[var(--glass-border)] bg-[var(--bg-elevated)] backdrop-blur-2xl shadow-[var(--glass-shadow)] rounded-3xl"
+          <MagicCard
+            enableStars={true}
+            enableBorderGlow={true}
+            enableTilt={true}
+            enableMagnetism={true}
+            clickEffect={true}
+            glowColor="0, 245, 155"
+            className="flex-1 p-5 relative overflow-hidden flex flex-col justify-between group border border-white/10 dark:border-white/10 bg-black/25 dark:bg-black/20 backdrop-blur-xl shadow-[var(--glass-shadow)] rounded-3xl"
           >
             <div>
               <div className="flex items-center justify-between mb-3">
@@ -170,7 +195,7 @@ export function StatBentoGrid({ stats, className }: StatBentoGridProps) {
                   <StatCounter value={activeCameras} duration={900} />
                 </span>
                 <span className="text-xs font-mono text-[var(--text-tertiary)] font-semibold uppercase">
-                  / 10
+                  / {totalCameras}
                 </span>
               </div>
 
@@ -180,11 +205,11 @@ export function StatBentoGrid({ stats, className }: StatBentoGridProps) {
             </div>
 
             {/* Circular Gauge Ring Visual */}
-            <div className="mt-4 pt-3 border-t border-[var(--glass-border)] flex items-center justify-between">
+            <div className="mt-4 pt-3 border-t border-white/[0.08] flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="relative w-8 h-8 shrink-0">
                   <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="14" fill="none" className="stroke-[var(--bg-elevated-2)]" strokeWidth="3" />
+                    <circle cx="18" cy="18" r="14" fill="none" className="stroke-white/10" strokeWidth="3" />
                     <circle
                       cx="18"
                       cy="18"
@@ -198,19 +223,21 @@ export function StatBentoGrid({ stats, className }: StatBentoGridProps) {
                     />
                   </svg>
                   <span className="absolute inset-0 flex items-center justify-center text-[8.5px] font-mono font-bold text-[var(--brand-teal)]">
-                    100%
+                    {totalCameras > 0 ? Math.round((activeCameras / totalCameras) * 100) : 0}%
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-mono text-[var(--text-primary)] font-bold block leading-tight">6 Sectors</span>
-                  <span className="text-[9px] font-mono text-[var(--text-tertiary)] block">100% Online</span>
+                  <span className="text-[10px] font-mono text-[var(--text-primary)] font-bold block leading-tight">9 Zones</span>
+                  <span className="text-[9px] font-mono text-[var(--text-tertiary)] block">
+                    {totalCameras > 0 ? Math.round((activeCameras / totalCameras) * 100) : 0}% Online
+                  </span>
                 </div>
               </div>
               <span className="text-[9px] font-mono text-[var(--brand-teal)] bg-[var(--brand-teal)]/15 border border-[var(--brand-teal)]/30 px-2 py-0.5 rounded-full shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] font-bold">
                 LOCKED
               </span>
             </div>
-          </GlassCard>
+          </MagicCard>
         </motion.div>
 
         {/* ── CARD 3: AVERAGE CITY VELOCITY (1 COL) ── */}
@@ -220,10 +247,14 @@ export function StatBentoGrid({ stats, className }: StatBentoGridProps) {
           onMouseEnter={() => setHoveredIndex(2)}
           onMouseLeave={() => setHoveredIndex(null)}
         >
-          <GlassCard
-            hover
-            glow="none"
-            className="flex-1 p-5 flex flex-col justify-between group border border-[var(--glass-border)] bg-[var(--bg-elevated)] backdrop-blur-2xl shadow-[var(--glass-shadow)] rounded-3xl"
+          <MagicCard
+            enableStars={true}
+            enableBorderGlow={true}
+            enableTilt={true}
+            enableMagnetism={true}
+            clickEffect={true}
+            glowColor="0, 240, 255"
+            className="flex-1 p-5 flex flex-col justify-between group border border-white/10 dark:border-white/10 bg-black/25 dark:bg-black/20 backdrop-blur-xl shadow-[var(--glass-shadow)] rounded-3xl"
           >
             <div>
               <div className="flex items-center justify-between gap-2 mb-2">
@@ -250,18 +281,18 @@ export function StatBentoGrid({ stats, className }: StatBentoGridProps) {
             </div>
 
             {/* Segmented Transit Bar Visual */}
-            <div className="mt-4 pt-3 border-t border-[var(--glass-border)]">
+            <div className="mt-4 pt-3 border-t border-white/[0.08]">
               <div className="flex items-center justify-between text-[10px] font-mono mb-1.5">
                 <span className="text-[var(--text-secondary)]">Transit Velocity Curve</span>
                 <span className="text-[var(--brand-teal)] font-bold">Nominal Flow</span>
               </div>
-              <div className="h-1.5 w-full rounded-full bg-[var(--bg-elevated-2)] overflow-hidden flex gap-0.5">
+              <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden flex gap-0.5">
                 <div className="h-full bg-[var(--brand-teal)]" style={{ width: '45%' }} />
                 <div className="h-full bg-[var(--brand-teal)]/60" style={{ width: '35%' }} />
                 <div className="h-full bg-[var(--text-tertiary)]/40" style={{ width: '20%' }} />
               </div>
             </div>
-          </GlassCard>
+          </MagicCard>
         </motion.div>
 
         {/* ── CARD 4: ACTIVE SENTINEL FLAGS (1 COL) ── */}
@@ -271,10 +302,14 @@ export function StatBentoGrid({ stats, className }: StatBentoGridProps) {
           onMouseEnter={() => setHoveredIndex(3)}
           onMouseLeave={() => setHoveredIndex(null)}
         >
-          <GlassCard
-            hover
-            glow="none"
-            className="flex-1 p-5 flex flex-col justify-between group border border-[var(--glass-border)] bg-[var(--bg-elevated)] backdrop-blur-2xl shadow-[var(--glass-shadow)] rounded-3xl"
+          <MagicCard
+            enableStars={true}
+            enableBorderGlow={true}
+            enableTilt={true}
+            enableMagnetism={true}
+            clickEffect={true}
+            glowColor="244, 63, 94"
+            className="flex-1 p-5 flex flex-col justify-between group border border-white/10 dark:border-white/10 bg-black/25 dark:bg-black/20 backdrop-blur-xl shadow-[var(--glass-shadow)] rounded-3xl"
           >
             <div>
               <div className="flex items-center justify-between gap-2 mb-2">
@@ -301,8 +336,8 @@ export function StatBentoGrid({ stats, className }: StatBentoGridProps) {
             </div>
 
             {/* Threat indicator details */}
-            <div className="mt-4 pt-3 border-t border-[var(--glass-border)] flex items-center justify-between text-[10px] font-mono">
-              <span className="text-[var(--text-secondary)]">3 Watch · 1 Critical</span>
+            <div className="mt-4 pt-3 border-t border-white/[0.08] flex items-center justify-between text-[10px] font-mono">
+              <span className="text-[var(--text-secondary)]">{activeAlerts > 0 ? `${activeAlerts} Active Alerts` : 'No Active Threats'}</span>
               <Link
                 href="/alerts"
                 className="text-[var(--status-critical)] font-bold hover:underline flex items-center gap-0.5"
@@ -310,7 +345,7 @@ export function StatBentoGrid({ stats, className }: StatBentoGridProps) {
                 Review <ArrowUpRight size={11} />
               </Link>
             </div>
-          </GlassCard>
+          </MagicCard>
         </motion.div>
       </motion.div>
 
@@ -320,7 +355,14 @@ export function StatBentoGrid({ stats, className }: StatBentoGridProps) {
         initial="hidden"
         animate="show"
       >
-        <GlassCard padding="sm" glow="none" className="px-5 py-3.5 border border-[var(--glass-border)] bg-[var(--bg-elevated)] backdrop-blur-3xl shadow-[var(--glass-shadow)] rounded-full">
+        <MagicCard
+          enableStars={false}
+          enableBorderGlow={true}
+          enableTilt={false}
+          enableMagnetism={false}
+          glowColor="0, 245, 155"
+          className="px-5 py-3.5 border border-white/10 dark:border-white/10 bg-black/25 dark:bg-black/20 backdrop-blur-2xl shadow-[var(--glass-shadow)] rounded-full"
+        >
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2.5">
               <Activity size={15} className="text-[var(--brand-teal)] shrink-0" />
@@ -332,15 +374,15 @@ export function StatBentoGrid({ stats, className }: StatBentoGridProps) {
             <div className="flex items-center gap-4 text-xs font-mono flex-wrap">
               <span className="flex items-center gap-1.5 text-[var(--brand-teal)] font-bold">
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-teal)] shadow-[0_0_10px_var(--brand-teal)]" />
-                10 Nodes Online (100%)
+                {activeCameras} Nodes Online ({totalCameras > 0 ? Math.round((activeCameras / totalCameras) * 100) : 0}%)
               </span>
               <span className="flex items-center gap-1.5 text-[var(--brand-teal)] font-bold">
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-teal)] shadow-[0_0_10px_var(--brand-teal)]" />
-                98.6% Frame Sync
+                {stats?.frameSyncPercentage != null ? stats.frameSyncPercentage : 98.6}% Frame Sync
               </span>
               <span className="flex items-center gap-1.5 text-[var(--text-secondary)] font-semibold hidden sm:inline-flex">
                 <Zap size={11} />
-                38ms Latency
+                {stats?.latencyMs != null ? stats.latencyMs : 38}ms Latency
               </span>
               <span className="flex items-center gap-1.5 text-[var(--status-critical)] font-bold">
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--status-critical)] shadow-[0_0_10px_var(--status-critical)]" />
@@ -350,10 +392,10 @@ export function StatBentoGrid({ stats, className }: StatBentoGridProps) {
           </div>
 
           {/* Restrained Accent Line */}
-          <div className="mt-2.5 h-1 rounded-full overflow-hidden bg-[var(--bg-elevated-2)]">
+          <div className="mt-2.5 h-1 rounded-full overflow-hidden bg-white/10">
             <div className="h-full w-full rounded-full bg-[var(--brand-teal)]" />
           </div>
-        </GlassCard>
+        </MagicCard>
       </motion.div>
     </div>
   );

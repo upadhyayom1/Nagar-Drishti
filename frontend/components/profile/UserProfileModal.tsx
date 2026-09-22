@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Shield, User, Clock, MapPin, Radio, Key, LogOut, Sun, Moon, CheckCircle2, Zap, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { MagicCard } from '@/components/ui/MagicBento';
 import { useUIStore } from '@/store/uiStore';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/services/authService';
@@ -112,24 +113,48 @@ export function UserProfileModal({ isOpen, onClose }: UserProfileModalProps) {
           <div className="p-6 space-y-4">
             {/* Bento-style Telemetry Metric Cards */}
             <div className="grid grid-cols-3 gap-2.5 text-center font-mono">
-              <div className="p-3 rounded-2xl bg-[var(--bg-surface)]/60 border border-[var(--glass-border)] shadow-sm hover:border-[var(--glass-highlight)] transition-all">
+              <MagicCard
+                enableStars={false}
+                enableBorderGlow={true}
+                enableTilt={true}
+                enableMagnetism={true}
+                clickEffect={true}
+                glowColor="0, 240, 255"
+                className="p-3 rounded-2xl border border-white/10 dark:border-white/10 bg-black/25 dark:bg-black/20 backdrop-blur-xl shadow-sm"
+              >
                 <span className="text-[10px] text-[var(--text-tertiary)] block uppercase tracking-wider font-semibold mb-1">
                   Shift Active
                 </span>
                 <span className="text-sm font-bold text-cyan-400 font-display">4h 32m</span>
-              </div>
-              <div className="p-3 rounded-2xl bg-[var(--bg-surface)]/60 border border-[var(--glass-border)] shadow-sm hover:border-[var(--glass-highlight)] transition-all">
+              </MagicCard>
+              <MagicCard
+                enableStars={false}
+                enableBorderGlow={true}
+                enableTilt={true}
+                enableMagnetism={true}
+                clickEffect={true}
+                glowColor="0, 245, 155"
+                className="p-3 rounded-2xl border border-white/10 dark:border-white/10 bg-black/25 dark:bg-black/20 backdrop-blur-xl shadow-sm"
+              >
                 <span className="text-[10px] text-[var(--text-tertiary)] block uppercase tracking-wider font-semibold mb-1">
                   Reliability
                 </span>
                 <span className="text-sm font-bold text-[#00f59b] font-display">99.8%</span>
-              </div>
-              <div className="p-3 rounded-2xl bg-[var(--bg-surface)]/60 border border-[var(--glass-border)] shadow-sm hover:border-[var(--glass-highlight)] transition-all">
+              </MagicCard>
+              <MagicCard
+                enableStars={false}
+                enableBorderGlow={true}
+                enableTilt={true}
+                enableMagnetism={true}
+                clickEffect={true}
+                glowColor="168, 85, 247"
+                className="p-3 rounded-2xl border border-white/10 dark:border-white/10 bg-black/25 dark:bg-black/20 backdrop-blur-xl shadow-sm"
+              >
                 <span className="text-[10px] text-[var(--text-tertiary)] block uppercase tracking-wider font-semibold mb-1">
                   Grid Nodes
                 </span>
-                <span className="text-sm font-bold text-violet-400 font-display">10 Sync</span>
-              </div>
+                <span className="text-sm font-bold text-violet-400 font-display">52 Sync</span>
+              </MagicCard>
             </div>
 
             {/* Operational Specs Rows */}
@@ -152,9 +177,9 @@ export function UserProfileModal({ isOpen, onClose }: UserProfileModalProps) {
                 <button
                   onClick={copyToken}
                   title="Click to copy token"
-                  className="flex items-center gap-1.5 font-bold text-[var(--brand-teal)] hover:underline cursor-pointer"
+                  className="group flex items-center gap-1.5 font-bold text-[var(--brand-teal)] cursor-pointer"
                 >
-                  <span>ED25519-AUTH-SEC-4</span>
+                  <span className="blur group-hover:blur-none transition-all duration-300 select-all">ED25519-AUTH-SEC-4</span>
                   {copiedToken ? (
                     <CheckCircle2 size={12} className="text-emerald-400" />
                   ) : (

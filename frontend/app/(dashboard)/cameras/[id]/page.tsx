@@ -1,7 +1,7 @@
 'use client';
 
-import { use, useState, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { use, useState, useCallback, useEffect } from 'react';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { ArrowLeft, Video, MapPin, Clock, Activity, Maximize2, Minimize2, Car, Radio, Zap } from 'lucide-react';
 import { GlassCard }   from '@/components/ui/GlassCard';
@@ -9,13 +9,37 @@ import { Badge }       from '@/components/ui/Badge';
 import { PageWrapper } from '@/components/layout/PageWrapper';
 import { cameraService } from '@/services/cameraService';
 import { formatTime } from '@/lib/utils';
-import { getCameraFeedImage } from '@/lib/cameraImages';
+import { useInView } from 'react-intersection-observer';
 import type { Detection } from '@/types';
 
 export default function CameraDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+  const { id: rawId } = use(params);
+  const id = decodeURIComponent(rawId);
   const { data: camera }          = useQuery({ queryKey: ['camera', id],     queryFn: () => cameraService.getCameraById(id) });
-  const { data: detections = [] } = useQuery({ queryKey: ['detections', id], queryFn: () => cameraService.getDetectionsByCamera(id) });
+  
+  const {
+    data: detectionsData,
+    isLoading: isDetectionsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useInfiniteQuery({
+    queryKey: ['detections', id],
+    queryFn: ({ pageParam }) => cameraService.getDetectionsByCamera(id, { cursor: pageParam }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor || undefined,
+  });
+
+  const { ref: loadMoreRef, inView } = useInView();
+
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const detections = detectionsData?.pages.flatMap((page) => page.items) || [];
+
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const toggleFullscreen = useCallback(() => {
@@ -50,7 +74,7 @@ export default function CameraDetailPage({ params }: { params: Promise<{ id: str
           <p className="text-xs font-mono text-[var(--text-secondary)] mt-1">{camera.location} · Sector Zone: {camera.zone}</p>
         </div>
         <span className="text-xs font-mono text-cyan-400 font-bold bg-cyan-500/10 px-3.5 py-1.5 rounded-xl border border-cyan-400/30 shadow-[0_0_15px_rgba(0,240,255,0.25)]">
-          NODE: {camera.id}
+          NODE: {camera.name}
         </span>
       </div>
 
@@ -59,11 +83,7 @@ export default function CameraDetailPage({ params }: { params: Promise<{ id: str
           {/* Main Optical Video Stream with Simulated Bounding Box + OCR Overlays */}
           <GlassCard padding="none" className="relative aspect-video overflow-hidden border border-cyan-500/30 shadow-[0_0_30px_rgba(0,240,255,0.15)] rounded-3xl">
             <div className="absolute inset-0 bg-[#060913] flex items-center justify-center">
-              <img
-                src={getCameraFeedImage(camera.cameraCode, camera.name).url}
-                alt={camera.name}
-                className="w-full h-full object-cover brightness-[0.88] contrast-[1.05]"
-              />
+              {/* Image removed to show pure simulated scanning background */}
             </div>
 
             {/* Glowing Scan-line sweep animation */}
@@ -104,7 +124,7 @@ export default function CameraDetailPage({ params }: { params: Promise<{ id: str
 
             <div className="absolute bottom-3 left-3">
               <span className="text-[10px] font-mono bg-black/80 backdrop-blur-md px-3 py-1 rounded-xl text-cyan-400 font-bold border border-cyan-400/30 shadow-lg">
-                {camera.cameraCode} · LAT {camera.lat.toFixed(4)}, LNG {camera.lng.toFixed(4)}
+                {camera.name} · LAT {camera.lat.toFixed(4)}, LNG {camera.lng.toFixed(4)}
               </span>
             </div>
           </GlassCard>
@@ -178,6 +198,11 @@ export default function CameraDetailPage({ params }: { params: Promise<{ id: str
 
               {detections.length === 0 && (
                 <p className="text-center text-xs font-mono text-[var(--text-tertiary)] py-12">No recent detection events</p>
+              )}
+              {hasNextPage && (
+                <div ref={loadMoreRef} className="flex justify-center py-4">
+                  <div className="w-5 h-5 rounded-full border-2 border-cyan-400/20 border-t-cyan-400 animate-spin" />
+                </div>
               )}
             </div>
           </GlassCard>

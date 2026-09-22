@@ -11,6 +11,8 @@ const envSchema = z.object({
   ANPR_SERVICE_URL: z.string().url().default('http://127.0.0.1:8001/anpr'),
   CORS_ORIGINS: z.string().default('http://localhost:3000,http://localhost:3001,http://localhost:5173,https://nagardrishti.vercel.app'),
   RENDER_EXTERNAL_URL: z.string().url().optional(),
+  REDIS_URL: z.string().url().optional(),
+  REDIS_ENABLED: z.string().default('true').transform((value) => value.toLowerCase() !== 'false'),
 });
 
 const _env = envSchema.safeParse(process.env);

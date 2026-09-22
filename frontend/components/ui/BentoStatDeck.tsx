@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import { LucideIcon, ArrowUpRight } from 'lucide-react';
 import { StatCounter } from '@/components/ui/StatCounter';
-import { GlassCard } from '@/components/ui/GlassCard';
+import { MagicCard, GlobalSpotlight } from '@/components/ui/MagicBento';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -105,13 +105,32 @@ const themeColorMap = {
   },
 };
 
-const defaultBars = [32, 45, 60, 78, 92, 85, 64, 70, 88, 95, 82, 68];
+
+const glowColorMap: Record<string, string> = {
+  brand: '0, 245, 155',
+  cyan: '0, 240, 255',
+  emerald: '0, 245, 155',
+  amber: '251, 191, 36',
+  rose: '255, 51, 85',
+  violet: '168, 85, 247',
+};
+
+const defaultBars = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 export function BentoStatDeck({ items, className }: BentoStatDeckProps) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   return (
-    <motion.div
+    <div className="relative w-full bento-section select-none" ref={gridRef}>
+      <GlobalSpotlight
+        gridRef={gridRef}
+        enabled={true}
+        spotlightRadius={340}
+        glowColor="0, 245, 155"
+      />
+
+      <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="show"
@@ -134,11 +153,15 @@ export function BentoStatDeck({ items, className }: BentoStatDeckProps) {
               onMouseEnter={() => setHoveredIdx(idx)}
               onMouseLeave={() => setHoveredIdx(null)}
             >
-              <GlassCard
-                hover
-                glow={item.colorTheme || 'brand'}
+              <MagicCard
+                enableStars={true}
+                enableBorderGlow={true}
+                enableTilt={true}
+                enableMagnetism={true}
+                clickEffect={true}
+                glowColor={glowColorMap[item.colorTheme || 'brand'] || '0, 245, 155'}
                 className={cn(
-                  'flex-1 p-6 relative overflow-hidden flex flex-col justify-between group border bg-[var(--bg-elevated)] border-[var(--card-soft-border)] shadow-[var(--glass-shadow)]',
+                  'flex-1 p-6 relative overflow-hidden flex flex-col justify-between group border border-white/10 dark:border-white/10 bg-black/25 dark:bg-black/20 backdrop-blur-xl shadow-[var(--glass-shadow)] rounded-3xl',
                   theme.border
                 )}
               >
@@ -205,30 +228,32 @@ export function BentoStatDeck({ items, className }: BentoStatDeckProps) {
                 </div>
 
                 {/* Diurnal Volume Rhythm Micro-Bars Visual */}
-                <div className="mt-6 pt-3 border-t border-[var(--glass-border)]">
-                  <div className="flex items-center justify-between text-[9px] font-mono text-[var(--text-tertiary)] mb-2">
-                    <span>{item.bars?.label || 'Diurnal Volume Rhythm (Past 12h)'}</span>
-                    <span className="text-[var(--brand-teal)] font-bold">{item.bars?.rightText || '98.4% ANPR Accuracy'}</span>
-                  </div>
+                {item.visual !== 'none' && (
+                  <div className="mt-6 pt-3 border-t border-[var(--glass-border)]">
+                    <div className="flex items-center justify-between text-[9px] font-mono text-[var(--text-tertiary)] mb-2">
+                      <span>{item.bars?.label || 'Diurnal Volume Rhythm (Past 12h)'}</span>
+                      <span className="text-[var(--brand-teal)] font-bold">{item.bars?.rightText || '98.4% ANPR Accuracy'}</span>
+                    </div>
 
-                  <div className="grid grid-cols-12 gap-1.5 h-9 items-end">
-                    {barsData.map((height, i) => (
-                      <div
-                        key={i}
-                        className="h-full flex items-end justify-center group/bar relative"
-                        title={`Hour ${i + 1}: ${Math.round((height / 100) * 340)} veh/hr`}
-                      >
-                        <motion.div
-                          initial={{ height: 0 }}
-                          animate={{ height: `${height}%` }}
-                          transition={{ duration: 0.8, delay: 0.1 + i * 0.04, ease: 'easeOut' }}
-                          className="w-full rounded-t bg-[var(--brand-teal)]/50 hover:bg-[var(--brand-teal)] transition-all duration-300"
-                        />
-                      </div>
-                    ))}
+                    <div className="grid grid-cols-12 gap-1.5 h-9 items-end">
+                      {barsData.map((height, i) => (
+                        <div
+                          key={i}
+                          className="h-full flex items-end justify-center group/bar relative"
+                          title={`Hour ${i + 1}: ${Math.round((height / 100) * 340)} veh/hr`}
+                        >
+                          <motion.div
+                            initial={{ height: 0 }}
+                            animate={{ height: `${height}%` }}
+                            transition={{ duration: 0.8, delay: 0.1 + i * 0.04, ease: 'easeOut' }}
+                            className="w-full rounded-t bg-[var(--brand-teal)]/50 hover:bg-[var(--brand-teal)] transition-all duration-300"
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </GlassCard>
+                )}
+              </MagicCard>
             </motion.div>
           );
         }
@@ -242,11 +267,15 @@ export function BentoStatDeck({ items, className }: BentoStatDeckProps) {
             onMouseEnter={() => setHoveredIdx(idx)}
             onMouseLeave={() => setHoveredIdx(null)}
           >
-            <GlassCard
-              hover
-              glow={item.colorTheme || 'cyan'}
+            <MagicCard
+              enableStars={true}
+              enableBorderGlow={true}
+              enableTilt={true}
+              enableMagnetism={true}
+              clickEffect={true}
+              glowColor={glowColorMap[item.colorTheme || 'cyan'] || '0, 240, 255'}
               className={cn(
-                'flex-1 p-5 relative overflow-hidden flex flex-col justify-between group border',
+                'flex-1 p-5 relative overflow-hidden flex flex-col justify-between group border border-white/10 dark:border-white/10 bg-black/25 dark:bg-black/20 backdrop-blur-xl shadow-[var(--glass-shadow)] rounded-3xl',
                 theme.border
               )}
             >
@@ -354,10 +383,11 @@ export function BentoStatDeck({ items, className }: BentoStatDeckProps) {
                   </div>
                 )}
               </div>
-            </GlassCard>
+            </MagicCard>
           </motion.div>
         );
       })}
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }

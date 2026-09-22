@@ -1,10 +1,11 @@
 'use client';
 
-import { use } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { use, useEffect, useState } from 'react';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Eye, Clock, Route, Camera, BrainCircuit, Scan } from 'lucide-react';
+import { useInView } from 'react-intersection-observer';
 import { GlassCard }    from '@/components/ui/GlassCard';
 import { Badge }        from '@/components/ui/Badge';
 import { Button }       from '@/components/ui/Button';
@@ -19,14 +20,38 @@ import type { Detection } from '@/types';
 export default function VehicleProfilePage({ params }: { params: Promise<{ plate: string }> }) {
   const { plate } = use(params);
   const decodedPlate = decodeURIComponent(plate).toUpperCase();
+  const [heatmapOffset, setHeatmapOffset] = useState(0);
 
   const { data: vehicle, isLoading: vehicleLoading }   = useQuery({ queryKey: ['vehicle', decodedPlate],           queryFn: () => vehicleService.getVehicleByPlate(decodedPlate) });
-  const { data: detections = { items: [] }, isLoading: detectionsLoading } = useQuery({ queryKey: ['vehicleDetections', decodedPlate], queryFn: () => vehicleService.getVehicleDetections(decodedPlate) });
+  const {
+    data: detectionsData,
+    isLoading: detectionsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useInfiniteQuery({
+    queryKey: ['vehicleDetections', decodedPlate],
+    queryFn: ({ pageParam }) => vehicleService.getVehicleDetections(decodedPlate, pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor || undefined,
+  });
+
+  const { ref: loadMoreRef, inView } = useInView();
+
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
   const { data: journey }                              = useQuery({ queryKey: ['vehicleJourney', decodedPlate],    queryFn: () => vehicleService.getVehicleJourney(decodedPlate) });
   const { data: intelligence, refetch: fetchIntelligence, isFetching: isAnalyzing } = useQuery({
     queryKey: ['vehicleIntelligence', decodedPlate],
     queryFn: () => vehicleService.getVehicleIntelligence(decodedPlate),
     enabled: false,
+  });
+  const { data: heatmapData, isFetching: isFetchingHeatmap } = useQuery({
+    queryKey: ['vehicleHeatmap', decodedPlate, heatmapOffset],
+    queryFn: () => vehicleService.getVehicleHeatmap(decodedPlate, heatmapOffset),
   });
 
   if (vehicleLoading) return (
@@ -45,18 +70,12 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
   );
 
   const statusVariant = vehicle.status === 'blacklist' ? 'danger' : vehicle.status === 'watchlist' ? 'warning' : 'success';
-  const activityDays = Array.from({ length: 28 }, (_, index) => {
-    const day = new Date();
-    day.setHours(0, 0, 0, 0);
-    day.setDate(day.getDate() - (27 - index));
-    const nextDay = new Date(day);
-    nextDay.setDate(nextDay.getDate() + 1);
-    return detections?.items?.filter((detection) => {
-      const timestamp = new Date(detection.timestamp);
-      return timestamp >= day && timestamp < nextDay;
-    }).length || 0;
-  });
+  const detectionsItems = detectionsData?.pages.flatMap((page) => page.items) || [];
+
+  const activityDays = heatmapData?.activityDays || Array(28).fill(0);
   const maxActivity = Math.max(...activityDays, 1);
+  const heatmapStart = heatmapData?.periodStart ? new Date(heatmapData.periodStart) : null;
+  const heatmapEnd = heatmapData?.periodEnd ? new Date(heatmapData.periodEnd) : null;
 
   return (
     <PageWrapper className="space-y-6 font-body">
@@ -102,19 +121,19 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
             colorTheme: 'brand',
             bars: {
               label: 'Detection Frequency Rhythm (Past 12h)',
-              rightText: `${detections.length} Total Telemetry Hits`,
+              rightText: `${vehicle.totalDetections} Total Telemetry Hits`,
             },
           },
           {
             category: 'CAMERA COVERAGE',
             title: 'Optical nodes visited',
             value: vehicle.camerasVisited,
-            unit: '/ 10',
+            unit: '/ 52',
             icon: Camera,
             colorTheme: 'violet',
             visual: 'ring',
             visualMeta: {
-              ringValue: Math.min(Math.round((vehicle.camerasVisited / 10) * 100), 100),
+              ringValue: Math.min(Math.round((vehicle.camerasVisited / 52) * 100), 100),
               ringText: `${vehicle.camerasVisited}`,
               subLabel: 'Grid Exposure',
               subNote: 'Spatial Distribution',
@@ -160,7 +179,7 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
 
           {detectionsLoading ? (
             <SkeletonCard variant="list" rows={5} />
-          ) : !detections?.items || detections.items.length === 0 ? (
+          ) : detectionsItems.length === 0 ? (
             <EmptyState icon={Eye} title="No Detection Events" subtitle="No detection events recorded for this vehicle yet." />
           ) : (
             <div className="relative">
@@ -168,7 +187,8 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
               <div className="absolute left-[11px] top-3 bottom-3 w-[2px] bg-[var(--bg-elevated-2)]" />
 
               <div className="space-y-4">
-                {detections.items.map((d: Detection, i: number) => (
+                {detectionsItems.map((d: Detection, i: number) => (
+
                   <motion.div
                     key={d.id}
                     initial={{ opacity: 0, x: -10 }}
@@ -181,14 +201,14 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
                     </div>
                     <div className="flex-1 p-3.5 rounded-xl bg-[var(--bg-elevated)]/60 border border-[var(--glass-border)] hover:border-cyan-400/40 transition-all">
                       <div className="flex items-center justify-between mb-1.5">
-                        <Link href={`/cameras/${d.cameraId}`} className="text-sm font-semibold text-[var(--text-primary)] hover:text-cyan-400 transition-colors font-display">
+                        <Link href={`/cameras/${encodeURIComponent(d.cameraName)}`} className="text-sm font-semibold text-[var(--text-primary)] hover:text-cyan-400 transition-colors font-display">
                           {d.cameraName}
                         </Link>
                         <span className="text-[10px] font-mono text-[var(--text-tertiary)]">{formatDateTime(d.timestamp)}</span>
                       </div>
                       {/* Bug #4 fixed: each detection shows its own recorded speed via d.speed */}
                       <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs font-mono text-[var(--text-secondary)]">
-                        <span className="text-cyan-400 font-semibold">{d.cameraId}</span>
+                        <span className="text-cyan-400 font-semibold">{d.cameraName}</span>
                         <span>Speed: <span className="text-[var(--text-primary)] font-bold tabular-nums">{d.speed} km/h</span></span>
                         <span>Confidence: <span className="text-violet-400 font-bold">{d.confidence}%</span></span>
                         <span>Heading: {d.direction}</span>
@@ -196,6 +216,12 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
                     </div>
                   </motion.div>
                 ))}
+                {/* Infinite Scroll Trigger */}
+                {hasNextPage && (
+                  <div ref={loadMoreRef} className="flex justify-center py-4">
+                    <div className="w-6 h-6 rounded-full border-2 border-cyan-400/20 border-t-cyan-400 animate-spin" />
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -203,27 +229,6 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
 
         {/* Journey Summary & Patterns */}
         <div className="space-y-5">
-          {journey && (
-            <GlassCard padding="md">
-              <p className="text-xs font-display font-bold uppercase tracking-wider text-[var(--text-primary)] mb-4">
-                Journey Analytics
-              </p>
-              <div className="space-y-3">
-                {[
-                  { label: 'Total Distance',  value: `${journey.totalDistance} km` },
-                  { label: 'Travel Duration', value: `${journey.totalDuration} min` },
-                  { label: 'Average Velocity', value: `${journey.avgSpeed} km/h` },
-                  { label: 'Nodes Crossed',   value: `${journey.waypoints.length} Cameras` },
-                ].map((row) => (
-                  <div key={row.label} className="flex justify-between items-center text-xs">
-                    <span className="text-[var(--text-secondary)] font-medium">{row.label}</span>
-                    <span className="font-mono text-[var(--text-primary)] font-bold tabular-nums">{row.value}</span>
-                  </div>
-                ))}
-              </div>
-            </GlassCard>
-          )}
-
           <GlassCard padding="md">
             <div className="flex items-center justify-between mb-4">
               <p className="text-xs font-display font-bold uppercase tracking-wider text-[var(--text-primary)]">
@@ -274,10 +279,35 @@ export default function VehicleProfilePage({ params }: { params: Promise<{ plate
 
           {/* Daily Activity Heatmap */}
           <GlassCard padding="md">
-            <p className="text-xs font-display font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
-              Daily Activity Heatmap
-            </p>
-            <div className="grid grid-cols-7 gap-1.5">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-display font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                Daily Activity Heatmap
+              </p>
+              <div className="flex items-center gap-3">
+                {heatmapStart && heatmapEnd && (
+                  <span className="text-[10px] font-mono text-[var(--text-tertiary)]">
+                    {heatmapStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - {heatmapEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </span>
+                )}
+                <div className="flex items-center gap-1">
+                  <button 
+                    onClick={() => setHeatmapOffset((prev) => prev + 1)}
+                    disabled={isFetchingHeatmap}
+                    className="p-1 rounded hover:bg-white/5 text-[var(--text-secondary)] hover:text-cyan-400 disabled:opacity-50 transition-colors cursor-pointer"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                  </button>
+                  <button 
+                    onClick={() => setHeatmapOffset((prev) => Math.max(0, prev - 1))}
+                    disabled={isFetchingHeatmap || heatmapOffset === 0}
+                    className="p-1 rounded hover:bg-white/5 text-[var(--text-secondary)] hover:text-cyan-400 disabled:opacity-50 transition-colors cursor-pointer"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className={`grid grid-cols-7 gap-1.5 transition-opacity duration-200 ${isFetchingHeatmap ? 'opacity-40' : 'opacity-100'}`}>
               {activityDays.map((count, index) => {
                 const level = count / maxActivity;
                 const background =
